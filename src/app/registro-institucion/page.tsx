@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { supabase } from '../../lib/supabase';
 
 interface Sede {
   id: string;
@@ -16,6 +17,8 @@ export default function RegistroInstitucion() {
     nit: '',
     nombre_contacto: '',
     telefono_contacto: '',
+    email: '',
+    password: '',
     tiene_sedes: false,
     jornadas: [] as string[]
   });
@@ -26,6 +29,10 @@ export default function RegistroInstitucion() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  const [emailDuplicateError, setEmailDuplicateError] = useState<string>('');
+  const [securityErrors, setSecurityErrors] = useState<{[key: string]: string}>({});
 
   const steps = [
     { id: 1, name: 'Información Básica', description: 'Datos principales de la institución' },
@@ -38,6 +45,202 @@ export default function RegistroInstitucion() {
     setToastType(type);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 5000);
+  };
+
+  // Validación de email
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validación de NIT (solo números, mínimo 9 dígitos)
+  const isValidNIT = (nit: string): boolean => {
+    const nitRegex = /^\d{9,}$/;
+    return nitRegex.test(nit);
+  };
+
+  // Validación de teléfono (solo números, mínimo 10 dígitos)
+  const isValidPhone = (phone: string): boolean => {
+    const phoneRegex = /^\d{10,}$/;
+    return phoneRegex.test(phone);
+  };
+
+  // Validación de campos vacíos
+  const hasEmptyFields = (): string[] => {
+    const errors: string[] = [];
+    
+    if (!formData.nombre.trim()) errors.push('El nombre de la institución es requerido');
+    if (!formData.direccion_principal.trim()) errors.push('La dirección principal es requerida');
+    if (!formData.nit.trim()) errors.push('El NIT es requerido');
+    if (!formData.nombre_contacto.trim()) errors.push('El nombre de contacto es requerido');
+    if (!formData.telefono_contacto.trim()) errors.push('El teléfono de contacto es requerido');
+    if (!formData.email.trim()) errors.push('El correo electrónico es requerido');
+    if (!formData.password.trim()) errors.push('La contraseña es requerida');
+    
+    return errors;
+  };
+
+  // Validación de email duplicado
+  const checkEmailDuplicate = async (email: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/instituciones/by-email/${encodeURIComponent(email)}`);
+      return response.ok; // Si la respuesta es ok, significa que el email ya existe
+    } catch (error) {
+      return false; // En caso de error, asumimos que no está duplicado
+    }
+  };
+
+  // Validación de contraseña segura
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('La contraseña debe tener al menos 8 caracteres');
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      errors.push('La contraseña debe contener al menos una letra mayúscula');
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      errors.push('La contraseña debe contener al menos una letra minúscula');
+    }
+    
+    if (!/\d/.test(password)) {
+      errors.push('La contraseña debe contener al menos un número');
+    }
+    
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('La contraseña debe contener al menos un carácter especial');
+    }
+    
+    return errors;
+  };
+
+  // ========== FUNCIONES DE SEGURIDAD CONTRA INYECCIÓN ==========
+
+  // Función para sanitizar entrada de texto
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replace(/[<>]/g, '') // Remover < y >
+      .replace(/javascript:/gi, '') // Remover javascript:
+      .replace(/on\w+=/gi, '') // Remover event handlers (onclick, onload, etc.)
+      .replace(/script/gi, '') // Remover script
+      .replace(/iframe/gi, '') // Remover iframe
+      .replace(/object/gi, '') // Remover object
+      .replace(/embed/gi, '') // Remover embed
+      .replace(/link/gi, '') // Remover link
+      .replace(/meta/gi, '') // Remover meta
+      .replace(/style/gi, '') // Remover style
+      .replace(/expression/gi, '') // Remover expression
+      .replace(/vbscript/gi, '') // Remover vbscript
+      .replace(/data:/gi, '') // Remover data:
+      .replace(/&lt;/g, '') // Remover &lt;
+      .replace(/&gt;/g, '') // Remover &gt;
+      .replace(/&amp;/g, '&') // Convertir &amp; a &
+      .replace(/&quot;/g, '"') // Convertir &quot; a "
+      .replace(/&#x27;/g, "'") // Convertir &#x27; a '
+      .replace(/&#x2F;/g, '/') // Convertir &#x2F; a /
+      .trim();
+  };
+
+  // Función para validar entrada segura
+  const validateSecureInput = (input: string, fieldName: string): string => {
+    const sanitized = sanitizeInput(input);
+    
+    // Detectar patrones de inyección comunes
+    const dangerousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /on\w+\s*=/i,
+      /<iframe/i,
+      /<object/i,
+      /<embed/i,
+      /<link/i,
+      /<meta/i,
+      /<style/i,
+      /expression\s*\(/i,
+      /vbscript:/i,
+      /data:/i,
+      /&lt;script/i,
+      /&lt;iframe/i,
+      /&lt;object/i,
+      /&lt;embed/i,
+      /&lt;link/i,
+      /&lt;meta/i,
+      /&lt;style/i,
+      /&lt;expression/i,
+      /&lt;vbscript/i,
+      /&lt;data:/i
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(input)) {
+        return `Entrada no válida detectada en ${fieldName}. Se han bloqueado caracteres potencialmente peligrosos.`;
+      }
+    }
+
+    return '';
+  };
+
+  // Función para validar email seguro
+  const validateSecureEmail = (email: string): string => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    if (!emailRegex.test(email)) {
+      return 'Formato de email inválido';
+    }
+
+    // Verificar longitud máxima
+    if (email.length > 254) {
+      return 'El email es demasiado largo';
+    }
+
+    // Verificar caracteres peligrosos
+    const dangerousChars = /[<>'"&]/;
+    if (dangerousChars.test(email)) {
+      return 'El email contiene caracteres no permitidos';
+    }
+
+    return '';
+  };
+
+  // Función para validar contraseña segura
+  const validateSecurePassword = (password: string): string => {
+    // Verificar longitud mínima y máxima
+    if (password.length < 8) {
+      return 'La contraseña debe tener al menos 8 caracteres';
+    }
+    
+    if (password.length > 128) {
+      return 'La contraseña es demasiado larga';
+    }
+
+    // Verificar caracteres peligrosos
+    const dangerousChars = /[<>'"&]/;
+    if (dangerousChars.test(password)) {
+      return 'La contraseña contiene caracteres no permitidos';
+    }
+
+    return '';
+  };
+
+  // Función para limpiar y validar entrada segura
+  const handleSecureInputChange = (value: string, fieldName: string, setter: (value: string) => void) => {
+    const sanitized = sanitizeInput(value);
+    const error = validateSecureInput(value, fieldName);
+    
+    setter(sanitized);
+    
+    if (error) {
+      setSecurityErrors(prev => ({ ...prev, [fieldName]: error }));
+    } else {
+      setSecurityErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
   };
 
   const nextStep = () => {
@@ -55,12 +258,26 @@ export default function RegistroInstitucion() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.nombre && formData.direccion_principal && formData.nit);
+        return !!(
+          formData.nombre.trim() && 
+          formData.direccion_principal.trim() && 
+          formData.nit.trim() && 
+          isValidNIT(formData.nit)
+        );
       case 2:
-        return !!(formData.nombre_contacto && formData.telefono_contacto);
+        const emailValid = formData.email && isValidEmail(formData.email) && !emailDuplicateError;
+        const passwordValid = formData.password && validatePassword(formData.password).length === 0;
+        const phoneValid = formData.telefono_contacto && isValidPhone(formData.telefono_contacto);
+        return !!(
+          formData.nombre_contacto.trim() && 
+          formData.telefono_contacto.trim() && 
+          phoneValid && 
+          emailValid && 
+          passwordValid
+        );
       case 3:
         if (formData.tiene_sedes) {
-          return sedes.length > 0 && sedes.every(sede => sede.nombre && sede.jornadas.length > 0);
+          return sedes.length > 0 && sedes.every(sede => sede.nombre.trim() && sede.jornadas.length > 0);
         } else {
           return formData.jornadas.length > 0;
         }
@@ -69,14 +286,82 @@ export default function RegistroInstitucion() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     
+    // Restricción para campos numéricos
+    let processedValue = value;
+    if (name === 'nit' || name === 'telefono_contacto') {
+      // Solo permitir números
+      processedValue = value.replace(/\D/g, '');
+    }
+    
+    // Aplicar sanitización de seguridad a todos los campos de texto
+    if (type !== 'checkbox' && name !== 'tiene_sedes') {
+      processedValue = sanitizeInput(processedValue);
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : processedValue
     }));
+
+    // Validar contraseña en tiempo real
+    if (name === 'password') {
+      const errors = validatePassword(processedValue);
+      setPasswordErrors(errors);
+      
+      // Validar seguridad de contraseña
+      const securityError = validateSecurePassword(processedValue);
+      if (securityError) {
+        setSecurityErrors(prev => ({ ...prev, password: securityError }));
+      } else {
+        setSecurityErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.password;
+          return newErrors;
+        });
+      }
+    }
+
+    // Validar email duplicado en tiempo real
+    if (name === 'email' && processedValue && isValidEmail(processedValue)) {
+      const isDuplicate = await checkEmailDuplicate(processedValue);
+      if (isDuplicate) {
+        setEmailDuplicateError('Este correo electrónico ya está registrado');
+      } else {
+        setEmailDuplicateError('');
+      }
+      
+      // Validar seguridad de email
+      const securityError = validateSecureEmail(processedValue);
+      if (securityError) {
+        setSecurityErrors(prev => ({ ...prev, email: securityError }));
+      } else {
+        setSecurityErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.email;
+          return newErrors;
+        });
+      }
+    } else if (name === 'email') {
+      setEmailDuplicateError('');
+    }
+
+    // Validar seguridad de otros campos
+    if (name !== 'password' && name !== 'email' && type !== 'checkbox' && name !== 'tiene_sedes') {
+      const securityError = validateSecureInput(processedValue, name);
+      if (securityError) {
+        setSecurityErrors(prev => ({ ...prev, [name]: securityError }));
+      } else {
+        setSecurityErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      }
+    }
   };
 
   const handleJornadaChange = (jornada: string, checked: boolean) => {
@@ -155,36 +440,141 @@ export default function RegistroInstitucion() {
     setMessage('');
 
     try {
+      // 1. Validar campos vacíos
+      const emptyFields = hasEmptyFields();
+      if (emptyFields.length > 0) {
+        showToastMessage(`Campos requeridos: ${emptyFields.join(', ')}`, 'error');
+        return;
+      }
+
+      // 2. Validar errores de seguridad
+      if (Object.keys(securityErrors).length > 0) {
+        const firstError = Object.values(securityErrors)[0];
+        showToastMessage(`Error de seguridad: ${firstError}`, 'error');
+        return;
+      }
+
+      // 3. Validar formato de NIT
+      if (!isValidNIT(formData.nit)) {
+        showToastMessage('El NIT debe contener al menos 9 dígitos numéricos', 'error');
+        return;
+      }
+
+      // 4. Validar formato de teléfono
+      if (!isValidPhone(formData.telefono_contacto)) {
+        showToastMessage('El teléfono debe contener al menos 10 dígitos numéricos', 'error');
+        return;
+      }
+
+      // 5. Validar formato de email
+      if (!isValidEmail(formData.email)) {
+        showToastMessage('Por favor ingrese un correo electrónico válido', 'error');
+        return;
+      }
+
+      // 6. Validar contraseña
+      const passwordErrors = validatePassword(formData.password);
+      if (passwordErrors.length > 0) {
+        showToastMessage(`Contraseña inválida: ${passwordErrors.join(', ')}`, 'error');
+        return;
+      }
+
+      // 7. Validar email duplicado
+      const isEmailDuplicate = await checkEmailDuplicate(formData.email);
+      if (isEmailDuplicate) {
+        showToastMessage('Este correo electrónico ya está registrado. Use otro correo.', 'error');
+        return;
+      }
+
+      // 8. Validar jornadas o sedes
+      if (formData.tiene_sedes) {
+        if (sedes.length === 0) {
+          showToastMessage('Debe agregar al menos una sede', 'error');
+          return;
+        }
+        const sedesInvalid = sedes.some(sede => !sede.nombre.trim() || sede.jornadas.length === 0);
+        if (sedesInvalid) {
+          showToastMessage('Todas las sedes deben tener nombre y al menos una jornada', 'error');
+          return;
+        }
+      } else {
+        if (formData.jornadas.length === 0) {
+          showToastMessage('Debe seleccionar al menos una jornada', 'error');
+          return;
+        }
+      }
+
+      // 9. Sanitizar todos los datos antes del envío
+      const sanitizedFormData = {
+        ...formData,
+        nombre: sanitizeInput(formData.nombre),
+        direccion_principal: sanitizeInput(formData.direccion_principal),
+        nombre_contacto: sanitizeInput(formData.nombre_contacto),
+        email: sanitizeInput(formData.email),
+        password: sanitizeInput(formData.password)
+      };
+
+      const sanitizedSedes = sedes.map(sede => ({
+        ...sede,
+        nombre: sanitizeInput(sede.nombre)
+      }));
+
+      // Si todas las validaciones pasan, proceder con el registro
+      // Primero crear el usuario en Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: sanitizedFormData.email,
+        password: sanitizedFormData.password,
+      });
+
+      if (authError) {
+        showToastMessage(authError.message, 'error');
+        return;
+      }
+
+      // Luego crear la institución en la base de datos
       const response = await fetch('/api/instituciones', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
-          sedes: sedes
+          ...sanitizedFormData,
+          sedes: sanitizedSedes
         }),
       });
 
       if (response.ok) {
-        showToastMessage('¡Institución registrada exitosamente!', 'success');
+        const result = await response.json();
+        showToastMessage('¡Institución registrada exitosamente! Revise su correo para confirmar la cuenta.', 'success');
+        
+        // Limpiar el formulario
         setFormData({
           nombre: '',
           direccion_principal: '',
           nit: '',
           nombre_contacto: '',
           telefono_contacto: '',
+          email: '',
+          password: '',
           tiene_sedes: false,
           jornadas: []
         });
         setSedes([]);
+        setPasswordErrors([]);
+        setEmailDuplicateError('');
+        setSecurityErrors({});
         setCurrentStep(1);
+        
+        // Redirigir a la página de login después de 3 segundos
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000);
       } else {
         const errorData = await response.json();
         showToastMessage(errorData.error || 'Error al registrar la institución', 'error');
       }
     } catch (error) {
-      setMessage('Error al conectar con el servidor');
+      setMessage('Error de seguridad detectado. Intente nuevamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -206,9 +596,20 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.nombre}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                  securityErrors.nombre ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
+                }`}
                 placeholder="Ingrese el nombre de la institución"
+                maxLength={255}
               />
+              {securityErrors.nombre && (
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {securityErrors.nombre}
+                </p>
+              )}
             </div>
 
             <div>
@@ -222,14 +623,25 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.direccion_principal}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                  securityErrors.direccion_principal ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
+                }`}
                 placeholder="Ingrese la dirección principal"
+                maxLength={500}
               />
+              {securityErrors.direccion_principal && (
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {securityErrors.direccion_principal}
+                </p>
+              )}
             </div>
 
             <div>
               <label htmlFor="nit" className="block text-sm font-medium text-slate-700 mb-2">
-                NIT *
+                NIT * (mínimo 9 dígitos)
               </label>
               <input
                 id="nit"
@@ -238,9 +650,25 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.nit}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200"
-                placeholder="Ingrese el NIT"
+                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                  (formData.nit && !isValidNIT(formData.nit)) || securityErrors.nit
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    : 'border-slate-200'
+                }`}
+                placeholder="Ingrese el NIT (solo números)"
+                maxLength={20}
               />
+              {formData.nit && !isValidNIT(formData.nit) && (
+                <p className="mt-1 text-xs text-red-600">El NIT debe contener al menos 9 dígitos numéricos</p>
+              )}
+              {securityErrors.nit && (
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {securityErrors.nit}
+                </p>
+              )}
             </div>
           </div>
         );
@@ -259,14 +687,25 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.nombre_contacto}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                  securityErrors.nombre_contacto ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
+                }`}
                 placeholder="Ingrese el nombre del contacto"
+                maxLength={255}
               />
+              {securityErrors.nombre_contacto && (
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {securityErrors.nombre_contacto}
+                </p>
+              )}
             </div>
 
             <div>
               <label htmlFor="telefono_contacto" className="block text-sm font-medium text-slate-700 mb-2">
-                Teléfono de Contacto *
+                Teléfono de Contacto * (mínimo 10 dígitos)
               </label>
               <input
                 id="telefono_contacto"
@@ -275,9 +714,133 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.telefono_contacto}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200"
-                placeholder="Ingrese el teléfono de contacto"
+                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                  (formData.telefono_contacto && !isValidPhone(formData.telefono_contacto)) || securityErrors.telefono_contacto
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    : 'border-slate-200'
+                }`}
+                placeholder="Ingrese el teléfono (solo números)"
+                maxLength={20}
               />
+              {formData.telefono_contacto && !isValidPhone(formData.telefono_contacto) && (
+                <p className="mt-1 text-xs text-red-600">El teléfono debe contener al menos 10 dígitos numéricos</p>
+              )}
+              {securityErrors.telefono_contacto && (
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {securityErrors.telefono_contacto}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                Correo Electrónico *
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                  (formData.email && !isValidEmail(formData.email)) || emailDuplicateError || securityErrors.email
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    : 'border-slate-200'
+                }`}
+                placeholder="correo@ejemplo.com"
+                maxLength={254}
+              />
+              {formData.email && !isValidEmail(formData.email) && (
+                <p className="mt-1 text-xs text-red-600">Por favor ingrese un correo electrónico válido</p>
+              )}
+              {emailDuplicateError && (
+                <p className="mt-1 text-xs text-red-600">{emailDuplicateError}</p>
+              )}
+              {securityErrors.email && (
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {securityErrors.email}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+                Contraseña *
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 pr-12 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                    passwordErrors.length > 0 || securityErrors.password
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-slate-200'
+                  }`}
+                  placeholder="Ingrese una contraseña segura"
+                  maxLength={128}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              
+              {/* Mostrar errores de contraseña */}
+              {passwordErrors.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {passwordErrors.map((error, index) => (
+                    <p key={index} className="text-xs text-red-600 flex items-center">
+                      <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {error}
+                    </p>
+                  ))}
+                </div>
+              )}
+              
+              {/* Mostrar indicador de fortaleza de contraseña */}
+              {formData.password && passwordErrors.length === 0 && !securityErrors.password && (
+                <p className="mt-1 text-xs text-green-600 flex items-center">
+                  <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  Contraseña segura
+                </p>
+              )}
+              
+              {/* Mostrar error de seguridad de contraseña */}
+              {securityErrors.password && (
+                <p className="mt-1 text-xs text-red-600 flex items-center">
+                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {securityErrors.password}
+                </p>
+              )}
             </div>
           </div>
         );
@@ -477,9 +1040,16 @@ export default function RegistroInstitucion() {
           <h1 className="text-3xl font-bold text-slate-800 mb-2">
             Registrar Institución
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 mb-3">
             Complete los datos paso a paso
           </p>
+          {/* Security Indicator */}
+          <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+            Formulario Protegido
+          </div>
         </div>
 
         <div className="flex gap-6">
@@ -605,40 +1175,60 @@ export default function RegistroInstitucion() {
 
         {/* Toast Notification */}
         {showToast && (
-          <div className="fixed top-4 right-4 z-50">
-            <div className={`max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden ${
-              toastType === 'success' ? 'border-l-4 border-green-400' : 'border-l-4 border-red-400'
+          <div className="fixed top-4 right-4 z-50 max-w-md w-full">
+            <div className={`w-full bg-white shadow-2xl rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border ${
+              toastType === 'success' 
+                ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50' 
+                : 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
             }`}>
-              <div className="p-4">
+              <div className="p-6">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     {toastType === 'success' ? (
-                      <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
                     ) : (
-                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
+                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
                     )}
                   </div>
-                  <div className="ml-3 w-0 flex-1 pt-0.5">
-                    <p className={`text-sm font-medium ${
-                      toastType === 'success' ? 'text-green-800' : 'text-red-800'
-                    }`}>
-                      {toastMessage}
-                    </p>
-                  </div>
-                  <div className="ml-4 flex-shrink-0 flex">
-                    <button
-                      className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                      onClick={() => setShowToast(false)}
-                    >
-                      <span className="sr-only">Cerrar</span>
-                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
+                  <div className="ml-4 flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className={`text-sm font-semibold ${
+                          toastType === 'success' ? 'text-green-800' : 'text-red-800'
+                        }`}>
+                          {toastType === 'success' ? '¡Registro Exitoso!' : 'Error'}
+                        </p>
+                        <p className={`text-sm mt-1 ${
+                          toastType === 'success' ? 'text-green-700' : 'text-red-700'
+                        }`}>
+                          {toastMessage}
+                        </p>
+                        {toastType === 'success' && toastMessage.includes('correo') && (
+                          <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-xs text-blue-800">
+                              📧 Revise su bandeja de entrada y carpeta de spam para confirmar su cuenta.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        className="ml-4 flex-shrink-0 inline-flex text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-full p-1"
+                        onClick={() => setShowToast(false)}
+                      >
+                        <span className="sr-only">Cerrar</span>
+                        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

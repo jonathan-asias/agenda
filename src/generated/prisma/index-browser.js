@@ -127,6 +127,8 @@ exports.Prisma.InstitucionesScalarFieldEnum = {
   nit: 'nit',
   nombre_contacto: 'nombre_contacto',
   telefono_contacto: 'telefono_contacto',
+  email: 'email',
+  password: 'password',
   tiene_sedes: 'tiene_sedes',
   jornadas: 'jornadas',
   created_at: 'created_at',
@@ -142,6 +144,21 @@ exports.Prisma.SedesScalarFieldEnum = {
   updated_at: 'updated_at'
 };
 
+exports.Prisma.AdministradoresScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  apellido: 'apellido',
+  email: 'email',
+  telefono: 'telefono',
+  cargo: 'cargo',
+  institucion_id: 'institucion_id',
+  fecha_nacimiento: 'fecha_nacimiento',
+  direccion: 'direccion',
+  activo: 'activo',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -152,10 +169,16 @@ exports.Prisma.QueryMode = {
   insensitive: 'insensitive'
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
   Instituciones: 'Instituciones',
-  Sedes: 'Sedes'
+  Sedes: 'Sedes',
+  Administradores: 'Administradores'
 };
 
 /**

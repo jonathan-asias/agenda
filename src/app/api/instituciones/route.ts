@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
       nit, 
       nombre_contacto, 
       telefono_contacto,
+      email,
+      password,
       tiene_sedes,
       jornadas = [],
       sedes = []
@@ -47,6 +49,37 @@ export async function POST(request: NextRequest) {
     if (!telefono_contacto || telefono_contacto.trim().length === 0) {
       return NextResponse.json(
         { error: 'El teléfono de contacto es requerido' },
+        { status: 400 }
+      );
+    }
+
+    if (!email || email.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'El correo electrónico es requerido' },
+        { status: 400 }
+      );
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'El formato del correo electrónico no es válido' },
+        { status: 400 }
+      );
+    }
+
+    if (!password || password.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'La contraseña es requerida' },
+        { status: 400 }
+      );
+    }
+
+    // Validar contraseña segura
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'La contraseña debe tener al menos 8 caracteres' },
         { status: 400 }
       );
     }
@@ -92,6 +125,8 @@ export async function POST(request: NextRequest) {
           nit: nit.trim(),
           nombre_contacto: nombre_contacto.trim(),
           telefono_contacto: telefono_contacto.trim(),
+          email: email.trim(),
+          password: password, // En producción, aquí deberías hashear la contraseña
           tiene_sedes: Boolean(tiene_sedes),
           jornadas: tiene_sedes ? [] : jornadas,
         },

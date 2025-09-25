@@ -23,6 +23,11 @@ export type Instituciones = $Result.DefaultSelection<Prisma.$InstitucionesPayloa
  * 
  */
 export type Sedes = $Result.DefaultSelection<Prisma.$SedesPayload>
+/**
+ * Model Administradores
+ * 
+ */
+export type Administradores = $Result.DefaultSelection<Prisma.$AdministradoresPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -161,6 +166,16 @@ export class PrismaClient<
     * ```
     */
   get sedes(): Prisma.SedesDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.administradores`: Exposes CRUD operations for the **Administradores** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Administradores
+    * const administradores = await prisma.administradores.findMany()
+    * ```
+    */
+  get administradores(): Prisma.AdministradoresDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -602,7 +617,8 @@ export namespace Prisma {
 
   export const ModelName: {
     Instituciones: 'Instituciones',
-    Sedes: 'Sedes'
+    Sedes: 'Sedes',
+    Administradores: 'Administradores'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -621,7 +637,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "instituciones" | "sedes"
+      modelProps: "instituciones" | "sedes" | "administradores"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -773,6 +789,80 @@ export namespace Prisma {
           }
         }
       }
+      Administradores: {
+        payload: Prisma.$AdministradoresPayload<ExtArgs>
+        fields: Prisma.AdministradoresFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.AdministradoresFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.AdministradoresFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>
+          }
+          findFirst: {
+            args: Prisma.AdministradoresFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.AdministradoresFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>
+          }
+          findMany: {
+            args: Prisma.AdministradoresFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>[]
+          }
+          create: {
+            args: Prisma.AdministradoresCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>
+          }
+          createMany: {
+            args: Prisma.AdministradoresCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.AdministradoresCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>[]
+          }
+          delete: {
+            args: Prisma.AdministradoresDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>
+          }
+          update: {
+            args: Prisma.AdministradoresUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>
+          }
+          deleteMany: {
+            args: Prisma.AdministradoresDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.AdministradoresUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.AdministradoresUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>[]
+          }
+          upsert: {
+            args: Prisma.AdministradoresUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AdministradoresPayload>
+          }
+          aggregate: {
+            args: Prisma.AdministradoresAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateAdministradores>
+          }
+          groupBy: {
+            args: Prisma.AdministradoresGroupByArgs<ExtArgs>
+            result: $Utils.Optional<AdministradoresGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.AdministradoresCountArgs<ExtArgs>
+            result: $Utils.Optional<AdministradoresCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -871,6 +961,7 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     instituciones?: InstitucionesOmit
     sedes?: SedesOmit
+    administradores?: AdministradoresOmit
   }
 
   /* Types for Logging */
@@ -951,10 +1042,12 @@ export namespace Prisma {
    */
 
   export type InstitucionesCountOutputType = {
+    administradores: number
     sedes: number
   }
 
   export type InstitucionesCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    administradores?: boolean | InstitucionesCountOutputTypeCountAdministradoresArgs
     sedes?: boolean | InstitucionesCountOutputTypeCountSedesArgs
   }
 
@@ -967,6 +1060,13 @@ export namespace Prisma {
      * Select specific fields to fetch from the InstitucionesCountOutputType
      */
     select?: InstitucionesCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * InstitucionesCountOutputType without action
+   */
+  export type InstitucionesCountOutputTypeCountAdministradoresArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AdministradoresWhereInput
   }
 
   /**
@@ -1008,6 +1108,8 @@ export namespace Prisma {
     nit: string | null
     nombre_contacto: string | null
     telefono_contacto: string | null
+    email: string | null
+    password: string | null
     tiene_sedes: boolean | null
     created_at: Date | null
     updated_at: Date | null
@@ -1020,6 +1122,8 @@ export namespace Prisma {
     nit: string | null
     nombre_contacto: string | null
     telefono_contacto: string | null
+    email: string | null
+    password: string | null
     tiene_sedes: boolean | null
     created_at: Date | null
     updated_at: Date | null
@@ -1032,6 +1136,8 @@ export namespace Prisma {
     nit: number
     nombre_contacto: number
     telefono_contacto: number
+    email: number
+    password: number
     tiene_sedes: number
     jornadas: number
     created_at: number
@@ -1055,6 +1161,8 @@ export namespace Prisma {
     nit?: true
     nombre_contacto?: true
     telefono_contacto?: true
+    email?: true
+    password?: true
     tiene_sedes?: true
     created_at?: true
     updated_at?: true
@@ -1067,6 +1175,8 @@ export namespace Prisma {
     nit?: true
     nombre_contacto?: true
     telefono_contacto?: true
+    email?: true
+    password?: true
     tiene_sedes?: true
     created_at?: true
     updated_at?: true
@@ -1079,6 +1189,8 @@ export namespace Prisma {
     nit?: true
     nombre_contacto?: true
     telefono_contacto?: true
+    email?: true
+    password?: true
     tiene_sedes?: true
     jornadas?: true
     created_at?: true
@@ -1179,6 +1291,8 @@ export namespace Prisma {
     nit: string
     nombre_contacto: string
     telefono_contacto: string
+    email: string
+    password: string
     tiene_sedes: boolean
     jornadas: string[]
     created_at: Date
@@ -1211,10 +1325,13 @@ export namespace Prisma {
     nit?: boolean
     nombre_contacto?: boolean
     telefono_contacto?: boolean
+    email?: boolean
+    password?: boolean
     tiene_sedes?: boolean
     jornadas?: boolean
     created_at?: boolean
     updated_at?: boolean
+    administradores?: boolean | Instituciones$administradoresArgs<ExtArgs>
     sedes?: boolean | Instituciones$sedesArgs<ExtArgs>
     _count?: boolean | InstitucionesCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["instituciones"]>
@@ -1226,6 +1343,8 @@ export namespace Prisma {
     nit?: boolean
     nombre_contacto?: boolean
     telefono_contacto?: boolean
+    email?: boolean
+    password?: boolean
     tiene_sedes?: boolean
     jornadas?: boolean
     created_at?: boolean
@@ -1239,6 +1358,8 @@ export namespace Prisma {
     nit?: boolean
     nombre_contacto?: boolean
     telefono_contacto?: boolean
+    email?: boolean
+    password?: boolean
     tiene_sedes?: boolean
     jornadas?: boolean
     created_at?: boolean
@@ -1252,14 +1373,17 @@ export namespace Prisma {
     nit?: boolean
     nombre_contacto?: boolean
     telefono_contacto?: boolean
+    email?: boolean
+    password?: boolean
     tiene_sedes?: boolean
     jornadas?: boolean
     created_at?: boolean
     updated_at?: boolean
   }
 
-  export type InstitucionesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "direccion_principal" | "nit" | "nombre_contacto" | "telefono_contacto" | "tiene_sedes" | "jornadas" | "created_at" | "updated_at", ExtArgs["result"]["instituciones"]>
+  export type InstitucionesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "direccion_principal" | "nit" | "nombre_contacto" | "telefono_contacto" | "email" | "password" | "tiene_sedes" | "jornadas" | "created_at" | "updated_at", ExtArgs["result"]["instituciones"]>
   export type InstitucionesInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    administradores?: boolean | Instituciones$administradoresArgs<ExtArgs>
     sedes?: boolean | Instituciones$sedesArgs<ExtArgs>
     _count?: boolean | InstitucionesCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -1269,6 +1393,7 @@ export namespace Prisma {
   export type $InstitucionesPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Instituciones"
     objects: {
+      administradores: Prisma.$AdministradoresPayload<ExtArgs>[]
       sedes: Prisma.$SedesPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -1278,6 +1403,8 @@ export namespace Prisma {
       nit: string
       nombre_contacto: string
       telefono_contacto: string
+      email: string
+      password: string
       tiene_sedes: boolean
       jornadas: string[]
       created_at: Date
@@ -1676,6 +1803,7 @@ export namespace Prisma {
    */
   export interface Prisma__InstitucionesClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    administradores<T extends Instituciones$administradoresArgs<ExtArgs> = {}>(args?: Subset<T, Instituciones$administradoresArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     sedes<T extends Instituciones$sedesArgs<ExtArgs> = {}>(args?: Subset<T, Instituciones$sedesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SedesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1712,6 +1840,8 @@ export namespace Prisma {
     readonly nit: FieldRef<"Instituciones", 'String'>
     readonly nombre_contacto: FieldRef<"Instituciones", 'String'>
     readonly telefono_contacto: FieldRef<"Instituciones", 'String'>
+    readonly email: FieldRef<"Instituciones", 'String'>
+    readonly password: FieldRef<"Instituciones", 'String'>
     readonly tiene_sedes: FieldRef<"Instituciones", 'Boolean'>
     readonly jornadas: FieldRef<"Instituciones", 'String[]'>
     readonly created_at: FieldRef<"Instituciones", 'DateTime'>
@@ -2101,6 +2231,30 @@ export namespace Prisma {
      * Limit how many Instituciones to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Instituciones.administradores
+   */
+  export type Instituciones$administradoresArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    where?: AdministradoresWhereInput
+    orderBy?: AdministradoresOrderByWithRelationInput | AdministradoresOrderByWithRelationInput[]
+    cursor?: AdministradoresWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AdministradoresScalarFieldEnum | AdministradoresScalarFieldEnum[]
   }
 
   /**
@@ -3252,6 +3406,1193 @@ export namespace Prisma {
 
 
   /**
+   * Model Administradores
+   */
+
+  export type AggregateAdministradores = {
+    _count: AdministradoresCountAggregateOutputType | null
+    _avg: AdministradoresAvgAggregateOutputType | null
+    _sum: AdministradoresSumAggregateOutputType | null
+    _min: AdministradoresMinAggregateOutputType | null
+    _max: AdministradoresMaxAggregateOutputType | null
+  }
+
+  export type AdministradoresAvgAggregateOutputType = {
+    id: number | null
+    institucion_id: number | null
+  }
+
+  export type AdministradoresSumAggregateOutputType = {
+    id: number | null
+    institucion_id: number | null
+  }
+
+  export type AdministradoresMinAggregateOutputType = {
+    id: number | null
+    nombre: string | null
+    apellido: string | null
+    email: string | null
+    telefono: string | null
+    cargo: string | null
+    institucion_id: number | null
+    fecha_nacimiento: Date | null
+    direccion: string | null
+    activo: boolean | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type AdministradoresMaxAggregateOutputType = {
+    id: number | null
+    nombre: string | null
+    apellido: string | null
+    email: string | null
+    telefono: string | null
+    cargo: string | null
+    institucion_id: number | null
+    fecha_nacimiento: Date | null
+    direccion: string | null
+    activo: boolean | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type AdministradoresCountAggregateOutputType = {
+    id: number
+    nombre: number
+    apellido: number
+    email: number
+    telefono: number
+    cargo: number
+    institucion_id: number
+    fecha_nacimiento: number
+    direccion: number
+    activo: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type AdministradoresAvgAggregateInputType = {
+    id?: true
+    institucion_id?: true
+  }
+
+  export type AdministradoresSumAggregateInputType = {
+    id?: true
+    institucion_id?: true
+  }
+
+  export type AdministradoresMinAggregateInputType = {
+    id?: true
+    nombre?: true
+    apellido?: true
+    email?: true
+    telefono?: true
+    cargo?: true
+    institucion_id?: true
+    fecha_nacimiento?: true
+    direccion?: true
+    activo?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type AdministradoresMaxAggregateInputType = {
+    id?: true
+    nombre?: true
+    apellido?: true
+    email?: true
+    telefono?: true
+    cargo?: true
+    institucion_id?: true
+    fecha_nacimiento?: true
+    direccion?: true
+    activo?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type AdministradoresCountAggregateInputType = {
+    id?: true
+    nombre?: true
+    apellido?: true
+    email?: true
+    telefono?: true
+    cargo?: true
+    institucion_id?: true
+    fecha_nacimiento?: true
+    direccion?: true
+    activo?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type AdministradoresAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Administradores to aggregate.
+     */
+    where?: AdministradoresWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Administradores to fetch.
+     */
+    orderBy?: AdministradoresOrderByWithRelationInput | AdministradoresOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: AdministradoresWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Administradores from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Administradores.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Administradores
+    **/
+    _count?: true | AdministradoresCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: AdministradoresAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: AdministradoresSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: AdministradoresMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: AdministradoresMaxAggregateInputType
+  }
+
+  export type GetAdministradoresAggregateType<T extends AdministradoresAggregateArgs> = {
+        [P in keyof T & keyof AggregateAdministradores]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateAdministradores[P]>
+      : GetScalarType<T[P], AggregateAdministradores[P]>
+  }
+
+
+
+
+  export type AdministradoresGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AdministradoresWhereInput
+    orderBy?: AdministradoresOrderByWithAggregationInput | AdministradoresOrderByWithAggregationInput[]
+    by: AdministradoresScalarFieldEnum[] | AdministradoresScalarFieldEnum
+    having?: AdministradoresScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: AdministradoresCountAggregateInputType | true
+    _avg?: AdministradoresAvgAggregateInputType
+    _sum?: AdministradoresSumAggregateInputType
+    _min?: AdministradoresMinAggregateInputType
+    _max?: AdministradoresMaxAggregateInputType
+  }
+
+  export type AdministradoresGroupByOutputType = {
+    id: number
+    nombre: string
+    apellido: string
+    email: string
+    telefono: string | null
+    cargo: string
+    institucion_id: number
+    fecha_nacimiento: Date | null
+    direccion: string | null
+    activo: boolean
+    created_at: Date
+    updated_at: Date
+    _count: AdministradoresCountAggregateOutputType | null
+    _avg: AdministradoresAvgAggregateOutputType | null
+    _sum: AdministradoresSumAggregateOutputType | null
+    _min: AdministradoresMinAggregateOutputType | null
+    _max: AdministradoresMaxAggregateOutputType | null
+  }
+
+  type GetAdministradoresGroupByPayload<T extends AdministradoresGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<AdministradoresGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof AdministradoresGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AdministradoresGroupByOutputType[P]>
+            : GetScalarType<T[P], AdministradoresGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type AdministradoresSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nombre?: boolean
+    apellido?: boolean
+    email?: boolean
+    telefono?: boolean
+    cargo?: boolean
+    institucion_id?: boolean
+    fecha_nacimiento?: boolean
+    direccion?: boolean
+    activo?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["administradores"]>
+
+  export type AdministradoresSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nombre?: boolean
+    apellido?: boolean
+    email?: boolean
+    telefono?: boolean
+    cargo?: boolean
+    institucion_id?: boolean
+    fecha_nacimiento?: boolean
+    direccion?: boolean
+    activo?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["administradores"]>
+
+  export type AdministradoresSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nombre?: boolean
+    apellido?: boolean
+    email?: boolean
+    telefono?: boolean
+    cargo?: boolean
+    institucion_id?: boolean
+    fecha_nacimiento?: boolean
+    direccion?: boolean
+    activo?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["administradores"]>
+
+  export type AdministradoresSelectScalar = {
+    id?: boolean
+    nombre?: boolean
+    apellido?: boolean
+    email?: boolean
+    telefono?: boolean
+    cargo?: boolean
+    institucion_id?: boolean
+    fecha_nacimiento?: boolean
+    direccion?: boolean
+    activo?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type AdministradoresOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "apellido" | "email" | "telefono" | "cargo" | "institucion_id" | "fecha_nacimiento" | "direccion" | "activo" | "created_at" | "updated_at", ExtArgs["result"]["administradores"]>
+  export type AdministradoresInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+  }
+  export type AdministradoresIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+  }
+  export type AdministradoresIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+  }
+
+  export type $AdministradoresPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Administradores"
+    objects: {
+      institucion: Prisma.$InstitucionesPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      nombre: string
+      apellido: string
+      email: string
+      telefono: string | null
+      cargo: string
+      institucion_id: number
+      fecha_nacimiento: Date | null
+      direccion: string | null
+      activo: boolean
+      created_at: Date
+      updated_at: Date
+    }, ExtArgs["result"]["administradores"]>
+    composites: {}
+  }
+
+  type AdministradoresGetPayload<S extends boolean | null | undefined | AdministradoresDefaultArgs> = $Result.GetResult<Prisma.$AdministradoresPayload, S>
+
+  type AdministradoresCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<AdministradoresFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: AdministradoresCountAggregateInputType | true
+    }
+
+  export interface AdministradoresDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Administradores'], meta: { name: 'Administradores' } }
+    /**
+     * Find zero or one Administradores that matches the filter.
+     * @param {AdministradoresFindUniqueArgs} args - Arguments to find a Administradores
+     * @example
+     * // Get one Administradores
+     * const administradores = await prisma.administradores.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AdministradoresFindUniqueArgs>(args: SelectSubset<T, AdministradoresFindUniqueArgs<ExtArgs>>): Prisma__AdministradoresClient<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Administradores that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AdministradoresFindUniqueOrThrowArgs} args - Arguments to find a Administradores
+     * @example
+     * // Get one Administradores
+     * const administradores = await prisma.administradores.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AdministradoresFindUniqueOrThrowArgs>(args: SelectSubset<T, AdministradoresFindUniqueOrThrowArgs<ExtArgs>>): Prisma__AdministradoresClient<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Administradores that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdministradoresFindFirstArgs} args - Arguments to find a Administradores
+     * @example
+     * // Get one Administradores
+     * const administradores = await prisma.administradores.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AdministradoresFindFirstArgs>(args?: SelectSubset<T, AdministradoresFindFirstArgs<ExtArgs>>): Prisma__AdministradoresClient<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Administradores that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdministradoresFindFirstOrThrowArgs} args - Arguments to find a Administradores
+     * @example
+     * // Get one Administradores
+     * const administradores = await prisma.administradores.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AdministradoresFindFirstOrThrowArgs>(args?: SelectSubset<T, AdministradoresFindFirstOrThrowArgs<ExtArgs>>): Prisma__AdministradoresClient<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Administradores that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdministradoresFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Administradores
+     * const administradores = await prisma.administradores.findMany()
+     * 
+     * // Get first 10 Administradores
+     * const administradores = await prisma.administradores.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const administradoresWithIdOnly = await prisma.administradores.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends AdministradoresFindManyArgs>(args?: SelectSubset<T, AdministradoresFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Administradores.
+     * @param {AdministradoresCreateArgs} args - Arguments to create a Administradores.
+     * @example
+     * // Create one Administradores
+     * const Administradores = await prisma.administradores.create({
+     *   data: {
+     *     // ... data to create a Administradores
+     *   }
+     * })
+     * 
+     */
+    create<T extends AdministradoresCreateArgs>(args: SelectSubset<T, AdministradoresCreateArgs<ExtArgs>>): Prisma__AdministradoresClient<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Administradores.
+     * @param {AdministradoresCreateManyArgs} args - Arguments to create many Administradores.
+     * @example
+     * // Create many Administradores
+     * const administradores = await prisma.administradores.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends AdministradoresCreateManyArgs>(args?: SelectSubset<T, AdministradoresCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Administradores and returns the data saved in the database.
+     * @param {AdministradoresCreateManyAndReturnArgs} args - Arguments to create many Administradores.
+     * @example
+     * // Create many Administradores
+     * const administradores = await prisma.administradores.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Administradores and only return the `id`
+     * const administradoresWithIdOnly = await prisma.administradores.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends AdministradoresCreateManyAndReturnArgs>(args?: SelectSubset<T, AdministradoresCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Administradores.
+     * @param {AdministradoresDeleteArgs} args - Arguments to delete one Administradores.
+     * @example
+     * // Delete one Administradores
+     * const Administradores = await prisma.administradores.delete({
+     *   where: {
+     *     // ... filter to delete one Administradores
+     *   }
+     * })
+     * 
+     */
+    delete<T extends AdministradoresDeleteArgs>(args: SelectSubset<T, AdministradoresDeleteArgs<ExtArgs>>): Prisma__AdministradoresClient<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Administradores.
+     * @param {AdministradoresUpdateArgs} args - Arguments to update one Administradores.
+     * @example
+     * // Update one Administradores
+     * const administradores = await prisma.administradores.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends AdministradoresUpdateArgs>(args: SelectSubset<T, AdministradoresUpdateArgs<ExtArgs>>): Prisma__AdministradoresClient<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Administradores.
+     * @param {AdministradoresDeleteManyArgs} args - Arguments to filter Administradores to delete.
+     * @example
+     * // Delete a few Administradores
+     * const { count } = await prisma.administradores.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends AdministradoresDeleteManyArgs>(args?: SelectSubset<T, AdministradoresDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Administradores.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdministradoresUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Administradores
+     * const administradores = await prisma.administradores.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends AdministradoresUpdateManyArgs>(args: SelectSubset<T, AdministradoresUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Administradores and returns the data updated in the database.
+     * @param {AdministradoresUpdateManyAndReturnArgs} args - Arguments to update many Administradores.
+     * @example
+     * // Update many Administradores
+     * const administradores = await prisma.administradores.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Administradores and only return the `id`
+     * const administradoresWithIdOnly = await prisma.administradores.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends AdministradoresUpdateManyAndReturnArgs>(args: SelectSubset<T, AdministradoresUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Administradores.
+     * @param {AdministradoresUpsertArgs} args - Arguments to update or create a Administradores.
+     * @example
+     * // Update or create a Administradores
+     * const administradores = await prisma.administradores.upsert({
+     *   create: {
+     *     // ... data to create a Administradores
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Administradores we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AdministradoresUpsertArgs>(args: SelectSubset<T, AdministradoresUpsertArgs<ExtArgs>>): Prisma__AdministradoresClient<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Administradores.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdministradoresCountArgs} args - Arguments to filter Administradores to count.
+     * @example
+     * // Count the number of Administradores
+     * const count = await prisma.administradores.count({
+     *   where: {
+     *     // ... the filter for the Administradores we want to count
+     *   }
+     * })
+    **/
+    count<T extends AdministradoresCountArgs>(
+      args?: Subset<T, AdministradoresCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], AdministradoresCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Administradores.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdministradoresAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AdministradoresAggregateArgs>(args: Subset<T, AdministradoresAggregateArgs>): Prisma.PrismaPromise<GetAdministradoresAggregateType<T>>
+
+    /**
+     * Group by Administradores.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AdministradoresGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends AdministradoresGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: AdministradoresGroupByArgs['orderBy'] }
+        : { orderBy?: AdministradoresGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, AdministradoresGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAdministradoresGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Administradores model
+   */
+  readonly fields: AdministradoresFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Administradores.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__AdministradoresClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Administradores model
+   */
+  interface AdministradoresFieldRefs {
+    readonly id: FieldRef<"Administradores", 'Int'>
+    readonly nombre: FieldRef<"Administradores", 'String'>
+    readonly apellido: FieldRef<"Administradores", 'String'>
+    readonly email: FieldRef<"Administradores", 'String'>
+    readonly telefono: FieldRef<"Administradores", 'String'>
+    readonly cargo: FieldRef<"Administradores", 'String'>
+    readonly institucion_id: FieldRef<"Administradores", 'Int'>
+    readonly fecha_nacimiento: FieldRef<"Administradores", 'DateTime'>
+    readonly direccion: FieldRef<"Administradores", 'String'>
+    readonly activo: FieldRef<"Administradores", 'Boolean'>
+    readonly created_at: FieldRef<"Administradores", 'DateTime'>
+    readonly updated_at: FieldRef<"Administradores", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Administradores findUnique
+   */
+  export type AdministradoresFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * Filter, which Administradores to fetch.
+     */
+    where: AdministradoresWhereUniqueInput
+  }
+
+  /**
+   * Administradores findUniqueOrThrow
+   */
+  export type AdministradoresFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * Filter, which Administradores to fetch.
+     */
+    where: AdministradoresWhereUniqueInput
+  }
+
+  /**
+   * Administradores findFirst
+   */
+  export type AdministradoresFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * Filter, which Administradores to fetch.
+     */
+    where?: AdministradoresWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Administradores to fetch.
+     */
+    orderBy?: AdministradoresOrderByWithRelationInput | AdministradoresOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Administradores.
+     */
+    cursor?: AdministradoresWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Administradores from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Administradores.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Administradores.
+     */
+    distinct?: AdministradoresScalarFieldEnum | AdministradoresScalarFieldEnum[]
+  }
+
+  /**
+   * Administradores findFirstOrThrow
+   */
+  export type AdministradoresFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * Filter, which Administradores to fetch.
+     */
+    where?: AdministradoresWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Administradores to fetch.
+     */
+    orderBy?: AdministradoresOrderByWithRelationInput | AdministradoresOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Administradores.
+     */
+    cursor?: AdministradoresWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Administradores from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Administradores.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Administradores.
+     */
+    distinct?: AdministradoresScalarFieldEnum | AdministradoresScalarFieldEnum[]
+  }
+
+  /**
+   * Administradores findMany
+   */
+  export type AdministradoresFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * Filter, which Administradores to fetch.
+     */
+    where?: AdministradoresWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Administradores to fetch.
+     */
+    orderBy?: AdministradoresOrderByWithRelationInput | AdministradoresOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Administradores.
+     */
+    cursor?: AdministradoresWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Administradores from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Administradores.
+     */
+    skip?: number
+    distinct?: AdministradoresScalarFieldEnum | AdministradoresScalarFieldEnum[]
+  }
+
+  /**
+   * Administradores create
+   */
+  export type AdministradoresCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Administradores.
+     */
+    data: XOR<AdministradoresCreateInput, AdministradoresUncheckedCreateInput>
+  }
+
+  /**
+   * Administradores createMany
+   */
+  export type AdministradoresCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Administradores.
+     */
+    data: AdministradoresCreateManyInput | AdministradoresCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Administradores createManyAndReturn
+   */
+  export type AdministradoresCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * The data used to create many Administradores.
+     */
+    data: AdministradoresCreateManyInput | AdministradoresCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Administradores update
+   */
+  export type AdministradoresUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Administradores.
+     */
+    data: XOR<AdministradoresUpdateInput, AdministradoresUncheckedUpdateInput>
+    /**
+     * Choose, which Administradores to update.
+     */
+    where: AdministradoresWhereUniqueInput
+  }
+
+  /**
+   * Administradores updateMany
+   */
+  export type AdministradoresUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Administradores.
+     */
+    data: XOR<AdministradoresUpdateManyMutationInput, AdministradoresUncheckedUpdateManyInput>
+    /**
+     * Filter which Administradores to update
+     */
+    where?: AdministradoresWhereInput
+    /**
+     * Limit how many Administradores to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Administradores updateManyAndReturn
+   */
+  export type AdministradoresUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * The data used to update Administradores.
+     */
+    data: XOR<AdministradoresUpdateManyMutationInput, AdministradoresUncheckedUpdateManyInput>
+    /**
+     * Filter which Administradores to update
+     */
+    where?: AdministradoresWhereInput
+    /**
+     * Limit how many Administradores to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Administradores upsert
+   */
+  export type AdministradoresUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Administradores to update in case it exists.
+     */
+    where: AdministradoresWhereUniqueInput
+    /**
+     * In case the Administradores found by the `where` argument doesn't exist, create a new Administradores with this data.
+     */
+    create: XOR<AdministradoresCreateInput, AdministradoresUncheckedCreateInput>
+    /**
+     * In case the Administradores was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<AdministradoresUpdateInput, AdministradoresUncheckedUpdateInput>
+  }
+
+  /**
+   * Administradores delete
+   */
+  export type AdministradoresDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    /**
+     * Filter which Administradores to delete.
+     */
+    where: AdministradoresWhereUniqueInput
+  }
+
+  /**
+   * Administradores deleteMany
+   */
+  export type AdministradoresDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Administradores to delete
+     */
+    where?: AdministradoresWhereInput
+    /**
+     * Limit how many Administradores to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Administradores without action
+   */
+  export type AdministradoresDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -3272,6 +4613,8 @@ export namespace Prisma {
     nit: 'nit',
     nombre_contacto: 'nombre_contacto',
     telefono_contacto: 'telefono_contacto',
+    email: 'email',
+    password: 'password',
     tiene_sedes: 'tiene_sedes',
     jornadas: 'jornadas',
     created_at: 'created_at',
@@ -3293,6 +4636,24 @@ export namespace Prisma {
   export type SedesScalarFieldEnum = (typeof SedesScalarFieldEnum)[keyof typeof SedesScalarFieldEnum]
 
 
+  export const AdministradoresScalarFieldEnum: {
+    id: 'id',
+    nombre: 'nombre',
+    apellido: 'apellido',
+    email: 'email',
+    telefono: 'telefono',
+    cargo: 'cargo',
+    institucion_id: 'institucion_id',
+    fecha_nacimiento: 'fecha_nacimiento',
+    direccion: 'direccion',
+    activo: 'activo',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type AdministradoresScalarFieldEnum = (typeof AdministradoresScalarFieldEnum)[keyof typeof AdministradoresScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -3307,6 +4668,14 @@ export namespace Prisma {
   };
 
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+  export const NullsOrder: {
+    first: 'first',
+    last: 'last'
+  };
+
+  export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
   /**
@@ -3390,10 +4759,13 @@ export namespace Prisma {
     nit?: StringFilter<"Instituciones"> | string
     nombre_contacto?: StringFilter<"Instituciones"> | string
     telefono_contacto?: StringFilter<"Instituciones"> | string
+    email?: StringFilter<"Instituciones"> | string
+    password?: StringFilter<"Instituciones"> | string
     tiene_sedes?: BoolFilter<"Instituciones"> | boolean
     jornadas?: StringNullableListFilter<"Instituciones">
     created_at?: DateTimeFilter<"Instituciones"> | Date | string
     updated_at?: DateTimeFilter<"Instituciones"> | Date | string
+    administradores?: AdministradoresListRelationFilter
     sedes?: SedesListRelationFilter
   }
 
@@ -3404,15 +4776,19 @@ export namespace Prisma {
     nit?: SortOrder
     nombre_contacto?: SortOrder
     telefono_contacto?: SortOrder
+    email?: SortOrder
+    password?: SortOrder
     tiene_sedes?: SortOrder
     jornadas?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    administradores?: AdministradoresOrderByRelationAggregateInput
     sedes?: SedesOrderByRelationAggregateInput
   }
 
   export type InstitucionesWhereUniqueInput = Prisma.AtLeast<{
     id?: number
+    email?: string
     AND?: InstitucionesWhereInput | InstitucionesWhereInput[]
     OR?: InstitucionesWhereInput[]
     NOT?: InstitucionesWhereInput | InstitucionesWhereInput[]
@@ -3421,12 +4797,14 @@ export namespace Prisma {
     nit?: StringFilter<"Instituciones"> | string
     nombre_contacto?: StringFilter<"Instituciones"> | string
     telefono_contacto?: StringFilter<"Instituciones"> | string
+    password?: StringFilter<"Instituciones"> | string
     tiene_sedes?: BoolFilter<"Instituciones"> | boolean
     jornadas?: StringNullableListFilter<"Instituciones">
     created_at?: DateTimeFilter<"Instituciones"> | Date | string
     updated_at?: DateTimeFilter<"Instituciones"> | Date | string
+    administradores?: AdministradoresListRelationFilter
     sedes?: SedesListRelationFilter
-  }, "id">
+  }, "id" | "email">
 
   export type InstitucionesOrderByWithAggregationInput = {
     id?: SortOrder
@@ -3435,6 +4813,8 @@ export namespace Prisma {
     nit?: SortOrder
     nombre_contacto?: SortOrder
     telefono_contacto?: SortOrder
+    email?: SortOrder
+    password?: SortOrder
     tiene_sedes?: SortOrder
     jornadas?: SortOrder
     created_at?: SortOrder
@@ -3456,6 +4836,8 @@ export namespace Prisma {
     nit?: StringWithAggregatesFilter<"Instituciones"> | string
     nombre_contacto?: StringWithAggregatesFilter<"Instituciones"> | string
     telefono_contacto?: StringWithAggregatesFilter<"Instituciones"> | string
+    email?: StringWithAggregatesFilter<"Instituciones"> | string
+    password?: StringWithAggregatesFilter<"Instituciones"> | string
     tiene_sedes?: BoolWithAggregatesFilter<"Instituciones"> | boolean
     jornadas?: StringNullableListFilter<"Instituciones">
     created_at?: DateTimeWithAggregatesFilter<"Instituciones"> | Date | string
@@ -3524,16 +4906,111 @@ export namespace Prisma {
     updated_at?: DateTimeWithAggregatesFilter<"Sedes"> | Date | string
   }
 
+  export type AdministradoresWhereInput = {
+    AND?: AdministradoresWhereInput | AdministradoresWhereInput[]
+    OR?: AdministradoresWhereInput[]
+    NOT?: AdministradoresWhereInput | AdministradoresWhereInput[]
+    id?: IntFilter<"Administradores"> | number
+    nombre?: StringFilter<"Administradores"> | string
+    apellido?: StringFilter<"Administradores"> | string
+    email?: StringFilter<"Administradores"> | string
+    telefono?: StringNullableFilter<"Administradores"> | string | null
+    cargo?: StringFilter<"Administradores"> | string
+    institucion_id?: IntFilter<"Administradores"> | number
+    fecha_nacimiento?: DateTimeNullableFilter<"Administradores"> | Date | string | null
+    direccion?: StringNullableFilter<"Administradores"> | string | null
+    activo?: BoolFilter<"Administradores"> | boolean
+    created_at?: DateTimeFilter<"Administradores"> | Date | string
+    updated_at?: DateTimeFilter<"Administradores"> | Date | string
+    institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
+  }
+
+  export type AdministradoresOrderByWithRelationInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    apellido?: SortOrder
+    email?: SortOrder
+    telefono?: SortOrderInput | SortOrder
+    cargo?: SortOrder
+    institucion_id?: SortOrder
+    fecha_nacimiento?: SortOrderInput | SortOrder
+    direccion?: SortOrderInput | SortOrder
+    activo?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    institucion?: InstitucionesOrderByWithRelationInput
+  }
+
+  export type AdministradoresWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    email?: string
+    AND?: AdministradoresWhereInput | AdministradoresWhereInput[]
+    OR?: AdministradoresWhereInput[]
+    NOT?: AdministradoresWhereInput | AdministradoresWhereInput[]
+    nombre?: StringFilter<"Administradores"> | string
+    apellido?: StringFilter<"Administradores"> | string
+    telefono?: StringNullableFilter<"Administradores"> | string | null
+    cargo?: StringFilter<"Administradores"> | string
+    institucion_id?: IntFilter<"Administradores"> | number
+    fecha_nacimiento?: DateTimeNullableFilter<"Administradores"> | Date | string | null
+    direccion?: StringNullableFilter<"Administradores"> | string | null
+    activo?: BoolFilter<"Administradores"> | boolean
+    created_at?: DateTimeFilter<"Administradores"> | Date | string
+    updated_at?: DateTimeFilter<"Administradores"> | Date | string
+    institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
+  }, "id" | "email">
+
+  export type AdministradoresOrderByWithAggregationInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    apellido?: SortOrder
+    email?: SortOrder
+    telefono?: SortOrderInput | SortOrder
+    cargo?: SortOrder
+    institucion_id?: SortOrder
+    fecha_nacimiento?: SortOrderInput | SortOrder
+    direccion?: SortOrderInput | SortOrder
+    activo?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    _count?: AdministradoresCountOrderByAggregateInput
+    _avg?: AdministradoresAvgOrderByAggregateInput
+    _max?: AdministradoresMaxOrderByAggregateInput
+    _min?: AdministradoresMinOrderByAggregateInput
+    _sum?: AdministradoresSumOrderByAggregateInput
+  }
+
+  export type AdministradoresScalarWhereWithAggregatesInput = {
+    AND?: AdministradoresScalarWhereWithAggregatesInput | AdministradoresScalarWhereWithAggregatesInput[]
+    OR?: AdministradoresScalarWhereWithAggregatesInput[]
+    NOT?: AdministradoresScalarWhereWithAggregatesInput | AdministradoresScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"Administradores"> | number
+    nombre?: StringWithAggregatesFilter<"Administradores"> | string
+    apellido?: StringWithAggregatesFilter<"Administradores"> | string
+    email?: StringWithAggregatesFilter<"Administradores"> | string
+    telefono?: StringNullableWithAggregatesFilter<"Administradores"> | string | null
+    cargo?: StringWithAggregatesFilter<"Administradores"> | string
+    institucion_id?: IntWithAggregatesFilter<"Administradores"> | number
+    fecha_nacimiento?: DateTimeNullableWithAggregatesFilter<"Administradores"> | Date | string | null
+    direccion?: StringNullableWithAggregatesFilter<"Administradores"> | string | null
+    activo?: BoolWithAggregatesFilter<"Administradores"> | boolean
+    created_at?: DateTimeWithAggregatesFilter<"Administradores"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"Administradores"> | Date | string
+  }
+
   export type InstitucionesCreateInput = {
     nombre: string
     direccion_principal: string
     nit: string
     nombre_contacto: string
     telefono_contacto: string
+    email: string
+    password: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
     updated_at?: Date | string
+    administradores?: AdministradoresCreateNestedManyWithoutInstitucionInput
     sedes?: SedesCreateNestedManyWithoutInstitucionInput
   }
 
@@ -3544,10 +5021,13 @@ export namespace Prisma {
     nit: string
     nombre_contacto: string
     telefono_contacto: string
+    email: string
+    password: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
     updated_at?: Date | string
+    administradores?: AdministradoresUncheckedCreateNestedManyWithoutInstitucionInput
     sedes?: SedesUncheckedCreateNestedManyWithoutInstitucionInput
   }
 
@@ -3557,10 +5037,13 @@ export namespace Prisma {
     nit?: StringFieldUpdateOperationsInput | string
     nombre_contacto?: StringFieldUpdateOperationsInput | string
     telefono_contacto?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    administradores?: AdministradoresUpdateManyWithoutInstitucionNestedInput
     sedes?: SedesUpdateManyWithoutInstitucionNestedInput
   }
 
@@ -3571,10 +5054,13 @@ export namespace Prisma {
     nit?: StringFieldUpdateOperationsInput | string
     nombre_contacto?: StringFieldUpdateOperationsInput | string
     telefono_contacto?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    administradores?: AdministradoresUncheckedUpdateManyWithoutInstitucionNestedInput
     sedes?: SedesUncheckedUpdateManyWithoutInstitucionNestedInput
   }
 
@@ -3585,6 +5071,8 @@ export namespace Prisma {
     nit: string
     nombre_contacto: string
     telefono_contacto: string
+    email: string
+    password: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -3597,6 +5085,8 @@ export namespace Prisma {
     nit?: StringFieldUpdateOperationsInput | string
     nombre_contacto?: StringFieldUpdateOperationsInput | string
     telefono_contacto?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -3610,6 +5100,8 @@ export namespace Prisma {
     nit?: StringFieldUpdateOperationsInput | string
     nombre_contacto?: StringFieldUpdateOperationsInput | string
     telefono_contacto?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -3675,6 +5167,107 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type AdministradoresCreateInput = {
+    nombre: string
+    apellido: string
+    email: string
+    telefono?: string | null
+    cargo: string
+    fecha_nacimiento?: Date | string | null
+    direccion?: string | null
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    institucion: InstitucionesCreateNestedOneWithoutAdministradoresInput
+  }
+
+  export type AdministradoresUncheckedCreateInput = {
+    id?: number
+    nombre: string
+    apellido: string
+    email: string
+    telefono?: string | null
+    cargo: string
+    institucion_id: number
+    fecha_nacimiento?: Date | string | null
+    direccion?: string | null
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type AdministradoresUpdateInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    cargo?: StringFieldUpdateOperationsInput | string
+    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    direccion?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    institucion?: InstitucionesUpdateOneRequiredWithoutAdministradoresNestedInput
+  }
+
+  export type AdministradoresUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    cargo?: StringFieldUpdateOperationsInput | string
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    direccion?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdministradoresCreateManyInput = {
+    id?: number
+    nombre: string
+    apellido: string
+    email: string
+    telefono?: string | null
+    cargo: string
+    institucion_id: number
+    fecha_nacimiento?: Date | string | null
+    direccion?: string | null
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type AdministradoresUpdateManyMutationInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    cargo?: StringFieldUpdateOperationsInput | string
+    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    direccion?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdministradoresUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    cargo?: StringFieldUpdateOperationsInput | string
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    direccion?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type IntFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -3725,10 +5318,20 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
+  export type AdministradoresListRelationFilter = {
+    every?: AdministradoresWhereInput
+    some?: AdministradoresWhereInput
+    none?: AdministradoresWhereInput
+  }
+
   export type SedesListRelationFilter = {
     every?: SedesWhereInput
     some?: SedesWhereInput
     none?: SedesWhereInput
+  }
+
+  export type AdministradoresOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type SedesOrderByRelationAggregateInput = {
@@ -3742,6 +5345,8 @@ export namespace Prisma {
     nit?: SortOrder
     nombre_contacto?: SortOrder
     telefono_contacto?: SortOrder
+    email?: SortOrder
+    password?: SortOrder
     tiene_sedes?: SortOrder
     jornadas?: SortOrder
     created_at?: SortOrder
@@ -3759,6 +5364,8 @@ export namespace Prisma {
     nit?: SortOrder
     nombre_contacto?: SortOrder
     telefono_contacto?: SortOrder
+    email?: SortOrder
+    password?: SortOrder
     tiene_sedes?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
@@ -3771,6 +5378,8 @@ export namespace Prisma {
     nit?: SortOrder
     nombre_contacto?: SortOrder
     telefono_contacto?: SortOrder
+    email?: SortOrder
+    password?: SortOrder
     tiene_sedes?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
@@ -3876,8 +5485,133 @@ export namespace Prisma {
     institucion_id?: SortOrder
   }
 
+  export type StringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
+  }
+
+  export type AdministradoresCountOrderByAggregateInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    apellido?: SortOrder
+    email?: SortOrder
+    telefono?: SortOrder
+    cargo?: SortOrder
+    institucion_id?: SortOrder
+    fecha_nacimiento?: SortOrder
+    direccion?: SortOrder
+    activo?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type AdministradoresAvgOrderByAggregateInput = {
+    id?: SortOrder
+    institucion_id?: SortOrder
+  }
+
+  export type AdministradoresMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    apellido?: SortOrder
+    email?: SortOrder
+    telefono?: SortOrder
+    cargo?: SortOrder
+    institucion_id?: SortOrder
+    fecha_nacimiento?: SortOrder
+    direccion?: SortOrder
+    activo?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type AdministradoresMinOrderByAggregateInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    apellido?: SortOrder
+    email?: SortOrder
+    telefono?: SortOrder
+    cargo?: SortOrder
+    institucion_id?: SortOrder
+    fecha_nacimiento?: SortOrder
+    direccion?: SortOrder
+    activo?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type AdministradoresSumOrderByAggregateInput = {
+    id?: SortOrder
+    institucion_id?: SortOrder
+  }
+
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
   export type InstitucionesCreatejornadasInput = {
     set: string[]
+  }
+
+  export type AdministradoresCreateNestedManyWithoutInstitucionInput = {
+    create?: XOR<AdministradoresCreateWithoutInstitucionInput, AdministradoresUncheckedCreateWithoutInstitucionInput> | AdministradoresCreateWithoutInstitucionInput[] | AdministradoresUncheckedCreateWithoutInstitucionInput[]
+    connectOrCreate?: AdministradoresCreateOrConnectWithoutInstitucionInput | AdministradoresCreateOrConnectWithoutInstitucionInput[]
+    createMany?: AdministradoresCreateManyInstitucionInputEnvelope
+    connect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
   }
 
   export type SedesCreateNestedManyWithoutInstitucionInput = {
@@ -3885,6 +5619,13 @@ export namespace Prisma {
     connectOrCreate?: SedesCreateOrConnectWithoutInstitucionInput | SedesCreateOrConnectWithoutInstitucionInput[]
     createMany?: SedesCreateManyInstitucionInputEnvelope
     connect?: SedesWhereUniqueInput | SedesWhereUniqueInput[]
+  }
+
+  export type AdministradoresUncheckedCreateNestedManyWithoutInstitucionInput = {
+    create?: XOR<AdministradoresCreateWithoutInstitucionInput, AdministradoresUncheckedCreateWithoutInstitucionInput> | AdministradoresCreateWithoutInstitucionInput[] | AdministradoresUncheckedCreateWithoutInstitucionInput[]
+    connectOrCreate?: AdministradoresCreateOrConnectWithoutInstitucionInput | AdministradoresCreateOrConnectWithoutInstitucionInput[]
+    createMany?: AdministradoresCreateManyInstitucionInputEnvelope
+    connect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
   }
 
   export type SedesUncheckedCreateNestedManyWithoutInstitucionInput = {
@@ -3911,6 +5652,20 @@ export namespace Prisma {
     set?: Date | string
   }
 
+  export type AdministradoresUpdateManyWithoutInstitucionNestedInput = {
+    create?: XOR<AdministradoresCreateWithoutInstitucionInput, AdministradoresUncheckedCreateWithoutInstitucionInput> | AdministradoresCreateWithoutInstitucionInput[] | AdministradoresUncheckedCreateWithoutInstitucionInput[]
+    connectOrCreate?: AdministradoresCreateOrConnectWithoutInstitucionInput | AdministradoresCreateOrConnectWithoutInstitucionInput[]
+    upsert?: AdministradoresUpsertWithWhereUniqueWithoutInstitucionInput | AdministradoresUpsertWithWhereUniqueWithoutInstitucionInput[]
+    createMany?: AdministradoresCreateManyInstitucionInputEnvelope
+    set?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    disconnect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    delete?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    connect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    update?: AdministradoresUpdateWithWhereUniqueWithoutInstitucionInput | AdministradoresUpdateWithWhereUniqueWithoutInstitucionInput[]
+    updateMany?: AdministradoresUpdateManyWithWhereWithoutInstitucionInput | AdministradoresUpdateManyWithWhereWithoutInstitucionInput[]
+    deleteMany?: AdministradoresScalarWhereInput | AdministradoresScalarWhereInput[]
+  }
+
   export type SedesUpdateManyWithoutInstitucionNestedInput = {
     create?: XOR<SedesCreateWithoutInstitucionInput, SedesUncheckedCreateWithoutInstitucionInput> | SedesCreateWithoutInstitucionInput[] | SedesUncheckedCreateWithoutInstitucionInput[]
     connectOrCreate?: SedesCreateOrConnectWithoutInstitucionInput | SedesCreateOrConnectWithoutInstitucionInput[]
@@ -3931,6 +5686,20 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
+  }
+
+  export type AdministradoresUncheckedUpdateManyWithoutInstitucionNestedInput = {
+    create?: XOR<AdministradoresCreateWithoutInstitucionInput, AdministradoresUncheckedCreateWithoutInstitucionInput> | AdministradoresCreateWithoutInstitucionInput[] | AdministradoresUncheckedCreateWithoutInstitucionInput[]
+    connectOrCreate?: AdministradoresCreateOrConnectWithoutInstitucionInput | AdministradoresCreateOrConnectWithoutInstitucionInput[]
+    upsert?: AdministradoresUpsertWithWhereUniqueWithoutInstitucionInput | AdministradoresUpsertWithWhereUniqueWithoutInstitucionInput[]
+    createMany?: AdministradoresCreateManyInstitucionInputEnvelope
+    set?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    disconnect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    delete?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    connect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    update?: AdministradoresUpdateWithWhereUniqueWithoutInstitucionInput | AdministradoresUpdateWithWhereUniqueWithoutInstitucionInput[]
+    updateMany?: AdministradoresUpdateManyWithWhereWithoutInstitucionInput | AdministradoresUpdateManyWithWhereWithoutInstitucionInput[]
+    deleteMany?: AdministradoresScalarWhereInput | AdministradoresScalarWhereInput[]
   }
 
   export type SedesUncheckedUpdateManyWithoutInstitucionNestedInput = {
@@ -3968,6 +5737,28 @@ export namespace Prisma {
     upsert?: InstitucionesUpsertWithoutSedesInput
     connect?: InstitucionesWhereUniqueInput
     update?: XOR<XOR<InstitucionesUpdateToOneWithWhereWithoutSedesInput, InstitucionesUpdateWithoutSedesInput>, InstitucionesUncheckedUpdateWithoutSedesInput>
+  }
+
+  export type InstitucionesCreateNestedOneWithoutAdministradoresInput = {
+    create?: XOR<InstitucionesCreateWithoutAdministradoresInput, InstitucionesUncheckedCreateWithoutAdministradoresInput>
+    connectOrCreate?: InstitucionesCreateOrConnectWithoutAdministradoresInput
+    connect?: InstitucionesWhereUniqueInput
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
+  }
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
+  }
+
+  export type InstitucionesUpdateOneRequiredWithoutAdministradoresNestedInput = {
+    create?: XOR<InstitucionesCreateWithoutAdministradoresInput, InstitucionesUncheckedCreateWithoutAdministradoresInput>
+    connectOrCreate?: InstitucionesCreateOrConnectWithoutAdministradoresInput
+    upsert?: InstitucionesUpsertWithoutAdministradoresInput
+    connect?: InstitucionesWhereUniqueInput
+    update?: XOR<XOR<InstitucionesUpdateToOneWithWhereWithoutAdministradoresInput, InstitucionesUpdateWithoutAdministradoresInput>, InstitucionesUncheckedUpdateWithoutAdministradoresInput>
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -4077,6 +5868,110 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedStringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type AdministradoresCreateWithoutInstitucionInput = {
+    nombre: string
+    apellido: string
+    email: string
+    telefono?: string | null
+    cargo: string
+    fecha_nacimiento?: Date | string | null
+    direccion?: string | null
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type AdministradoresUncheckedCreateWithoutInstitucionInput = {
+    id?: number
+    nombre: string
+    apellido: string
+    email: string
+    telefono?: string | null
+    cargo: string
+    fecha_nacimiento?: Date | string | null
+    direccion?: string | null
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type AdministradoresCreateOrConnectWithoutInstitucionInput = {
+    where: AdministradoresWhereUniqueInput
+    create: XOR<AdministradoresCreateWithoutInstitucionInput, AdministradoresUncheckedCreateWithoutInstitucionInput>
+  }
+
+  export type AdministradoresCreateManyInstitucionInputEnvelope = {
+    data: AdministradoresCreateManyInstitucionInput | AdministradoresCreateManyInstitucionInput[]
+    skipDuplicates?: boolean
+  }
+
   export type SedesCreateWithoutInstitucionInput = {
     nombre: string
     jornadas?: SedesCreatejornadasInput | string[]
@@ -4100,6 +5995,40 @@ export namespace Prisma {
   export type SedesCreateManyInstitucionInputEnvelope = {
     data: SedesCreateManyInstitucionInput | SedesCreateManyInstitucionInput[]
     skipDuplicates?: boolean
+  }
+
+  export type AdministradoresUpsertWithWhereUniqueWithoutInstitucionInput = {
+    where: AdministradoresWhereUniqueInput
+    update: XOR<AdministradoresUpdateWithoutInstitucionInput, AdministradoresUncheckedUpdateWithoutInstitucionInput>
+    create: XOR<AdministradoresCreateWithoutInstitucionInput, AdministradoresUncheckedCreateWithoutInstitucionInput>
+  }
+
+  export type AdministradoresUpdateWithWhereUniqueWithoutInstitucionInput = {
+    where: AdministradoresWhereUniqueInput
+    data: XOR<AdministradoresUpdateWithoutInstitucionInput, AdministradoresUncheckedUpdateWithoutInstitucionInput>
+  }
+
+  export type AdministradoresUpdateManyWithWhereWithoutInstitucionInput = {
+    where: AdministradoresScalarWhereInput
+    data: XOR<AdministradoresUpdateManyMutationInput, AdministradoresUncheckedUpdateManyWithoutInstitucionInput>
+  }
+
+  export type AdministradoresScalarWhereInput = {
+    AND?: AdministradoresScalarWhereInput | AdministradoresScalarWhereInput[]
+    OR?: AdministradoresScalarWhereInput[]
+    NOT?: AdministradoresScalarWhereInput | AdministradoresScalarWhereInput[]
+    id?: IntFilter<"Administradores"> | number
+    nombre?: StringFilter<"Administradores"> | string
+    apellido?: StringFilter<"Administradores"> | string
+    email?: StringFilter<"Administradores"> | string
+    telefono?: StringNullableFilter<"Administradores"> | string | null
+    cargo?: StringFilter<"Administradores"> | string
+    institucion_id?: IntFilter<"Administradores"> | number
+    fecha_nacimiento?: DateTimeNullableFilter<"Administradores"> | Date | string | null
+    direccion?: StringNullableFilter<"Administradores"> | string | null
+    activo?: BoolFilter<"Administradores"> | boolean
+    created_at?: DateTimeFilter<"Administradores"> | Date | string
+    updated_at?: DateTimeFilter<"Administradores"> | Date | string
   }
 
   export type SedesUpsertWithWhereUniqueWithoutInstitucionInput = {
@@ -4136,10 +6065,13 @@ export namespace Prisma {
     nit: string
     nombre_contacto: string
     telefono_contacto: string
+    email: string
+    password: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
     updated_at?: Date | string
+    administradores?: AdministradoresCreateNestedManyWithoutInstitucionInput
   }
 
   export type InstitucionesUncheckedCreateWithoutSedesInput = {
@@ -4149,10 +6081,13 @@ export namespace Prisma {
     nit: string
     nombre_contacto: string
     telefono_contacto: string
+    email: string
+    password: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
     updated_at?: Date | string
+    administradores?: AdministradoresUncheckedCreateNestedManyWithoutInstitucionInput
   }
 
   export type InstitucionesCreateOrConnectWithoutSedesInput = {
@@ -4177,10 +6112,13 @@ export namespace Prisma {
     nit?: StringFieldUpdateOperationsInput | string
     nombre_contacto?: StringFieldUpdateOperationsInput | string
     telefono_contacto?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    administradores?: AdministradoresUpdateManyWithoutInstitucionNestedInput
   }
 
   export type InstitucionesUncheckedUpdateWithoutSedesInput = {
@@ -4190,10 +6128,105 @@ export namespace Prisma {
     nit?: StringFieldUpdateOperationsInput | string
     nombre_contacto?: StringFieldUpdateOperationsInput | string
     telefono_contacto?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    administradores?: AdministradoresUncheckedUpdateManyWithoutInstitucionNestedInput
+  }
+
+  export type InstitucionesCreateWithoutAdministradoresInput = {
+    nombre: string
+    direccion_principal: string
+    nit: string
+    nombre_contacto: string
+    telefono_contacto: string
+    email: string
+    password: string
+    tiene_sedes?: boolean
+    jornadas?: InstitucionesCreatejornadasInput | string[]
+    created_at?: Date | string
+    updated_at?: Date | string
+    sedes?: SedesCreateNestedManyWithoutInstitucionInput
+  }
+
+  export type InstitucionesUncheckedCreateWithoutAdministradoresInput = {
+    id?: number
+    nombre: string
+    direccion_principal: string
+    nit: string
+    nombre_contacto: string
+    telefono_contacto: string
+    email: string
+    password: string
+    tiene_sedes?: boolean
+    jornadas?: InstitucionesCreatejornadasInput | string[]
+    created_at?: Date | string
+    updated_at?: Date | string
+    sedes?: SedesUncheckedCreateNestedManyWithoutInstitucionInput
+  }
+
+  export type InstitucionesCreateOrConnectWithoutAdministradoresInput = {
+    where: InstitucionesWhereUniqueInput
+    create: XOR<InstitucionesCreateWithoutAdministradoresInput, InstitucionesUncheckedCreateWithoutAdministradoresInput>
+  }
+
+  export type InstitucionesUpsertWithoutAdministradoresInput = {
+    update: XOR<InstitucionesUpdateWithoutAdministradoresInput, InstitucionesUncheckedUpdateWithoutAdministradoresInput>
+    create: XOR<InstitucionesCreateWithoutAdministradoresInput, InstitucionesUncheckedCreateWithoutAdministradoresInput>
+    where?: InstitucionesWhereInput
+  }
+
+  export type InstitucionesUpdateToOneWithWhereWithoutAdministradoresInput = {
+    where?: InstitucionesWhereInput
+    data: XOR<InstitucionesUpdateWithoutAdministradoresInput, InstitucionesUncheckedUpdateWithoutAdministradoresInput>
+  }
+
+  export type InstitucionesUpdateWithoutAdministradoresInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    direccion_principal?: StringFieldUpdateOperationsInput | string
+    nit?: StringFieldUpdateOperationsInput | string
+    nombre_contacto?: StringFieldUpdateOperationsInput | string
+    telefono_contacto?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
+    jornadas?: InstitucionesUpdatejornadasInput | string[]
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    sedes?: SedesUpdateManyWithoutInstitucionNestedInput
+  }
+
+  export type InstitucionesUncheckedUpdateWithoutAdministradoresInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    direccion_principal?: StringFieldUpdateOperationsInput | string
+    nit?: StringFieldUpdateOperationsInput | string
+    nombre_contacto?: StringFieldUpdateOperationsInput | string
+    telefono_contacto?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
+    jornadas?: InstitucionesUpdatejornadasInput | string[]
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    sedes?: SedesUncheckedUpdateManyWithoutInstitucionNestedInput
+  }
+
+  export type AdministradoresCreateManyInstitucionInput = {
+    id?: number
+    nombre: string
+    apellido: string
+    email: string
+    telefono?: string | null
+    cargo: string
+    fecha_nacimiento?: Date | string | null
+    direccion?: string | null
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type SedesCreateManyInstitucionInput = {
@@ -4202,6 +6235,47 @@ export namespace Prisma {
     jornadas?: SedesCreatejornadasInput | string[]
     created_at?: Date | string
     updated_at?: Date | string
+  }
+
+  export type AdministradoresUpdateWithoutInstitucionInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    cargo?: StringFieldUpdateOperationsInput | string
+    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    direccion?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdministradoresUncheckedUpdateWithoutInstitucionInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    cargo?: StringFieldUpdateOperationsInput | string
+    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    direccion?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdministradoresUncheckedUpdateManyWithoutInstitucionInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    cargo?: StringFieldUpdateOperationsInput | string
+    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    direccion?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type SedesUpdateWithoutInstitucionInput = {
