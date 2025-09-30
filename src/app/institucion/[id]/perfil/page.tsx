@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../../contexts/AuthContext';
+import InstitucionAuthGuard from '../InstitucionAuthGuard';
 
 interface Institucion {
   id: number;
@@ -98,7 +99,8 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <InstitucionAuthGuard institucionId={parseInt(params.id as string)}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -312,5 +314,6 @@ export default function PerfilPage() {
         </div>
       </div>
     </div>
+    </InstitucionAuthGuard>
   );
 }

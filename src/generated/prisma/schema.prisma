@@ -29,13 +29,14 @@ model Instituciones {
 }
 
 model Sedes {
-  id             Int           @id @default(autoincrement())
-  nombre         String        @db.VarChar(255)
-  jornadas       String[]      @default([])
-  institucion_id Int
-  created_at     DateTime      @default(now()) @map("created_at")
-  updated_at     DateTime      @updatedAt @map("updated_at")
-  institucion    Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  id              Int               @id @default(autoincrement())
+  nombre          String            @db.VarChar(255)
+  jornadas        String[]          @default([])
+  institucion_id  Int
+  created_at      DateTime          @default(now()) @map("created_at")
+  updated_at      DateTime          @updatedAt @map("updated_at")
+  administradores Administradores[]
+  institucion     Instituciones     @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
 
   @@map("Sedes")
 }
@@ -44,16 +45,29 @@ model Administradores {
   id               Int           @id @default(autoincrement())
   nombre           String        @db.VarChar(255)
   apellido         String        @db.VarChar(255)
-  email            String        @unique @db.VarChar(255)
-  telefono         String?       @db.VarChar(20)
+  telefono         String        @db.VarChar(20)
   cargo            String        @db.VarChar(100)
   institucion_id   Int
-  fecha_nacimiento DateTime?     @db.Date
-  direccion        String?
-  activo           Boolean       @default(true)
   created_at       DateTime      @default(now()) @map("created_at")
   updated_at       DateTime      @updatedAt @map("updated_at")
+  correo           String        @unique @db.VarChar(255)
+  sede_id          Int?
+  password         String        @db.VarChar(255)
+  supabase_user_id String?       @db.VarChar(255)
   institucion      Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  sede             Sedes?        @relation(fields: [sede_id], references: [id])
 
   @@map("Administradores")
+}
+
+model PasswordResetTokens {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(255)
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  userType  String   @db.VarChar(50) // 'institucion', 'administrador', 'docente'
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("PasswordResetTokens")
 }

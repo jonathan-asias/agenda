@@ -1,6 +1,38 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
 
 export default function Home() {
+  const { user, loading, userType, institucion, administrador } = useUnifiedAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      if (userType === 'institucion' && institucion) {
+        router.push(`/institucion/${institucion.id}`);
+      } else if (userType === 'administrador' && administrador) {
+        router.push(`/institucion/${administrador.institucion.id}/admin`);
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [user, loading, userType, institucion, administrador, router]);
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no hay usuario, mostrar la página principal
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">

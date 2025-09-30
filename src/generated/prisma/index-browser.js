@@ -148,15 +148,25 @@ exports.Prisma.AdministradoresScalarFieldEnum = {
   id: 'id',
   nombre: 'nombre',
   apellido: 'apellido',
-  email: 'email',
   telefono: 'telefono',
   cargo: 'cargo',
   institucion_id: 'institucion_id',
-  fecha_nacimiento: 'fecha_nacimiento',
-  direccion: 'direccion',
-  activo: 'activo',
   created_at: 'created_at',
-  updated_at: 'updated_at'
+  updated_at: 'updated_at',
+  correo: 'correo',
+  sede_id: 'sede_id',
+  password: 'password',
+  supabase_user_id: 'supabase_user_id'
+};
+
+exports.Prisma.PasswordResetTokensScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  token: 'token',
+  expiresAt: 'expiresAt',
+  used: 'used',
+  userType: 'userType',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -178,7 +188,8 @@ exports.Prisma.NullsOrder = {
 exports.Prisma.ModelName = {
   Instituciones: 'Instituciones',
   Sedes: 'Sedes',
-  Administradores: 'Administradores'
+  Administradores: 'Administradores',
+  PasswordResetTokens: 'PasswordResetTokens'
 };
 
 /**

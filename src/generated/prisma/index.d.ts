@@ -28,6 +28,11 @@ export type Sedes = $Result.DefaultSelection<Prisma.$SedesPayload>
  * 
  */
 export type Administradores = $Result.DefaultSelection<Prisma.$AdministradoresPayload>
+/**
+ * Model PasswordResetTokens
+ * 
+ */
+export type PasswordResetTokens = $Result.DefaultSelection<Prisma.$PasswordResetTokensPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -176,6 +181,16 @@ export class PrismaClient<
     * ```
     */
   get administradores(): Prisma.AdministradoresDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.passwordResetTokens`: Exposes CRUD operations for the **PasswordResetTokens** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PasswordResetTokens
+    * const passwordResetTokens = await prisma.passwordResetTokens.findMany()
+    * ```
+    */
+  get passwordResetTokens(): Prisma.PasswordResetTokensDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -618,7 +633,8 @@ export namespace Prisma {
   export const ModelName: {
     Instituciones: 'Instituciones',
     Sedes: 'Sedes',
-    Administradores: 'Administradores'
+    Administradores: 'Administradores',
+    PasswordResetTokens: 'PasswordResetTokens'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -637,7 +653,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "instituciones" | "sedes" | "administradores"
+      modelProps: "instituciones" | "sedes" | "administradores" | "passwordResetTokens"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -863,6 +879,80 @@ export namespace Prisma {
           }
         }
       }
+      PasswordResetTokens: {
+        payload: Prisma.$PasswordResetTokensPayload<ExtArgs>
+        fields: Prisma.PasswordResetTokensFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PasswordResetTokensFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PasswordResetTokensFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>
+          }
+          findFirst: {
+            args: Prisma.PasswordResetTokensFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PasswordResetTokensFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>
+          }
+          findMany: {
+            args: Prisma.PasswordResetTokensFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>[]
+          }
+          create: {
+            args: Prisma.PasswordResetTokensCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>
+          }
+          createMany: {
+            args: Prisma.PasswordResetTokensCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PasswordResetTokensCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>[]
+          }
+          delete: {
+            args: Prisma.PasswordResetTokensDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>
+          }
+          update: {
+            args: Prisma.PasswordResetTokensUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>
+          }
+          deleteMany: {
+            args: Prisma.PasswordResetTokensDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PasswordResetTokensUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PasswordResetTokensUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>[]
+          }
+          upsert: {
+            args: Prisma.PasswordResetTokensUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PasswordResetTokensPayload>
+          }
+          aggregate: {
+            args: Prisma.PasswordResetTokensAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePasswordResetTokens>
+          }
+          groupBy: {
+            args: Prisma.PasswordResetTokensGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PasswordResetTokensGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PasswordResetTokensCountArgs<ExtArgs>
+            result: $Utils.Optional<PasswordResetTokensCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -962,6 +1052,7 @@ export namespace Prisma {
     instituciones?: InstitucionesOmit
     sedes?: SedesOmit
     administradores?: AdministradoresOmit
+    passwordResetTokens?: PasswordResetTokensOmit
   }
 
   /* Types for Logging */
@@ -1074,6 +1165,37 @@ export namespace Prisma {
    */
   export type InstitucionesCountOutputTypeCountSedesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: SedesWhereInput
+  }
+
+
+  /**
+   * Count Type SedesCountOutputType
+   */
+
+  export type SedesCountOutputType = {
+    administradores: number
+  }
+
+  export type SedesCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    administradores?: boolean | SedesCountOutputTypeCountAdministradoresArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * SedesCountOutputType without action
+   */
+  export type SedesCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SedesCountOutputType
+     */
+    select?: SedesCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * SedesCountOutputType without action
+   */
+  export type SedesCountOutputTypeCountAdministradoresArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AdministradoresWhereInput
   }
 
 
@@ -2506,7 +2628,9 @@ export namespace Prisma {
     institucion_id?: boolean
     created_at?: boolean
     updated_at?: boolean
+    administradores?: boolean | Sedes$administradoresArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    _count?: boolean | SedesCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["sedes"]>
 
   export type SedesSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -2540,7 +2664,9 @@ export namespace Prisma {
 
   export type SedesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "jornadas" | "institucion_id" | "created_at" | "updated_at", ExtArgs["result"]["sedes"]>
   export type SedesInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    administradores?: boolean | Sedes$administradoresArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    _count?: boolean | SedesCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type SedesIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
@@ -2552,6 +2678,7 @@ export namespace Prisma {
   export type $SedesPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Sedes"
     objects: {
+      administradores: Prisma.$AdministradoresPayload<ExtArgs>[]
       institucion: Prisma.$InstitucionesPayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -2955,6 +3082,7 @@ export namespace Prisma {
    */
   export interface Prisma__SedesClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    administradores<T extends Sedes$administradoresArgs<ExtArgs> = {}>(args?: Subset<T, Sedes$administradoresArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AdministradoresPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -3387,6 +3515,30 @@ export namespace Prisma {
   }
 
   /**
+   * Sedes.administradores
+   */
+  export type Sedes$administradoresArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Administradores
+     */
+    select?: AdministradoresSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Administradores
+     */
+    omit?: AdministradoresOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AdministradoresInclude<ExtArgs> | null
+    where?: AdministradoresWhereInput
+    orderBy?: AdministradoresOrderByWithRelationInput | AdministradoresOrderByWithRelationInput[]
+    cursor?: AdministradoresWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AdministradoresScalarFieldEnum | AdministradoresScalarFieldEnum[]
+  }
+
+  /**
    * Sedes without action
    */
   export type SedesDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3420,56 +3572,58 @@ export namespace Prisma {
   export type AdministradoresAvgAggregateOutputType = {
     id: number | null
     institucion_id: number | null
+    sede_id: number | null
   }
 
   export type AdministradoresSumAggregateOutputType = {
     id: number | null
     institucion_id: number | null
+    sede_id: number | null
   }
 
   export type AdministradoresMinAggregateOutputType = {
     id: number | null
     nombre: string | null
     apellido: string | null
-    email: string | null
     telefono: string | null
     cargo: string | null
     institucion_id: number | null
-    fecha_nacimiento: Date | null
-    direccion: string | null
-    activo: boolean | null
     created_at: Date | null
     updated_at: Date | null
+    correo: string | null
+    sede_id: number | null
+    password: string | null
+    supabase_user_id: string | null
   }
 
   export type AdministradoresMaxAggregateOutputType = {
     id: number | null
     nombre: string | null
     apellido: string | null
-    email: string | null
     telefono: string | null
     cargo: string | null
     institucion_id: number | null
-    fecha_nacimiento: Date | null
-    direccion: string | null
-    activo: boolean | null
     created_at: Date | null
     updated_at: Date | null
+    correo: string | null
+    sede_id: number | null
+    password: string | null
+    supabase_user_id: string | null
   }
 
   export type AdministradoresCountAggregateOutputType = {
     id: number
     nombre: number
     apellido: number
-    email: number
     telefono: number
     cargo: number
     institucion_id: number
-    fecha_nacimiento: number
-    direccion: number
-    activo: number
     created_at: number
     updated_at: number
+    correo: number
+    sede_id: number
+    password: number
+    supabase_user_id: number
     _all: number
   }
 
@@ -3477,56 +3631,58 @@ export namespace Prisma {
   export type AdministradoresAvgAggregateInputType = {
     id?: true
     institucion_id?: true
+    sede_id?: true
   }
 
   export type AdministradoresSumAggregateInputType = {
     id?: true
     institucion_id?: true
+    sede_id?: true
   }
 
   export type AdministradoresMinAggregateInputType = {
     id?: true
     nombre?: true
     apellido?: true
-    email?: true
     telefono?: true
     cargo?: true
     institucion_id?: true
-    fecha_nacimiento?: true
-    direccion?: true
-    activo?: true
     created_at?: true
     updated_at?: true
+    correo?: true
+    sede_id?: true
+    password?: true
+    supabase_user_id?: true
   }
 
   export type AdministradoresMaxAggregateInputType = {
     id?: true
     nombre?: true
     apellido?: true
-    email?: true
     telefono?: true
     cargo?: true
     institucion_id?: true
-    fecha_nacimiento?: true
-    direccion?: true
-    activo?: true
     created_at?: true
     updated_at?: true
+    correo?: true
+    sede_id?: true
+    password?: true
+    supabase_user_id?: true
   }
 
   export type AdministradoresCountAggregateInputType = {
     id?: true
     nombre?: true
     apellido?: true
-    email?: true
     telefono?: true
     cargo?: true
     institucion_id?: true
-    fecha_nacimiento?: true
-    direccion?: true
-    activo?: true
     created_at?: true
     updated_at?: true
+    correo?: true
+    sede_id?: true
+    password?: true
+    supabase_user_id?: true
     _all?: true
   }
 
@@ -3620,15 +3776,15 @@ export namespace Prisma {
     id: number
     nombre: string
     apellido: string
-    email: string
-    telefono: string | null
+    telefono: string
     cargo: string
     institucion_id: number
-    fecha_nacimiento: Date | null
-    direccion: string | null
-    activo: boolean
     created_at: Date
     updated_at: Date
+    correo: string
+    sede_id: number | null
+    password: string
+    supabase_user_id: string | null
     _count: AdministradoresCountAggregateOutputType | null
     _avg: AdministradoresAvgAggregateOutputType | null
     _sum: AdministradoresSumAggregateOutputType | null
@@ -3654,94 +3810,101 @@ export namespace Prisma {
     id?: boolean
     nombre?: boolean
     apellido?: boolean
-    email?: boolean
     telefono?: boolean
     cargo?: boolean
     institucion_id?: boolean
-    fecha_nacimiento?: boolean
-    direccion?: boolean
-    activo?: boolean
     created_at?: boolean
     updated_at?: boolean
+    correo?: boolean
+    sede_id?: boolean
+    password?: boolean
+    supabase_user_id?: boolean
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    sede?: boolean | Administradores$sedeArgs<ExtArgs>
   }, ExtArgs["result"]["administradores"]>
 
   export type AdministradoresSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     nombre?: boolean
     apellido?: boolean
-    email?: boolean
     telefono?: boolean
     cargo?: boolean
     institucion_id?: boolean
-    fecha_nacimiento?: boolean
-    direccion?: boolean
-    activo?: boolean
     created_at?: boolean
     updated_at?: boolean
+    correo?: boolean
+    sede_id?: boolean
+    password?: boolean
+    supabase_user_id?: boolean
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    sede?: boolean | Administradores$sedeArgs<ExtArgs>
   }, ExtArgs["result"]["administradores"]>
 
   export type AdministradoresSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     nombre?: boolean
     apellido?: boolean
-    email?: boolean
     telefono?: boolean
     cargo?: boolean
     institucion_id?: boolean
-    fecha_nacimiento?: boolean
-    direccion?: boolean
-    activo?: boolean
     created_at?: boolean
     updated_at?: boolean
+    correo?: boolean
+    sede_id?: boolean
+    password?: boolean
+    supabase_user_id?: boolean
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    sede?: boolean | Administradores$sedeArgs<ExtArgs>
   }, ExtArgs["result"]["administradores"]>
 
   export type AdministradoresSelectScalar = {
     id?: boolean
     nombre?: boolean
     apellido?: boolean
-    email?: boolean
     telefono?: boolean
     cargo?: boolean
     institucion_id?: boolean
-    fecha_nacimiento?: boolean
-    direccion?: boolean
-    activo?: boolean
     created_at?: boolean
     updated_at?: boolean
+    correo?: boolean
+    sede_id?: boolean
+    password?: boolean
+    supabase_user_id?: boolean
   }
 
-  export type AdministradoresOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "apellido" | "email" | "telefono" | "cargo" | "institucion_id" | "fecha_nacimiento" | "direccion" | "activo" | "created_at" | "updated_at", ExtArgs["result"]["administradores"]>
+  export type AdministradoresOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "apellido" | "telefono" | "cargo" | "institucion_id" | "created_at" | "updated_at" | "correo" | "sede_id" | "password" | "supabase_user_id", ExtArgs["result"]["administradores"]>
   export type AdministradoresInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    sede?: boolean | Administradores$sedeArgs<ExtArgs>
   }
   export type AdministradoresIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    sede?: boolean | Administradores$sedeArgs<ExtArgs>
   }
   export type AdministradoresIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    sede?: boolean | Administradores$sedeArgs<ExtArgs>
   }
 
   export type $AdministradoresPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Administradores"
     objects: {
       institucion: Prisma.$InstitucionesPayload<ExtArgs>
+      sede: Prisma.$SedesPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
       nombre: string
       apellido: string
-      email: string
-      telefono: string | null
+      telefono: string
       cargo: string
       institucion_id: number
-      fecha_nacimiento: Date | null
-      direccion: string | null
-      activo: boolean
       created_at: Date
       updated_at: Date
+      correo: string
+      sede_id: number | null
+      password: string
+      supabase_user_id: string | null
     }, ExtArgs["result"]["administradores"]>
     composites: {}
   }
@@ -4137,6 +4300,7 @@ export namespace Prisma {
   export interface Prisma__AdministradoresClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    sede<T extends Administradores$sedeArgs<ExtArgs> = {}>(args?: Subset<T, Administradores$sedeArgs<ExtArgs>>): Prisma__SedesClient<$Result.GetResult<Prisma.$SedesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4169,15 +4333,15 @@ export namespace Prisma {
     readonly id: FieldRef<"Administradores", 'Int'>
     readonly nombre: FieldRef<"Administradores", 'String'>
     readonly apellido: FieldRef<"Administradores", 'String'>
-    readonly email: FieldRef<"Administradores", 'String'>
     readonly telefono: FieldRef<"Administradores", 'String'>
     readonly cargo: FieldRef<"Administradores", 'String'>
     readonly institucion_id: FieldRef<"Administradores", 'Int'>
-    readonly fecha_nacimiento: FieldRef<"Administradores", 'DateTime'>
-    readonly direccion: FieldRef<"Administradores", 'String'>
-    readonly activo: FieldRef<"Administradores", 'Boolean'>
     readonly created_at: FieldRef<"Administradores", 'DateTime'>
     readonly updated_at: FieldRef<"Administradores", 'DateTime'>
+    readonly correo: FieldRef<"Administradores", 'String'>
+    readonly sede_id: FieldRef<"Administradores", 'Int'>
+    readonly password: FieldRef<"Administradores", 'String'>
+    readonly supabase_user_id: FieldRef<"Administradores", 'String'>
   }
     
 
@@ -4574,6 +4738,25 @@ export namespace Prisma {
   }
 
   /**
+   * Administradores.sede
+   */
+  export type Administradores$sedeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sedes
+     */
+    select?: SedesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Sedes
+     */
+    omit?: SedesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SedesInclude<ExtArgs> | null
+    where?: SedesWhereInput
+  }
+
+  /**
    * Administradores without action
    */
   export type AdministradoresDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4589,6 +4772,1061 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: AdministradoresInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PasswordResetTokens
+   */
+
+  export type AggregatePasswordResetTokens = {
+    _count: PasswordResetTokensCountAggregateOutputType | null
+    _avg: PasswordResetTokensAvgAggregateOutputType | null
+    _sum: PasswordResetTokensSumAggregateOutputType | null
+    _min: PasswordResetTokensMinAggregateOutputType | null
+    _max: PasswordResetTokensMaxAggregateOutputType | null
+  }
+
+  export type PasswordResetTokensAvgAggregateOutputType = {
+    id: number | null
+  }
+
+  export type PasswordResetTokensSumAggregateOutputType = {
+    id: number | null
+  }
+
+  export type PasswordResetTokensMinAggregateOutputType = {
+    id: number | null
+    email: string | null
+    token: string | null
+    expiresAt: Date | null
+    used: boolean | null
+    userType: string | null
+    createdAt: Date | null
+  }
+
+  export type PasswordResetTokensMaxAggregateOutputType = {
+    id: number | null
+    email: string | null
+    token: string | null
+    expiresAt: Date | null
+    used: boolean | null
+    userType: string | null
+    createdAt: Date | null
+  }
+
+  export type PasswordResetTokensCountAggregateOutputType = {
+    id: number
+    email: number
+    token: number
+    expiresAt: number
+    used: number
+    userType: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type PasswordResetTokensAvgAggregateInputType = {
+    id?: true
+  }
+
+  export type PasswordResetTokensSumAggregateInputType = {
+    id?: true
+  }
+
+  export type PasswordResetTokensMinAggregateInputType = {
+    id?: true
+    email?: true
+    token?: true
+    expiresAt?: true
+    used?: true
+    userType?: true
+    createdAt?: true
+  }
+
+  export type PasswordResetTokensMaxAggregateInputType = {
+    id?: true
+    email?: true
+    token?: true
+    expiresAt?: true
+    used?: true
+    userType?: true
+    createdAt?: true
+  }
+
+  export type PasswordResetTokensCountAggregateInputType = {
+    id?: true
+    email?: true
+    token?: true
+    expiresAt?: true
+    used?: true
+    userType?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type PasswordResetTokensAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PasswordResetTokens to aggregate.
+     */
+    where?: PasswordResetTokensWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PasswordResetTokens to fetch.
+     */
+    orderBy?: PasswordResetTokensOrderByWithRelationInput | PasswordResetTokensOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PasswordResetTokensWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PasswordResetTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PasswordResetTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PasswordResetTokens
+    **/
+    _count?: true | PasswordResetTokensCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PasswordResetTokensAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PasswordResetTokensSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PasswordResetTokensMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PasswordResetTokensMaxAggregateInputType
+  }
+
+  export type GetPasswordResetTokensAggregateType<T extends PasswordResetTokensAggregateArgs> = {
+        [P in keyof T & keyof AggregatePasswordResetTokens]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePasswordResetTokens[P]>
+      : GetScalarType<T[P], AggregatePasswordResetTokens[P]>
+  }
+
+
+
+
+  export type PasswordResetTokensGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PasswordResetTokensWhereInput
+    orderBy?: PasswordResetTokensOrderByWithAggregationInput | PasswordResetTokensOrderByWithAggregationInput[]
+    by: PasswordResetTokensScalarFieldEnum[] | PasswordResetTokensScalarFieldEnum
+    having?: PasswordResetTokensScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PasswordResetTokensCountAggregateInputType | true
+    _avg?: PasswordResetTokensAvgAggregateInputType
+    _sum?: PasswordResetTokensSumAggregateInputType
+    _min?: PasswordResetTokensMinAggregateInputType
+    _max?: PasswordResetTokensMaxAggregateInputType
+  }
+
+  export type PasswordResetTokensGroupByOutputType = {
+    id: number
+    email: string
+    token: string
+    expiresAt: Date
+    used: boolean
+    userType: string
+    createdAt: Date
+    _count: PasswordResetTokensCountAggregateOutputType | null
+    _avg: PasswordResetTokensAvgAggregateOutputType | null
+    _sum: PasswordResetTokensSumAggregateOutputType | null
+    _min: PasswordResetTokensMinAggregateOutputType | null
+    _max: PasswordResetTokensMaxAggregateOutputType | null
+  }
+
+  type GetPasswordResetTokensGroupByPayload<T extends PasswordResetTokensGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PasswordResetTokensGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PasswordResetTokensGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PasswordResetTokensGroupByOutputType[P]>
+            : GetScalarType<T[P], PasswordResetTokensGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PasswordResetTokensSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    email?: boolean
+    token?: boolean
+    expiresAt?: boolean
+    used?: boolean
+    userType?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["passwordResetTokens"]>
+
+  export type PasswordResetTokensSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    email?: boolean
+    token?: boolean
+    expiresAt?: boolean
+    used?: boolean
+    userType?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["passwordResetTokens"]>
+
+  export type PasswordResetTokensSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    email?: boolean
+    token?: boolean
+    expiresAt?: boolean
+    used?: boolean
+    userType?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["passwordResetTokens"]>
+
+  export type PasswordResetTokensSelectScalar = {
+    id?: boolean
+    email?: boolean
+    token?: boolean
+    expiresAt?: boolean
+    used?: boolean
+    userType?: boolean
+    createdAt?: boolean
+  }
+
+  export type PasswordResetTokensOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "token" | "expiresAt" | "used" | "userType" | "createdAt", ExtArgs["result"]["passwordResetTokens"]>
+
+  export type $PasswordResetTokensPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PasswordResetTokens"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      email: string
+      token: string
+      expiresAt: Date
+      used: boolean
+      userType: string
+      createdAt: Date
+    }, ExtArgs["result"]["passwordResetTokens"]>
+    composites: {}
+  }
+
+  type PasswordResetTokensGetPayload<S extends boolean | null | undefined | PasswordResetTokensDefaultArgs> = $Result.GetResult<Prisma.$PasswordResetTokensPayload, S>
+
+  type PasswordResetTokensCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PasswordResetTokensFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PasswordResetTokensCountAggregateInputType | true
+    }
+
+  export interface PasswordResetTokensDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PasswordResetTokens'], meta: { name: 'PasswordResetTokens' } }
+    /**
+     * Find zero or one PasswordResetTokens that matches the filter.
+     * @param {PasswordResetTokensFindUniqueArgs} args - Arguments to find a PasswordResetTokens
+     * @example
+     * // Get one PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PasswordResetTokensFindUniqueArgs>(args: SelectSubset<T, PasswordResetTokensFindUniqueArgs<ExtArgs>>): Prisma__PasswordResetTokensClient<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PasswordResetTokens that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PasswordResetTokensFindUniqueOrThrowArgs} args - Arguments to find a PasswordResetTokens
+     * @example
+     * // Get one PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PasswordResetTokensFindUniqueOrThrowArgs>(args: SelectSubset<T, PasswordResetTokensFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PasswordResetTokensClient<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PasswordResetTokens that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokensFindFirstArgs} args - Arguments to find a PasswordResetTokens
+     * @example
+     * // Get one PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PasswordResetTokensFindFirstArgs>(args?: SelectSubset<T, PasswordResetTokensFindFirstArgs<ExtArgs>>): Prisma__PasswordResetTokensClient<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PasswordResetTokens that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokensFindFirstOrThrowArgs} args - Arguments to find a PasswordResetTokens
+     * @example
+     * // Get one PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PasswordResetTokensFindFirstOrThrowArgs>(args?: SelectSubset<T, PasswordResetTokensFindFirstOrThrowArgs<ExtArgs>>): Prisma__PasswordResetTokensClient<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PasswordResetTokens that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokensFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.findMany()
+     * 
+     * // Get first 10 PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const passwordResetTokensWithIdOnly = await prisma.passwordResetTokens.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PasswordResetTokensFindManyArgs>(args?: SelectSubset<T, PasswordResetTokensFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PasswordResetTokens.
+     * @param {PasswordResetTokensCreateArgs} args - Arguments to create a PasswordResetTokens.
+     * @example
+     * // Create one PasswordResetTokens
+     * const PasswordResetTokens = await prisma.passwordResetTokens.create({
+     *   data: {
+     *     // ... data to create a PasswordResetTokens
+     *   }
+     * })
+     * 
+     */
+    create<T extends PasswordResetTokensCreateArgs>(args: SelectSubset<T, PasswordResetTokensCreateArgs<ExtArgs>>): Prisma__PasswordResetTokensClient<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PasswordResetTokens.
+     * @param {PasswordResetTokensCreateManyArgs} args - Arguments to create many PasswordResetTokens.
+     * @example
+     * // Create many PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PasswordResetTokensCreateManyArgs>(args?: SelectSubset<T, PasswordResetTokensCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PasswordResetTokens and returns the data saved in the database.
+     * @param {PasswordResetTokensCreateManyAndReturnArgs} args - Arguments to create many PasswordResetTokens.
+     * @example
+     * // Create many PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PasswordResetTokens and only return the `id`
+     * const passwordResetTokensWithIdOnly = await prisma.passwordResetTokens.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PasswordResetTokensCreateManyAndReturnArgs>(args?: SelectSubset<T, PasswordResetTokensCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PasswordResetTokens.
+     * @param {PasswordResetTokensDeleteArgs} args - Arguments to delete one PasswordResetTokens.
+     * @example
+     * // Delete one PasswordResetTokens
+     * const PasswordResetTokens = await prisma.passwordResetTokens.delete({
+     *   where: {
+     *     // ... filter to delete one PasswordResetTokens
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PasswordResetTokensDeleteArgs>(args: SelectSubset<T, PasswordResetTokensDeleteArgs<ExtArgs>>): Prisma__PasswordResetTokensClient<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PasswordResetTokens.
+     * @param {PasswordResetTokensUpdateArgs} args - Arguments to update one PasswordResetTokens.
+     * @example
+     * // Update one PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PasswordResetTokensUpdateArgs>(args: SelectSubset<T, PasswordResetTokensUpdateArgs<ExtArgs>>): Prisma__PasswordResetTokensClient<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PasswordResetTokens.
+     * @param {PasswordResetTokensDeleteManyArgs} args - Arguments to filter PasswordResetTokens to delete.
+     * @example
+     * // Delete a few PasswordResetTokens
+     * const { count } = await prisma.passwordResetTokens.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PasswordResetTokensDeleteManyArgs>(args?: SelectSubset<T, PasswordResetTokensDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PasswordResetTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokensUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PasswordResetTokensUpdateManyArgs>(args: SelectSubset<T, PasswordResetTokensUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PasswordResetTokens and returns the data updated in the database.
+     * @param {PasswordResetTokensUpdateManyAndReturnArgs} args - Arguments to update many PasswordResetTokens.
+     * @example
+     * // Update many PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PasswordResetTokens and only return the `id`
+     * const passwordResetTokensWithIdOnly = await prisma.passwordResetTokens.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PasswordResetTokensUpdateManyAndReturnArgs>(args: SelectSubset<T, PasswordResetTokensUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PasswordResetTokens.
+     * @param {PasswordResetTokensUpsertArgs} args - Arguments to update or create a PasswordResetTokens.
+     * @example
+     * // Update or create a PasswordResetTokens
+     * const passwordResetTokens = await prisma.passwordResetTokens.upsert({
+     *   create: {
+     *     // ... data to create a PasswordResetTokens
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PasswordResetTokens we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PasswordResetTokensUpsertArgs>(args: SelectSubset<T, PasswordResetTokensUpsertArgs<ExtArgs>>): Prisma__PasswordResetTokensClient<$Result.GetResult<Prisma.$PasswordResetTokensPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PasswordResetTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokensCountArgs} args - Arguments to filter PasswordResetTokens to count.
+     * @example
+     * // Count the number of PasswordResetTokens
+     * const count = await prisma.passwordResetTokens.count({
+     *   where: {
+     *     // ... the filter for the PasswordResetTokens we want to count
+     *   }
+     * })
+    **/
+    count<T extends PasswordResetTokensCountArgs>(
+      args?: Subset<T, PasswordResetTokensCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PasswordResetTokensCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PasswordResetTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokensAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PasswordResetTokensAggregateArgs>(args: Subset<T, PasswordResetTokensAggregateArgs>): Prisma.PrismaPromise<GetPasswordResetTokensAggregateType<T>>
+
+    /**
+     * Group by PasswordResetTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PasswordResetTokensGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PasswordResetTokensGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PasswordResetTokensGroupByArgs['orderBy'] }
+        : { orderBy?: PasswordResetTokensGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PasswordResetTokensGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPasswordResetTokensGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PasswordResetTokens model
+   */
+  readonly fields: PasswordResetTokensFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PasswordResetTokens.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PasswordResetTokensClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PasswordResetTokens model
+   */
+  interface PasswordResetTokensFieldRefs {
+    readonly id: FieldRef<"PasswordResetTokens", 'Int'>
+    readonly email: FieldRef<"PasswordResetTokens", 'String'>
+    readonly token: FieldRef<"PasswordResetTokens", 'String'>
+    readonly expiresAt: FieldRef<"PasswordResetTokens", 'DateTime'>
+    readonly used: FieldRef<"PasswordResetTokens", 'Boolean'>
+    readonly userType: FieldRef<"PasswordResetTokens", 'String'>
+    readonly createdAt: FieldRef<"PasswordResetTokens", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PasswordResetTokens findUnique
+   */
+  export type PasswordResetTokensFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetTokens to fetch.
+     */
+    where: PasswordResetTokensWhereUniqueInput
+  }
+
+  /**
+   * PasswordResetTokens findUniqueOrThrow
+   */
+  export type PasswordResetTokensFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetTokens to fetch.
+     */
+    where: PasswordResetTokensWhereUniqueInput
+  }
+
+  /**
+   * PasswordResetTokens findFirst
+   */
+  export type PasswordResetTokensFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetTokens to fetch.
+     */
+    where?: PasswordResetTokensWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PasswordResetTokens to fetch.
+     */
+    orderBy?: PasswordResetTokensOrderByWithRelationInput | PasswordResetTokensOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PasswordResetTokens.
+     */
+    cursor?: PasswordResetTokensWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PasswordResetTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PasswordResetTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PasswordResetTokens.
+     */
+    distinct?: PasswordResetTokensScalarFieldEnum | PasswordResetTokensScalarFieldEnum[]
+  }
+
+  /**
+   * PasswordResetTokens findFirstOrThrow
+   */
+  export type PasswordResetTokensFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetTokens to fetch.
+     */
+    where?: PasswordResetTokensWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PasswordResetTokens to fetch.
+     */
+    orderBy?: PasswordResetTokensOrderByWithRelationInput | PasswordResetTokensOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PasswordResetTokens.
+     */
+    cursor?: PasswordResetTokensWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PasswordResetTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PasswordResetTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PasswordResetTokens.
+     */
+    distinct?: PasswordResetTokensScalarFieldEnum | PasswordResetTokensScalarFieldEnum[]
+  }
+
+  /**
+   * PasswordResetTokens findMany
+   */
+  export type PasswordResetTokensFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * Filter, which PasswordResetTokens to fetch.
+     */
+    where?: PasswordResetTokensWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PasswordResetTokens to fetch.
+     */
+    orderBy?: PasswordResetTokensOrderByWithRelationInput | PasswordResetTokensOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PasswordResetTokens.
+     */
+    cursor?: PasswordResetTokensWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PasswordResetTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PasswordResetTokens.
+     */
+    skip?: number
+    distinct?: PasswordResetTokensScalarFieldEnum | PasswordResetTokensScalarFieldEnum[]
+  }
+
+  /**
+   * PasswordResetTokens create
+   */
+  export type PasswordResetTokensCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * The data needed to create a PasswordResetTokens.
+     */
+    data: XOR<PasswordResetTokensCreateInput, PasswordResetTokensUncheckedCreateInput>
+  }
+
+  /**
+   * PasswordResetTokens createMany
+   */
+  export type PasswordResetTokensCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PasswordResetTokens.
+     */
+    data: PasswordResetTokensCreateManyInput | PasswordResetTokensCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PasswordResetTokens createManyAndReturn
+   */
+  export type PasswordResetTokensCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * The data used to create many PasswordResetTokens.
+     */
+    data: PasswordResetTokensCreateManyInput | PasswordResetTokensCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PasswordResetTokens update
+   */
+  export type PasswordResetTokensUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * The data needed to update a PasswordResetTokens.
+     */
+    data: XOR<PasswordResetTokensUpdateInput, PasswordResetTokensUncheckedUpdateInput>
+    /**
+     * Choose, which PasswordResetTokens to update.
+     */
+    where: PasswordResetTokensWhereUniqueInput
+  }
+
+  /**
+   * PasswordResetTokens updateMany
+   */
+  export type PasswordResetTokensUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PasswordResetTokens.
+     */
+    data: XOR<PasswordResetTokensUpdateManyMutationInput, PasswordResetTokensUncheckedUpdateManyInput>
+    /**
+     * Filter which PasswordResetTokens to update
+     */
+    where?: PasswordResetTokensWhereInput
+    /**
+     * Limit how many PasswordResetTokens to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PasswordResetTokens updateManyAndReturn
+   */
+  export type PasswordResetTokensUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * The data used to update PasswordResetTokens.
+     */
+    data: XOR<PasswordResetTokensUpdateManyMutationInput, PasswordResetTokensUncheckedUpdateManyInput>
+    /**
+     * Filter which PasswordResetTokens to update
+     */
+    where?: PasswordResetTokensWhereInput
+    /**
+     * Limit how many PasswordResetTokens to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PasswordResetTokens upsert
+   */
+  export type PasswordResetTokensUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * The filter to search for the PasswordResetTokens to update in case it exists.
+     */
+    where: PasswordResetTokensWhereUniqueInput
+    /**
+     * In case the PasswordResetTokens found by the `where` argument doesn't exist, create a new PasswordResetTokens with this data.
+     */
+    create: XOR<PasswordResetTokensCreateInput, PasswordResetTokensUncheckedCreateInput>
+    /**
+     * In case the PasswordResetTokens was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PasswordResetTokensUpdateInput, PasswordResetTokensUncheckedUpdateInput>
+  }
+
+  /**
+   * PasswordResetTokens delete
+   */
+  export type PasswordResetTokensDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
+    /**
+     * Filter which PasswordResetTokens to delete.
+     */
+    where: PasswordResetTokensWhereUniqueInput
+  }
+
+  /**
+   * PasswordResetTokens deleteMany
+   */
+  export type PasswordResetTokensDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PasswordResetTokens to delete
+     */
+    where?: PasswordResetTokensWhereInput
+    /**
+     * Limit how many PasswordResetTokens to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PasswordResetTokens without action
+   */
+  export type PasswordResetTokensDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PasswordResetTokens
+     */
+    select?: PasswordResetTokensSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PasswordResetTokens
+     */
+    omit?: PasswordResetTokensOmit<ExtArgs> | null
   }
 
 
@@ -4640,18 +5878,31 @@ export namespace Prisma {
     id: 'id',
     nombre: 'nombre',
     apellido: 'apellido',
-    email: 'email',
     telefono: 'telefono',
     cargo: 'cargo',
     institucion_id: 'institucion_id',
-    fecha_nacimiento: 'fecha_nacimiento',
-    direccion: 'direccion',
-    activo: 'activo',
     created_at: 'created_at',
-    updated_at: 'updated_at'
+    updated_at: 'updated_at',
+    correo: 'correo',
+    sede_id: 'sede_id',
+    password: 'password',
+    supabase_user_id: 'supabase_user_id'
   };
 
   export type AdministradoresScalarFieldEnum = (typeof AdministradoresScalarFieldEnum)[keyof typeof AdministradoresScalarFieldEnum]
+
+
+  export const PasswordResetTokensScalarFieldEnum: {
+    id: 'id',
+    email: 'email',
+    token: 'token',
+    expiresAt: 'expiresAt',
+    used: 'used',
+    userType: 'userType',
+    createdAt: 'createdAt'
+  };
+
+  export type PasswordResetTokensScalarFieldEnum = (typeof PasswordResetTokensScalarFieldEnum)[keyof typeof PasswordResetTokensScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -4854,6 +6105,7 @@ export namespace Prisma {
     institucion_id?: IntFilter<"Sedes"> | number
     created_at?: DateTimeFilter<"Sedes"> | Date | string
     updated_at?: DateTimeFilter<"Sedes"> | Date | string
+    administradores?: AdministradoresListRelationFilter
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
   }
 
@@ -4864,6 +6116,7 @@ export namespace Prisma {
     institucion_id?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    administradores?: AdministradoresOrderByRelationAggregateInput
     institucion?: InstitucionesOrderByWithRelationInput
   }
 
@@ -4877,6 +6130,7 @@ export namespace Prisma {
     institucion_id?: IntFilter<"Sedes"> | number
     created_at?: DateTimeFilter<"Sedes"> | Date | string
     updated_at?: DateTimeFilter<"Sedes"> | Date | string
+    administradores?: AdministradoresListRelationFilter
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
   }, "id">
 
@@ -4913,66 +6167,69 @@ export namespace Prisma {
     id?: IntFilter<"Administradores"> | number
     nombre?: StringFilter<"Administradores"> | string
     apellido?: StringFilter<"Administradores"> | string
-    email?: StringFilter<"Administradores"> | string
-    telefono?: StringNullableFilter<"Administradores"> | string | null
+    telefono?: StringFilter<"Administradores"> | string
     cargo?: StringFilter<"Administradores"> | string
     institucion_id?: IntFilter<"Administradores"> | number
-    fecha_nacimiento?: DateTimeNullableFilter<"Administradores"> | Date | string | null
-    direccion?: StringNullableFilter<"Administradores"> | string | null
-    activo?: BoolFilter<"Administradores"> | boolean
     created_at?: DateTimeFilter<"Administradores"> | Date | string
     updated_at?: DateTimeFilter<"Administradores"> | Date | string
+    correo?: StringFilter<"Administradores"> | string
+    sede_id?: IntNullableFilter<"Administradores"> | number | null
+    password?: StringFilter<"Administradores"> | string
+    supabase_user_id?: StringNullableFilter<"Administradores"> | string | null
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
+    sede?: XOR<SedesNullableScalarRelationFilter, SedesWhereInput> | null
   }
 
   export type AdministradoresOrderByWithRelationInput = {
     id?: SortOrder
     nombre?: SortOrder
     apellido?: SortOrder
-    email?: SortOrder
-    telefono?: SortOrderInput | SortOrder
+    telefono?: SortOrder
     cargo?: SortOrder
     institucion_id?: SortOrder
-    fecha_nacimiento?: SortOrderInput | SortOrder
-    direccion?: SortOrderInput | SortOrder
-    activo?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    correo?: SortOrder
+    sede_id?: SortOrderInput | SortOrder
+    password?: SortOrder
+    supabase_user_id?: SortOrderInput | SortOrder
     institucion?: InstitucionesOrderByWithRelationInput
+    sede?: SedesOrderByWithRelationInput
   }
 
   export type AdministradoresWhereUniqueInput = Prisma.AtLeast<{
     id?: number
-    email?: string
+    correo?: string
     AND?: AdministradoresWhereInput | AdministradoresWhereInput[]
     OR?: AdministradoresWhereInput[]
     NOT?: AdministradoresWhereInput | AdministradoresWhereInput[]
     nombre?: StringFilter<"Administradores"> | string
     apellido?: StringFilter<"Administradores"> | string
-    telefono?: StringNullableFilter<"Administradores"> | string | null
+    telefono?: StringFilter<"Administradores"> | string
     cargo?: StringFilter<"Administradores"> | string
     institucion_id?: IntFilter<"Administradores"> | number
-    fecha_nacimiento?: DateTimeNullableFilter<"Administradores"> | Date | string | null
-    direccion?: StringNullableFilter<"Administradores"> | string | null
-    activo?: BoolFilter<"Administradores"> | boolean
     created_at?: DateTimeFilter<"Administradores"> | Date | string
     updated_at?: DateTimeFilter<"Administradores"> | Date | string
+    sede_id?: IntNullableFilter<"Administradores"> | number | null
+    password?: StringFilter<"Administradores"> | string
+    supabase_user_id?: StringNullableFilter<"Administradores"> | string | null
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
-  }, "id" | "email">
+    sede?: XOR<SedesNullableScalarRelationFilter, SedesWhereInput> | null
+  }, "id" | "correo">
 
   export type AdministradoresOrderByWithAggregationInput = {
     id?: SortOrder
     nombre?: SortOrder
     apellido?: SortOrder
-    email?: SortOrder
-    telefono?: SortOrderInput | SortOrder
+    telefono?: SortOrder
     cargo?: SortOrder
     institucion_id?: SortOrder
-    fecha_nacimiento?: SortOrderInput | SortOrder
-    direccion?: SortOrderInput | SortOrder
-    activo?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    correo?: SortOrder
+    sede_id?: SortOrderInput | SortOrder
+    password?: SortOrder
+    supabase_user_id?: SortOrderInput | SortOrder
     _count?: AdministradoresCountOrderByAggregateInput
     _avg?: AdministradoresAvgOrderByAggregateInput
     _max?: AdministradoresMaxOrderByAggregateInput
@@ -4987,15 +6244,79 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"Administradores"> | number
     nombre?: StringWithAggregatesFilter<"Administradores"> | string
     apellido?: StringWithAggregatesFilter<"Administradores"> | string
-    email?: StringWithAggregatesFilter<"Administradores"> | string
-    telefono?: StringNullableWithAggregatesFilter<"Administradores"> | string | null
+    telefono?: StringWithAggregatesFilter<"Administradores"> | string
     cargo?: StringWithAggregatesFilter<"Administradores"> | string
     institucion_id?: IntWithAggregatesFilter<"Administradores"> | number
-    fecha_nacimiento?: DateTimeNullableWithAggregatesFilter<"Administradores"> | Date | string | null
-    direccion?: StringNullableWithAggregatesFilter<"Administradores"> | string | null
-    activo?: BoolWithAggregatesFilter<"Administradores"> | boolean
     created_at?: DateTimeWithAggregatesFilter<"Administradores"> | Date | string
     updated_at?: DateTimeWithAggregatesFilter<"Administradores"> | Date | string
+    correo?: StringWithAggregatesFilter<"Administradores"> | string
+    sede_id?: IntNullableWithAggregatesFilter<"Administradores"> | number | null
+    password?: StringWithAggregatesFilter<"Administradores"> | string
+    supabase_user_id?: StringNullableWithAggregatesFilter<"Administradores"> | string | null
+  }
+
+  export type PasswordResetTokensWhereInput = {
+    AND?: PasswordResetTokensWhereInput | PasswordResetTokensWhereInput[]
+    OR?: PasswordResetTokensWhereInput[]
+    NOT?: PasswordResetTokensWhereInput | PasswordResetTokensWhereInput[]
+    id?: IntFilter<"PasswordResetTokens"> | number
+    email?: StringFilter<"PasswordResetTokens"> | string
+    token?: StringFilter<"PasswordResetTokens"> | string
+    expiresAt?: DateTimeFilter<"PasswordResetTokens"> | Date | string
+    used?: BoolFilter<"PasswordResetTokens"> | boolean
+    userType?: StringFilter<"PasswordResetTokens"> | string
+    createdAt?: DateTimeFilter<"PasswordResetTokens"> | Date | string
+  }
+
+  export type PasswordResetTokensOrderByWithRelationInput = {
+    id?: SortOrder
+    email?: SortOrder
+    token?: SortOrder
+    expiresAt?: SortOrder
+    used?: SortOrder
+    userType?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PasswordResetTokensWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    token?: string
+    AND?: PasswordResetTokensWhereInput | PasswordResetTokensWhereInput[]
+    OR?: PasswordResetTokensWhereInput[]
+    NOT?: PasswordResetTokensWhereInput | PasswordResetTokensWhereInput[]
+    email?: StringFilter<"PasswordResetTokens"> | string
+    expiresAt?: DateTimeFilter<"PasswordResetTokens"> | Date | string
+    used?: BoolFilter<"PasswordResetTokens"> | boolean
+    userType?: StringFilter<"PasswordResetTokens"> | string
+    createdAt?: DateTimeFilter<"PasswordResetTokens"> | Date | string
+  }, "id" | "token">
+
+  export type PasswordResetTokensOrderByWithAggregationInput = {
+    id?: SortOrder
+    email?: SortOrder
+    token?: SortOrder
+    expiresAt?: SortOrder
+    used?: SortOrder
+    userType?: SortOrder
+    createdAt?: SortOrder
+    _count?: PasswordResetTokensCountOrderByAggregateInput
+    _avg?: PasswordResetTokensAvgOrderByAggregateInput
+    _max?: PasswordResetTokensMaxOrderByAggregateInput
+    _min?: PasswordResetTokensMinOrderByAggregateInput
+    _sum?: PasswordResetTokensSumOrderByAggregateInput
+  }
+
+  export type PasswordResetTokensScalarWhereWithAggregatesInput = {
+    AND?: PasswordResetTokensScalarWhereWithAggregatesInput | PasswordResetTokensScalarWhereWithAggregatesInput[]
+    OR?: PasswordResetTokensScalarWhereWithAggregatesInput[]
+    NOT?: PasswordResetTokensScalarWhereWithAggregatesInput | PasswordResetTokensScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"PasswordResetTokens"> | number
+    email?: StringWithAggregatesFilter<"PasswordResetTokens"> | string
+    token?: StringWithAggregatesFilter<"PasswordResetTokens"> | string
+    expiresAt?: DateTimeWithAggregatesFilter<"PasswordResetTokens"> | Date | string
+    used?: BoolWithAggregatesFilter<"PasswordResetTokens"> | boolean
+    userType?: StringWithAggregatesFilter<"PasswordResetTokens"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"PasswordResetTokens"> | Date | string
   }
 
   export type InstitucionesCreateInput = {
@@ -5113,6 +6434,7 @@ export namespace Prisma {
     jornadas?: SedesCreatejornadasInput | string[]
     created_at?: Date | string
     updated_at?: Date | string
+    administradores?: AdministradoresCreateNestedManyWithoutSedeInput
     institucion: InstitucionesCreateNestedOneWithoutSedesInput
   }
 
@@ -5123,6 +6445,7 @@ export namespace Prisma {
     institucion_id: number
     created_at?: Date | string
     updated_at?: Date | string
+    administradores?: AdministradoresUncheckedCreateNestedManyWithoutSedeInput
   }
 
   export type SedesUpdateInput = {
@@ -5130,6 +6453,7 @@ export namespace Prisma {
     jornadas?: SedesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    administradores?: AdministradoresUpdateManyWithoutSedeNestedInput
     institucion?: InstitucionesUpdateOneRequiredWithoutSedesNestedInput
   }
 
@@ -5140,6 +6464,7 @@ export namespace Prisma {
     institucion_id?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    administradores?: AdministradoresUncheckedUpdateManyWithoutSedeNestedInput
   }
 
   export type SedesCreateManyInput = {
@@ -5170,102 +6495,168 @@ export namespace Prisma {
   export type AdministradoresCreateInput = {
     nombre: string
     apellido: string
-    email: string
-    telefono?: string | null
+    telefono: string
     cargo: string
-    fecha_nacimiento?: Date | string | null
-    direccion?: string | null
-    activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    correo: string
+    password: string
+    supabase_user_id?: string | null
     institucion: InstitucionesCreateNestedOneWithoutAdministradoresInput
+    sede?: SedesCreateNestedOneWithoutAdministradoresInput
   }
 
   export type AdministradoresUncheckedCreateInput = {
     id?: number
     nombre: string
     apellido: string
-    email: string
-    telefono?: string | null
+    telefono: string
     cargo: string
     institucion_id: number
-    fecha_nacimiento?: Date | string | null
-    direccion?: string | null
-    activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    correo: string
+    sede_id?: number | null
+    password: string
+    supabase_user_id?: string | null
   }
 
   export type AdministradoresUpdateInput = {
     nombre?: StringFieldUpdateOperationsInput | string
     apellido?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono?: StringFieldUpdateOperationsInput | string
     cargo?: StringFieldUpdateOperationsInput | string
-    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    direccion?: NullableStringFieldUpdateOperationsInput | string | null
-    activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
     institucion?: InstitucionesUpdateOneRequiredWithoutAdministradoresNestedInput
+    sede?: SedesUpdateOneWithoutAdministradoresNestedInput
   }
 
   export type AdministradoresUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     nombre?: StringFieldUpdateOperationsInput | string
     apellido?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono?: StringFieldUpdateOperationsInput | string
     cargo?: StringFieldUpdateOperationsInput | string
     institucion_id?: IntFieldUpdateOperationsInput | number
-    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    direccion?: NullableStringFieldUpdateOperationsInput | string | null
-    activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    sede_id?: NullableIntFieldUpdateOperationsInput | number | null
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AdministradoresCreateManyInput = {
     id?: number
     nombre: string
     apellido: string
-    email: string
-    telefono?: string | null
+    telefono: string
     cargo: string
     institucion_id: number
-    fecha_nacimiento?: Date | string | null
-    direccion?: string | null
-    activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    correo: string
+    sede_id?: number | null
+    password: string
+    supabase_user_id?: string | null
   }
 
   export type AdministradoresUpdateManyMutationInput = {
     nombre?: StringFieldUpdateOperationsInput | string
     apellido?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono?: StringFieldUpdateOperationsInput | string
     cargo?: StringFieldUpdateOperationsInput | string
-    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    direccion?: NullableStringFieldUpdateOperationsInput | string | null
-    activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AdministradoresUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     nombre?: StringFieldUpdateOperationsInput | string
     apellido?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono?: StringFieldUpdateOperationsInput | string
     cargo?: StringFieldUpdateOperationsInput | string
     institucion_id?: IntFieldUpdateOperationsInput | number
-    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    direccion?: NullableStringFieldUpdateOperationsInput | string | null
-    activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    sede_id?: NullableIntFieldUpdateOperationsInput | number | null
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PasswordResetTokensCreateInput = {
+    email: string
+    token: string
+    expiresAt: Date | string
+    used?: boolean
+    userType: string
+    createdAt?: Date | string
+  }
+
+  export type PasswordResetTokensUncheckedCreateInput = {
+    id?: number
+    email: string
+    token: string
+    expiresAt: Date | string
+    used?: boolean
+    userType: string
+    createdAt?: Date | string
+  }
+
+  export type PasswordResetTokensUpdateInput = {
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    used?: BoolFieldUpdateOperationsInput | boolean
+    userType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PasswordResetTokensUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    used?: BoolFieldUpdateOperationsInput | boolean
+    userType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PasswordResetTokensCreateManyInput = {
+    id?: number
+    email: string
+    token: string
+    expiresAt: Date | string
+    used?: boolean
+    userType: string
+    createdAt?: Date | string
+  }
+
+  export type PasswordResetTokensUpdateManyMutationInput = {
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    used?: BoolFieldUpdateOperationsInput | boolean
+    userType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PasswordResetTokensUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    email?: StringFieldUpdateOperationsInput | string
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    used?: BoolFieldUpdateOperationsInput | boolean
+    userType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -5485,6 +6876,17 @@ export namespace Prisma {
     institucion_id?: SortOrder
   }
 
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type StringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
     in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
@@ -5500,15 +6902,9 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type DateTimeNullableFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  export type SedesNullableScalarRelationFilter = {
+    is?: SedesWhereInput | null
+    isNot?: SedesWhereInput | null
   }
 
   export type SortOrderInput = {
@@ -5520,55 +6916,73 @@ export namespace Prisma {
     id?: SortOrder
     nombre?: SortOrder
     apellido?: SortOrder
-    email?: SortOrder
     telefono?: SortOrder
     cargo?: SortOrder
     institucion_id?: SortOrder
-    fecha_nacimiento?: SortOrder
-    direccion?: SortOrder
-    activo?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    correo?: SortOrder
+    sede_id?: SortOrder
+    password?: SortOrder
+    supabase_user_id?: SortOrder
   }
 
   export type AdministradoresAvgOrderByAggregateInput = {
     id?: SortOrder
     institucion_id?: SortOrder
+    sede_id?: SortOrder
   }
 
   export type AdministradoresMaxOrderByAggregateInput = {
     id?: SortOrder
     nombre?: SortOrder
     apellido?: SortOrder
-    email?: SortOrder
     telefono?: SortOrder
     cargo?: SortOrder
     institucion_id?: SortOrder
-    fecha_nacimiento?: SortOrder
-    direccion?: SortOrder
-    activo?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    correo?: SortOrder
+    sede_id?: SortOrder
+    password?: SortOrder
+    supabase_user_id?: SortOrder
   }
 
   export type AdministradoresMinOrderByAggregateInput = {
     id?: SortOrder
     nombre?: SortOrder
     apellido?: SortOrder
-    email?: SortOrder
     telefono?: SortOrder
     cargo?: SortOrder
     institucion_id?: SortOrder
-    fecha_nacimiento?: SortOrder
-    direccion?: SortOrder
-    activo?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    correo?: SortOrder
+    sede_id?: SortOrder
+    password?: SortOrder
+    supabase_user_id?: SortOrder
   }
 
   export type AdministradoresSumOrderByAggregateInput = {
     id?: SortOrder
     institucion_id?: SortOrder
+    sede_id?: SortOrder
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
   export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -5589,18 +7003,42 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
-  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  export type PasswordResetTokensCountOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    token?: SortOrder
+    expiresAt?: SortOrder
+    used?: SortOrder
+    userType?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PasswordResetTokensAvgOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type PasswordResetTokensMaxOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    token?: SortOrder
+    expiresAt?: SortOrder
+    used?: SortOrder
+    userType?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PasswordResetTokensMinOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    token?: SortOrder
+    expiresAt?: SortOrder
+    used?: SortOrder
+    userType?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PasswordResetTokensSumOrderByAggregateInput = {
+    id?: SortOrder
   }
 
   export type InstitucionesCreatejornadasInput = {
@@ -5720,15 +7158,43 @@ export namespace Prisma {
     set: string[]
   }
 
+  export type AdministradoresCreateNestedManyWithoutSedeInput = {
+    create?: XOR<AdministradoresCreateWithoutSedeInput, AdministradoresUncheckedCreateWithoutSedeInput> | AdministradoresCreateWithoutSedeInput[] | AdministradoresUncheckedCreateWithoutSedeInput[]
+    connectOrCreate?: AdministradoresCreateOrConnectWithoutSedeInput | AdministradoresCreateOrConnectWithoutSedeInput[]
+    createMany?: AdministradoresCreateManySedeInputEnvelope
+    connect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+  }
+
   export type InstitucionesCreateNestedOneWithoutSedesInput = {
     create?: XOR<InstitucionesCreateWithoutSedesInput, InstitucionesUncheckedCreateWithoutSedesInput>
     connectOrCreate?: InstitucionesCreateOrConnectWithoutSedesInput
     connect?: InstitucionesWhereUniqueInput
   }
 
+  export type AdministradoresUncheckedCreateNestedManyWithoutSedeInput = {
+    create?: XOR<AdministradoresCreateWithoutSedeInput, AdministradoresUncheckedCreateWithoutSedeInput> | AdministradoresCreateWithoutSedeInput[] | AdministradoresUncheckedCreateWithoutSedeInput[]
+    connectOrCreate?: AdministradoresCreateOrConnectWithoutSedeInput | AdministradoresCreateOrConnectWithoutSedeInput[]
+    createMany?: AdministradoresCreateManySedeInputEnvelope
+    connect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+  }
+
   export type SedesUpdatejornadasInput = {
     set?: string[]
     push?: string | string[]
+  }
+
+  export type AdministradoresUpdateManyWithoutSedeNestedInput = {
+    create?: XOR<AdministradoresCreateWithoutSedeInput, AdministradoresUncheckedCreateWithoutSedeInput> | AdministradoresCreateWithoutSedeInput[] | AdministradoresUncheckedCreateWithoutSedeInput[]
+    connectOrCreate?: AdministradoresCreateOrConnectWithoutSedeInput | AdministradoresCreateOrConnectWithoutSedeInput[]
+    upsert?: AdministradoresUpsertWithWhereUniqueWithoutSedeInput | AdministradoresUpsertWithWhereUniqueWithoutSedeInput[]
+    createMany?: AdministradoresCreateManySedeInputEnvelope
+    set?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    disconnect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    delete?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    connect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    update?: AdministradoresUpdateWithWhereUniqueWithoutSedeInput | AdministradoresUpdateWithWhereUniqueWithoutSedeInput[]
+    updateMany?: AdministradoresUpdateManyWithWhereWithoutSedeInput | AdministradoresUpdateManyWithWhereWithoutSedeInput[]
+    deleteMany?: AdministradoresScalarWhereInput | AdministradoresScalarWhereInput[]
   }
 
   export type InstitucionesUpdateOneRequiredWithoutSedesNestedInput = {
@@ -5739,18 +7205,34 @@ export namespace Prisma {
     update?: XOR<XOR<InstitucionesUpdateToOneWithWhereWithoutSedesInput, InstitucionesUpdateWithoutSedesInput>, InstitucionesUncheckedUpdateWithoutSedesInput>
   }
 
+  export type AdministradoresUncheckedUpdateManyWithoutSedeNestedInput = {
+    create?: XOR<AdministradoresCreateWithoutSedeInput, AdministradoresUncheckedCreateWithoutSedeInput> | AdministradoresCreateWithoutSedeInput[] | AdministradoresUncheckedCreateWithoutSedeInput[]
+    connectOrCreate?: AdministradoresCreateOrConnectWithoutSedeInput | AdministradoresCreateOrConnectWithoutSedeInput[]
+    upsert?: AdministradoresUpsertWithWhereUniqueWithoutSedeInput | AdministradoresUpsertWithWhereUniqueWithoutSedeInput[]
+    createMany?: AdministradoresCreateManySedeInputEnvelope
+    set?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    disconnect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    delete?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    connect?: AdministradoresWhereUniqueInput | AdministradoresWhereUniqueInput[]
+    update?: AdministradoresUpdateWithWhereUniqueWithoutSedeInput | AdministradoresUpdateWithWhereUniqueWithoutSedeInput[]
+    updateMany?: AdministradoresUpdateManyWithWhereWithoutSedeInput | AdministradoresUpdateManyWithWhereWithoutSedeInput[]
+    deleteMany?: AdministradoresScalarWhereInput | AdministradoresScalarWhereInput[]
+  }
+
   export type InstitucionesCreateNestedOneWithoutAdministradoresInput = {
     create?: XOR<InstitucionesCreateWithoutAdministradoresInput, InstitucionesUncheckedCreateWithoutAdministradoresInput>
     connectOrCreate?: InstitucionesCreateOrConnectWithoutAdministradoresInput
     connect?: InstitucionesWhereUniqueInput
   }
 
-  export type NullableStringFieldUpdateOperationsInput = {
-    set?: string | null
+  export type SedesCreateNestedOneWithoutAdministradoresInput = {
+    create?: XOR<SedesCreateWithoutAdministradoresInput, SedesUncheckedCreateWithoutAdministradoresInput>
+    connectOrCreate?: SedesCreateOrConnectWithoutAdministradoresInput
+    connect?: SedesWhereUniqueInput
   }
 
-  export type NullableDateTimeFieldUpdateOperationsInput = {
-    set?: Date | string | null
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
   }
 
   export type InstitucionesUpdateOneRequiredWithoutAdministradoresNestedInput = {
@@ -5759,6 +7241,24 @@ export namespace Prisma {
     upsert?: InstitucionesUpsertWithoutAdministradoresInput
     connect?: InstitucionesWhereUniqueInput
     update?: XOR<XOR<InstitucionesUpdateToOneWithWhereWithoutAdministradoresInput, InstitucionesUpdateWithoutAdministradoresInput>, InstitucionesUncheckedUpdateWithoutAdministradoresInput>
+  }
+
+  export type SedesUpdateOneWithoutAdministradoresNestedInput = {
+    create?: XOR<SedesCreateWithoutAdministradoresInput, SedesUncheckedCreateWithoutAdministradoresInput>
+    connectOrCreate?: SedesCreateOrConnectWithoutAdministradoresInput
+    upsert?: SedesUpsertWithoutAdministradoresInput
+    disconnect?: SedesWhereInput | boolean
+    delete?: SedesWhereInput | boolean
+    connect?: SedesWhereUniqueInput
+    update?: XOR<XOR<SedesUpdateToOneWithWhereWithoutAdministradoresInput, SedesUpdateWithoutAdministradoresInput>, SedesUncheckedUpdateWithoutAdministradoresInput>
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -5868,6 +7368,17 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedStringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
     in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
@@ -5882,15 +7393,31 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
   export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -5910,56 +7437,31 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
-  export type NestedIntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
-  }
-
   export type AdministradoresCreateWithoutInstitucionInput = {
     nombre: string
     apellido: string
-    email: string
-    telefono?: string | null
+    telefono: string
     cargo: string
-    fecha_nacimiento?: Date | string | null
-    direccion?: string | null
-    activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    correo: string
+    password: string
+    supabase_user_id?: string | null
+    sede?: SedesCreateNestedOneWithoutAdministradoresInput
   }
 
   export type AdministradoresUncheckedCreateWithoutInstitucionInput = {
     id?: number
     nombre: string
     apellido: string
-    email: string
-    telefono?: string | null
+    telefono: string
     cargo: string
-    fecha_nacimiento?: Date | string | null
-    direccion?: string | null
-    activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    correo: string
+    sede_id?: number | null
+    password: string
+    supabase_user_id?: string | null
   }
 
   export type AdministradoresCreateOrConnectWithoutInstitucionInput = {
@@ -5977,6 +7479,7 @@ export namespace Prisma {
     jornadas?: SedesCreatejornadasInput | string[]
     created_at?: Date | string
     updated_at?: Date | string
+    administradores?: AdministradoresCreateNestedManyWithoutSedeInput
   }
 
   export type SedesUncheckedCreateWithoutInstitucionInput = {
@@ -5985,6 +7488,7 @@ export namespace Prisma {
     jornadas?: SedesCreatejornadasInput | string[]
     created_at?: Date | string
     updated_at?: Date | string
+    administradores?: AdministradoresUncheckedCreateNestedManyWithoutSedeInput
   }
 
   export type SedesCreateOrConnectWithoutInstitucionInput = {
@@ -6020,15 +7524,15 @@ export namespace Prisma {
     id?: IntFilter<"Administradores"> | number
     nombre?: StringFilter<"Administradores"> | string
     apellido?: StringFilter<"Administradores"> | string
-    email?: StringFilter<"Administradores"> | string
-    telefono?: StringNullableFilter<"Administradores"> | string | null
+    telefono?: StringFilter<"Administradores"> | string
     cargo?: StringFilter<"Administradores"> | string
     institucion_id?: IntFilter<"Administradores"> | number
-    fecha_nacimiento?: DateTimeNullableFilter<"Administradores"> | Date | string | null
-    direccion?: StringNullableFilter<"Administradores"> | string | null
-    activo?: BoolFilter<"Administradores"> | boolean
     created_at?: DateTimeFilter<"Administradores"> | Date | string
     updated_at?: DateTimeFilter<"Administradores"> | Date | string
+    correo?: StringFilter<"Administradores"> | string
+    sede_id?: IntNullableFilter<"Administradores"> | number | null
+    password?: StringFilter<"Administradores"> | string
+    supabase_user_id?: StringNullableFilter<"Administradores"> | string | null
   }
 
   export type SedesUpsertWithWhereUniqueWithoutInstitucionInput = {
@@ -6057,6 +7561,43 @@ export namespace Prisma {
     institucion_id?: IntFilter<"Sedes"> | number
     created_at?: DateTimeFilter<"Sedes"> | Date | string
     updated_at?: DateTimeFilter<"Sedes"> | Date | string
+  }
+
+  export type AdministradoresCreateWithoutSedeInput = {
+    nombre: string
+    apellido: string
+    telefono: string
+    cargo: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    correo: string
+    password: string
+    supabase_user_id?: string | null
+    institucion: InstitucionesCreateNestedOneWithoutAdministradoresInput
+  }
+
+  export type AdministradoresUncheckedCreateWithoutSedeInput = {
+    id?: number
+    nombre: string
+    apellido: string
+    telefono: string
+    cargo: string
+    institucion_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    correo: string
+    password: string
+    supabase_user_id?: string | null
+  }
+
+  export type AdministradoresCreateOrConnectWithoutSedeInput = {
+    where: AdministradoresWhereUniqueInput
+    create: XOR<AdministradoresCreateWithoutSedeInput, AdministradoresUncheckedCreateWithoutSedeInput>
+  }
+
+  export type AdministradoresCreateManySedeInputEnvelope = {
+    data: AdministradoresCreateManySedeInput | AdministradoresCreateManySedeInput[]
+    skipDuplicates?: boolean
   }
 
   export type InstitucionesCreateWithoutSedesInput = {
@@ -6093,6 +7634,22 @@ export namespace Prisma {
   export type InstitucionesCreateOrConnectWithoutSedesInput = {
     where: InstitucionesWhereUniqueInput
     create: XOR<InstitucionesCreateWithoutSedesInput, InstitucionesUncheckedCreateWithoutSedesInput>
+  }
+
+  export type AdministradoresUpsertWithWhereUniqueWithoutSedeInput = {
+    where: AdministradoresWhereUniqueInput
+    update: XOR<AdministradoresUpdateWithoutSedeInput, AdministradoresUncheckedUpdateWithoutSedeInput>
+    create: XOR<AdministradoresCreateWithoutSedeInput, AdministradoresUncheckedCreateWithoutSedeInput>
+  }
+
+  export type AdministradoresUpdateWithWhereUniqueWithoutSedeInput = {
+    where: AdministradoresWhereUniqueInput
+    data: XOR<AdministradoresUpdateWithoutSedeInput, AdministradoresUncheckedUpdateWithoutSedeInput>
+  }
+
+  export type AdministradoresUpdateManyWithWhereWithoutSedeInput = {
+    where: AdministradoresScalarWhereInput
+    data: XOR<AdministradoresUpdateManyMutationInput, AdministradoresUncheckedUpdateManyWithoutSedeInput>
   }
 
   export type InstitucionesUpsertWithoutSedesInput = {
@@ -6173,6 +7730,28 @@ export namespace Prisma {
     create: XOR<InstitucionesCreateWithoutAdministradoresInput, InstitucionesUncheckedCreateWithoutAdministradoresInput>
   }
 
+  export type SedesCreateWithoutAdministradoresInput = {
+    nombre: string
+    jornadas?: SedesCreatejornadasInput | string[]
+    created_at?: Date | string
+    updated_at?: Date | string
+    institucion: InstitucionesCreateNestedOneWithoutSedesInput
+  }
+
+  export type SedesUncheckedCreateWithoutAdministradoresInput = {
+    id?: number
+    nombre: string
+    jornadas?: SedesCreatejornadasInput | string[]
+    institucion_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type SedesCreateOrConnectWithoutAdministradoresInput = {
+    where: SedesWhereUniqueInput
+    create: XOR<SedesCreateWithoutAdministradoresInput, SedesUncheckedCreateWithoutAdministradoresInput>
+  }
+
   export type InstitucionesUpsertWithoutAdministradoresInput = {
     update: XOR<InstitucionesUpdateWithoutAdministradoresInput, InstitucionesUncheckedUpdateWithoutAdministradoresInput>
     create: XOR<InstitucionesCreateWithoutAdministradoresInput, InstitucionesUncheckedCreateWithoutAdministradoresInput>
@@ -6215,18 +7794,46 @@ export namespace Prisma {
     sedes?: SedesUncheckedUpdateManyWithoutInstitucionNestedInput
   }
 
+  export type SedesUpsertWithoutAdministradoresInput = {
+    update: XOR<SedesUpdateWithoutAdministradoresInput, SedesUncheckedUpdateWithoutAdministradoresInput>
+    create: XOR<SedesCreateWithoutAdministradoresInput, SedesUncheckedCreateWithoutAdministradoresInput>
+    where?: SedesWhereInput
+  }
+
+  export type SedesUpdateToOneWithWhereWithoutAdministradoresInput = {
+    where?: SedesWhereInput
+    data: XOR<SedesUpdateWithoutAdministradoresInput, SedesUncheckedUpdateWithoutAdministradoresInput>
+  }
+
+  export type SedesUpdateWithoutAdministradoresInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    jornadas?: SedesUpdatejornadasInput | string[]
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    institucion?: InstitucionesUpdateOneRequiredWithoutSedesNestedInput
+  }
+
+  export type SedesUncheckedUpdateWithoutAdministradoresInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    jornadas?: SedesUpdatejornadasInput | string[]
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type AdministradoresCreateManyInstitucionInput = {
     id?: number
     nombre: string
     apellido: string
-    email: string
-    telefono?: string | null
+    telefono: string
     cargo: string
-    fecha_nacimiento?: Date | string | null
-    direccion?: string | null
-    activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    correo: string
+    sede_id?: number | null
+    password: string
+    supabase_user_id?: string | null
   }
 
   export type SedesCreateManyInstitucionInput = {
@@ -6240,42 +7847,42 @@ export namespace Prisma {
   export type AdministradoresUpdateWithoutInstitucionInput = {
     nombre?: StringFieldUpdateOperationsInput | string
     apellido?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono?: StringFieldUpdateOperationsInput | string
     cargo?: StringFieldUpdateOperationsInput | string
-    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    direccion?: NullableStringFieldUpdateOperationsInput | string | null
-    activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
+    sede?: SedesUpdateOneWithoutAdministradoresNestedInput
   }
 
   export type AdministradoresUncheckedUpdateWithoutInstitucionInput = {
     id?: IntFieldUpdateOperationsInput | number
     nombre?: StringFieldUpdateOperationsInput | string
     apellido?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono?: StringFieldUpdateOperationsInput | string
     cargo?: StringFieldUpdateOperationsInput | string
-    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    direccion?: NullableStringFieldUpdateOperationsInput | string | null
-    activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    sede_id?: NullableIntFieldUpdateOperationsInput | number | null
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AdministradoresUncheckedUpdateManyWithoutInstitucionInput = {
     id?: IntFieldUpdateOperationsInput | number
     nombre?: StringFieldUpdateOperationsInput | string
     apellido?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    telefono?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono?: StringFieldUpdateOperationsInput | string
     cargo?: StringFieldUpdateOperationsInput | string
-    fecha_nacimiento?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    direccion?: NullableStringFieldUpdateOperationsInput | string | null
-    activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    sede_id?: NullableIntFieldUpdateOperationsInput | number | null
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SedesUpdateWithoutInstitucionInput = {
@@ -6283,6 +7890,7 @@ export namespace Prisma {
     jornadas?: SedesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    administradores?: AdministradoresUpdateManyWithoutSedeNestedInput
   }
 
   export type SedesUncheckedUpdateWithoutInstitucionInput = {
@@ -6291,6 +7899,7 @@ export namespace Prisma {
     jornadas?: SedesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    administradores?: AdministradoresUncheckedUpdateManyWithoutSedeNestedInput
   }
 
   export type SedesUncheckedUpdateManyWithoutInstitucionInput = {
@@ -6299,6 +7908,61 @@ export namespace Prisma {
     jornadas?: SedesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AdministradoresCreateManySedeInput = {
+    id?: number
+    nombre: string
+    apellido: string
+    telefono: string
+    cargo: string
+    institucion_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    correo: string
+    password: string
+    supabase_user_id?: string | null
+  }
+
+  export type AdministradoresUpdateWithoutSedeInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    telefono?: StringFieldUpdateOperationsInput | string
+    cargo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
+    institucion?: InstitucionesUpdateOneRequiredWithoutAdministradoresNestedInput
+  }
+
+  export type AdministradoresUncheckedUpdateWithoutSedeInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    telefono?: StringFieldUpdateOperationsInput | string
+    cargo?: StringFieldUpdateOperationsInput | string
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type AdministradoresUncheckedUpdateManyWithoutSedeInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    apellido?: StringFieldUpdateOperationsInput | string
+    telefono?: StringFieldUpdateOperationsInput | string
+    cargo?: StringFieldUpdateOperationsInput | string
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    correo?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    supabase_user_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
 

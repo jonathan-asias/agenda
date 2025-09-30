@@ -167,48 +167,42 @@ export default function LoginPage() {
         return;
       }
 
-      // 4. Validar entrada contra inyección
-      const emailInjectionError = validateSecureInput(email, 'email');
-      if (emailInjectionError) {
-        setValidationErrors(prev => ({ ...prev, email: emailInjectionError }));
-        setError(emailInjectionError);
-        return;
-      }
-
-      const passwordInjectionError = validateSecureInput(password, 'contraseña');
-      if (passwordInjectionError) {
-        setValidationErrors(prev => ({ ...prev, password: passwordInjectionError }));
-        setError(passwordInjectionError);
-        return;
-      }
-
-      // 5. Sanitizar datos antes del envío
-      const sanitizedEmail = sanitizeInput(email.trim());
+      // 4. Sanitizar entrada
+      const sanitizedEmail = sanitizeInput(email);
       const sanitizedPassword = sanitizeInput(password);
 
-      // 6. Intentar autenticación
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // 5. Validar entrada segura
+      const emailValidationError = validateSecureInput(sanitizedEmail, 'email');
+      const passwordValidationError = validateSecureInput(sanitizedPassword, 'password');
+
+      if (emailValidationError || passwordValidationError) {
+        const newErrors: {[key: string]: string} = {};
+        if (emailValidationError) newErrors.email = emailValidationError;
+        if (passwordValidationError) newErrors.password = passwordValidationError;
+        setValidationErrors(newErrors);
+        setError('Entrada no válida detectada');
+        return;
+      }
+
+      // 6. Intentar login con Supabase
+      const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
         email: sanitizedEmail,
-        password: sanitizedPassword
+        password: sanitizedPassword,
       });
 
-      if (error) {
-        setError('Credenciales inválidas. Verifique su email y contraseña.');
+      if (supabaseError) {
+        setError('Credenciales inválidas');
         return;
       }
 
       if (data.user) {
-        // Buscar la institución asociada al usuario
-        const response = await fetch(`/api/instituciones/by-email/${encodeURIComponent(sanitizedEmail)}`);
-        if (response.ok) {
-          const institucion = await response.json();
-          router.push(`/institucion/${institucion.id}/perfil`);
-        } else {
-          setError('No se encontró una institución asociada a este correo');
-        }
+        // El contexto unificado se encargará de determinar el tipo de usuario
+        // y redirigir apropiadamente
+        router.push('/');
       }
     } catch (err) {
-      setError('Error de seguridad detectado. Intente nuevamente.');
+      console.error('Error en login de institución:', err);
+      setError('Error de conexión');
     } finally {
       setLoading(false);
     }
@@ -230,6 +224,7 @@ export default function LoginPage() {
           <p className="text-slate-600 mb-3">
             Accede a tu cuenta de institución
           </p>
+
           {/* Security Indicator */}
           <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
             <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -358,6 +353,15 @@ export default function LoginPage() {
                 className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
                 Regístrate aquí
+              </Link>
+            </p>
+            <p className="text-sm text-slate-600">
+              ¿Olvidaste tu contraseña?{' '}
+              <Link
+                href="/recuperar-contrasena"
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              >
+                Recupérala aquí
               </Link>
             </p>
             
