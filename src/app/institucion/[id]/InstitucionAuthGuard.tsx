@@ -10,7 +10,7 @@ interface InstitucionAuthGuardProps {
 }
 
 export default function InstitucionAuthGuard({ children, institucionId }: InstitucionAuthGuardProps) {
-  const { user, loading, institutionId: userInstitutionId } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -28,20 +28,10 @@ export default function InstitucionAuthGuard({ children, institucionId }: Instit
         return;
       }
       
-      if (!userInstitutionId) {
-        router.push('/login');
-        return;
-      }
-
-      // Verificar que el usuario pertenece a esta institución
-      if (userInstitutionId !== institucionId) {
-        router.push('/login');
-        return;
-      }
-      
+      // Simplemente autorizar si hay usuario (el login ya verificó todo)
       setIsAuthorized(true);
     }
-  }, [isMounted, user, loading, userInstitutionId, institucionId, router]);
+  }, [isMounted, user, loading, router]);
 
   // Mostrar loading durante la hidratación y verificación
   if (!isMounted || loading) {

@@ -1,18 +1,59 @@
 'use client';
 
-import { useUnifiedAuth } from '../../../../contexts/UnifiedAuthContext';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import SetupWizard from './SetupWizard';
+
+interface Administrador {
+  id: number;
+  nombre: string;
+  apellido: string;
+  correo: string;
+  cargo: string;
+  institucion: {
+    id: number;
+    nombre: string;
+  };
+  sede?: {
+    id: number;
+    nombre: string;
+  };
+}
 
 export default function AdminDashboardContent() {
-  const { administrador, signOut } = useUnifiedAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
+  const [administrador, setAdministrador] = useState<Administrador | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showWizard, setShowWizard] = useState(false);
+
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      if (!user?.email) return;
+      
+      try {
+        const response = await fetch(`/api/administradores/by-email/${encodeURIComponent(user.email)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAdministrador(data.administrador);
+        }
+      } catch (error) {
+        console.error('Error fetching admin data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdminData();
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut();
     router.push('/login');
   };
 
-  if (!administrador) {
+  if (loading || !administrador) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
@@ -57,54 +98,48 @@ export default function AdminDashboardContent() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Información Personal */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              Información Personal
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-slate-600">Nombre completo</p>
-                <p className="font-medium text-slate-900">
-                  {administrador.nombre} {administrador.apellido}
-                </p>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
               </div>
-              <div>
-                <p className="text-sm text-slate-600">Correo electrónico</p>
-                <p className="font-medium text-slate-900">{administrador.correo}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Cargo</p>
-                <p className="font-medium text-slate-900">{administrador.cargo}</p>
-              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                Bienvenido al Panel de Administración
+              </h2>
+              <p className="text-slate-600">
+                Configura tu institución educativa en pocos pasos
+              </p>
             </div>
-          </div>
 
-          {/* Información de la Institución */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              Institución
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-slate-600">Nombre</p>
-                <p className="font-medium text-slate-900">
-                  {administrador.institucion.nombre}
-                </p>
-              </div>
-              {administrador.sede && (
-                <div>
-                  <p className="text-sm text-slate-600">Sede</p>
-                  <p className="font-medium text-slate-900">
-                    {administrador.sede.nombre}
-                  </p>
-                </div>
-              )}
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowWizard(true)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 flex items-center justify-center shadow-lg"
+              >
+                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Iniciar Configuración Inicial
+              </button>
+
+              <p className="text-sm text-slate-500">
+                Este asistente te guiará paso a paso para configurar grados, áreas, materias, docentes y estudiantes
+              </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Setup Wizard Modal */}
+      {showWizard && (
+        <SetupWizard 
+          institucionId={administrador.institucion.id}
+          onClose={() => setShowWizard(false)} 
+        />
+      )}
     </div>
   );
 }

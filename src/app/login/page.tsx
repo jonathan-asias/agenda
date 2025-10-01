@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [userType, setUserType] = useState<'institucion' | 'administrador'>('institucion');
   const router = useRouter();
 
   // Función para sanitizar entrada de texto
@@ -196,9 +197,28 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // El contexto unificado se encargará de determinar el tipo de usuario
-        // y redirigir apropiadamente
-        router.push('/');
+        // Verificar el tipo de usuario seleccionado
+        if (userType === 'administrador') {
+          // Buscar administrador
+          const adminResponse = await fetch(`/api/administradores/by-email/${encodeURIComponent(sanitizedEmail)}`);
+          if (adminResponse.ok) {
+            const adminData = await adminResponse.json();
+            router.push(`/institucion/${adminData.administrador.institucion.id}/admin`);
+          } else {
+            setError('No se encontró un administrador con este correo');
+            await supabase.auth.signOut();
+          }
+        } else {
+          // Buscar institución
+          const instResponse = await fetch(`/api/instituciones/by-email/${encodeURIComponent(sanitizedEmail)}`);
+          if (instResponse.ok) {
+            const instData = await instResponse.json();
+            router.push(`/institucion/${instData.id}/perfil`);
+          } else {
+            setError('No se encontró una institución con este correo');
+            await supabase.auth.signOut();
+          }
+        }
       }
     } catch (err) {
       console.error('Error en login de institución:', err);
@@ -221,9 +241,64 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold text-slate-800 mb-2">
             Iniciar Sesión
           </h1>
-          <p className="text-slate-600 mb-3">
-            Accede a tu cuenta de institución
+          <p className="text-slate-600 mb-6">
+            Accede a tu cuenta
           </p>
+
+          {/* Tipo de Usuario - Radio Buttons */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-700 mb-3 text-center">
+              Tipo de Usuario
+            </label>
+            <div className="flex justify-center gap-6">
+              <label className="flex items-center cursor-pointer group">
+                <div className="relative">
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="institucion"
+                    checked={userType === 'institucion'}
+                    onChange={(e) => {
+                      setUserType('institucion');
+                      setError('');
+                      setValidationErrors({});
+                    }}
+                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                  />
+                </div>
+                <span className={`ml-3 text-sm font-medium transition-colors ${
+                  userType === 'institucion' 
+                    ? 'text-blue-600' 
+                    : 'text-slate-600 group-hover:text-slate-900'
+                }`}>
+                  Institución
+                </span>
+              </label>
+              <label className="flex items-center cursor-pointer group">
+                <div className="relative">
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="administrador"
+                    checked={userType === 'administrador'}
+                    onChange={(e) => {
+                      setUserType('administrador');
+                      setError('');
+                      setValidationErrors({});
+                    }}
+                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                  />
+                </div>
+                <span className={`ml-3 text-sm font-medium transition-colors ${
+                  userType === 'administrador' 
+                    ? 'text-blue-600' 
+                    : 'text-slate-600 group-hover:text-slate-900'
+                }`}>
+                  Administrador
+                </span>
+              </label>
+            </div>
+          </div>
 
           {/* Security Indicator */}
           <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">

@@ -169,6 +169,90 @@ exports.Prisma.PasswordResetTokensScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.GradosScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  nivel: 'nivel',
+  orden: 'orden',
+  institucion_id: 'institucion_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.CursosScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  grado_id: 'grado_id',
+  jornada: 'jornada',
+  sede_id: 'sede_id',
+  institucion_id: 'institucion_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.AreasScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  es_opcional: 'es_opcional',
+  orden: 'orden',
+  institucion_id: 'institucion_id',
+  activa: 'activa',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.MateriasScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  area_id: 'area_id',
+  institucion_id: 'institucion_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.MateriaGradosScalarFieldEnum = {
+  id: 'id',
+  materia_id: 'materia_id',
+  grado_id: 'grado_id',
+  created_at: 'created_at'
+};
+
+exports.Prisma.DocentesScalarFieldEnum = {
+  id: 'id',
+  apellidos: 'apellidos',
+  nombres: 'nombres',
+  telefono: 'telefono',
+  email: 'email',
+  institucion_id: 'institucion_id',
+  sede_id: 'sede_id',
+  activo: 'activo',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.DocenteAsignacionesScalarFieldEnum = {
+  id: 'id',
+  docente_id: 'docente_id',
+  curso_id: 'curso_id',
+  materia_id: 'materia_id',
+  created_at: 'created_at'
+};
+
+exports.Prisma.EstudiantesScalarFieldEnum = {
+  id: 'id',
+  apellidos: 'apellidos',
+  nombres: 'nombres',
+  codigo_estudiantil: 'codigo_estudiantil',
+  nombre_acudiente: 'nombre_acudiente',
+  correo_acudiente: 'correo_acudiente',
+  telefono_acudiente: 'telefono_acudiente',
+  curso_id: 'curso_id',
+  institucion_id: 'institucion_id',
+  activo: 'activo',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -189,7 +273,15 @@ exports.Prisma.ModelName = {
   Instituciones: 'Instituciones',
   Sedes: 'Sedes',
   Administradores: 'Administradores',
-  PasswordResetTokens: 'PasswordResetTokens'
+  PasswordResetTokens: 'PasswordResetTokens',
+  Grados: 'Grados',
+  Cursos: 'Cursos',
+  Areas: 'Areas',
+  Materias: 'Materias',
+  MateriaGrados: 'MateriaGrados',
+  Docentes: 'Docentes',
+  DocenteAsignaciones: 'DocenteAsignaciones',
+  Estudiantes: 'Estudiantes'
 };
 
 /**

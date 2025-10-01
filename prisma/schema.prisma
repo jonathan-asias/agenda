@@ -24,6 +24,12 @@ model Instituciones {
   updated_at          DateTime          @updatedAt @map("updated_at")
   administradores     Administradores[]
   sedes               Sedes[]
+  grados              Grados[]
+  cursos              Cursos[]
+  areas               Areas[]
+  materias            Materias[]
+  docentes            Docentes[]
+  estudiantes         Estudiantes[]
 
   @@map("Instituciones")
 }
@@ -36,6 +42,8 @@ model Sedes {
   created_at      DateTime          @default(now()) @map("created_at")
   updated_at      DateTime          @updatedAt @map("updated_at")
   administradores Administradores[]
+  cursos          Cursos[]
+  docentes        Docentes[]
   institucion     Instituciones     @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
 
   @@map("Sedes")
@@ -70,4 +78,135 @@ model PasswordResetTokens {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("PasswordResetTokens")
+}
+
+// ========================================
+// MODELOS DEL SISTEMA EDUCATIVO
+// ========================================
+
+model Grados {
+  id             Int             @id @default(autoincrement())
+  nombre         String          @db.VarChar(100) // "PÁRVULOS", "1°", "2°", etc.
+  nivel          String          @db.VarChar(50) // "Educación Inicial", "Primaria", "Secundaria", "Media"
+  orden          Int // Para ordenarlos: 1, 2, 3...
+  institucion_id Int
+  created_at     DateTime        @default(now()) @map("created_at")
+  updated_at     DateTime        @updatedAt @map("updated_at")
+  institucion    Instituciones   @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  cursos         Cursos[]
+  materiaGrados  MateriaGrados[]
+
+  @@map("Grados")
+}
+
+model Cursos {
+  id                  Int                   @id @default(autoincrement())
+  nombre              String                @db.VarChar(100) // "Curso A", "Curso B", etc.
+  grado_id            Int
+  jornada             String?               @db.VarChar(50) // "Mañana", "Tarde", etc.
+  sede_id             Int?
+  institucion_id      Int
+  created_at          DateTime              @default(now()) @map("created_at")
+  updated_at          DateTime              @updatedAt @map("updated_at")
+  grado               Grados                @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+  institucion         Instituciones         @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  sede                Sedes?                @relation(fields: [sede_id], references: [id])
+  estudiantes         Estudiantes[]
+  docenteAsignaciones DocenteAsignaciones[]
+
+  @@map("Cursos")
+}
+
+model Areas {
+  id             Int           @id @default(autoincrement())
+  nombre         String        @db.VarChar(255)
+  es_opcional    Boolean       @default(false) // true para las 4 opcionales
+  orden          Int
+  institucion_id Int
+  activa         Boolean       @default(true) // Para activar/desactivar opcionales
+  created_at     DateTime      @default(now()) @map("created_at")
+  updated_at     DateTime      @updatedAt @map("updated_at")
+  institucion    Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  materias       Materias[]
+
+  @@map("Areas")
+}
+
+model Materias {
+  id                  Int                   @id @default(autoincrement())
+  nombre              String                @db.VarChar(255) // "Biología", "Álgebra", etc.
+  area_id             Int
+  institucion_id      Int
+  created_at          DateTime              @default(now()) @map("created_at")
+  updated_at          DateTime              @updatedAt @map("updated_at")
+  area                Areas                 @relation(fields: [area_id], references: [id], onDelete: Cascade)
+  institucion         Instituciones         @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  materiaGrados       MateriaGrados[]
+  docenteAsignaciones DocenteAsignaciones[]
+
+  @@map("Materias")
+}
+
+model MateriaGrados {
+  id         Int      @id @default(autoincrement())
+  materia_id Int
+  grado_id   Int
+  created_at DateTime @default(now()) @map("created_at")
+  materia    Materias @relation(fields: [materia_id], references: [id], onDelete: Cascade)
+  grado      Grados   @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+
+  @@unique([materia_id, grado_id])
+  @@map("MateriaGrados")
+}
+
+model Docentes {
+  id                  Int                   @id @default(autoincrement())
+  apellidos           String                @db.VarChar(255)
+  nombres             String                @db.VarChar(255)
+  telefono            String                @db.VarChar(20)
+  email               String                @unique @db.VarChar(255)
+  institucion_id      Int
+  sede_id             Int?
+  activo              Boolean               @default(true)
+  created_at          DateTime              @default(now()) @map("created_at")
+  updated_at          DateTime              @updatedAt @map("updated_at")
+  institucion         Instituciones         @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  sede                Sedes?                @relation(fields: [sede_id], references: [id])
+  docenteAsignaciones DocenteAsignaciones[]
+
+  @@map("Docentes")
+}
+
+model DocenteAsignaciones {
+  id         Int      @id @default(autoincrement())
+  docente_id Int
+  curso_id   Int
+  materia_id Int
+  created_at DateTime @default(now()) @map("created_at")
+  docente    Docentes @relation(fields: [docente_id], references: [id], onDelete: Cascade)
+  curso      Cursos   @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+  materia    Materias @relation(fields: [materia_id], references: [id], onDelete: Cascade)
+
+  @@unique([docente_id, curso_id, materia_id])
+  @@map("DocenteAsignaciones")
+}
+
+model Estudiantes {
+  id                  Int           @id @default(autoincrement())
+  apellidos           String        @db.VarChar(255)
+  nombres             String        @db.VarChar(255)
+  codigo_estudiantil  String        @db.VarChar(50)
+  nombre_acudiente    String        @db.VarChar(255)
+  correo_acudiente    String?       @db.VarChar(255)
+  telefono_acudiente  String        @db.VarChar(20)
+  curso_id            Int
+  institucion_id      Int
+  activo              Boolean       @default(true)
+  created_at          DateTime      @default(now()) @map("created_at")
+  updated_at          DateTime      @updatedAt @map("updated_at")
+  curso               Cursos        @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+  institucion         Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+
+  @@unique([codigo_estudiantil, institucion_id])
+  @@map("Estudiantes")
 }

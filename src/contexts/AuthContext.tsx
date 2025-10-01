@@ -35,10 +35,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Función para obtener el ID de la institución
   const getInstitutionId = async (userEmail: string): Promise<number | null> => {
     try {
-      const response = await fetch(`/api/instituciones/by-email/${encodeURIComponent(userEmail)}`);
-      if (response.ok) {
-        const data = await response.json();
-        return data?.id || null;
+      // Primero intentar buscar como administrador
+      const adminResponse = await fetch(`/api/administradores/by-email/${encodeURIComponent(userEmail)}`);
+      if (adminResponse.ok) {
+        const adminData = await adminResponse.json();
+        return adminData?.administrador?.institucion?.id || null;
+      }
+      
+      // Si no es administrador, intentar buscar como institución
+      const instResponse = await fetch(`/api/instituciones/by-email/${encodeURIComponent(userEmail)}`);
+      if (instResponse.ok) {
+        const instData = await instResponse.json();
+        return instData?.id || null;
       }
     } catch (error) {
       console.error('Error al obtener institución:', error);
@@ -59,18 +67,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Solo procesar si el usuario NO es administrador
-      if (session?.user?.user_metadata?.tipo === 'administrador') {
-        console.log('AuthContext: Ignorando sesión de administrador');
-        setUser(null);
-        setInstitutionId(null);
-        setLoading(false);
-        return;
-      }
-      
       setUser(session?.user ?? null);
       
-      // Si hay usuario, obtener su institución
+      // Si hay usuario, obtener su institución (sin importar si es admin o institución)
       if (session?.user?.email) {
         const instId = await getInstitutionId(session.user.email);
         setInstitutionId(instId);
@@ -86,15 +85,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Solo procesar si el usuario NO es administrador
-        if (session?.user?.user_metadata?.tipo === 'administrador') {
-          console.log('AuthContext: Ignorando usuario administrador');
-          return;
-        }
-        
         setUser(session?.user ?? null);
         
-        // Si hay usuario, obtener su institución
+        // Si hay usuario, obtener su institución (sin importar si es admin o institución)
         if (session?.user?.email) {
           const instId = await getInstitutionId(session.user.email);
           setInstitutionId(instId);

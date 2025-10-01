@@ -67,14 +67,14 @@ export const UnifiedAuthProvider = ({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!isMounted) return;
 
-    // Verificar sesión inicial
+    // Verificar sesión inicial - SIN determinar tipo automáticamente
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
           setUser(session.user);
-          await determineUserType(session.user);
+          // NO determinar tipo aquí, solo verificar que hay sesión
         } else {
           setUser(null);
           setUserType(null);
@@ -94,12 +94,12 @@ export const UnifiedAuthProvider = ({ children }: { children: React.ReactNode })
 
     checkAuth();
 
-    // Escuchar cambios en la autenticación
+    // Escuchar cambios en la autenticación - SIN determinar tipo automáticamente
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user);
-          await determineUserType(session.user);
+          // NO determinar tipo aquí, el login se encarga
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setUserType(null);
