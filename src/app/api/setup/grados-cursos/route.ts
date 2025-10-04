@@ -100,6 +100,9 @@ export async function POST(request: NextRequest) {
 
     // Guardar cursos
     console.log('Creando cursos...');
+    console.log('Datos de cursos a crear:', JSON.stringify(cursos, null, 2));
+    console.log('Mapa de grados:', Object.fromEntries(gradoIdMap));
+    
     const cursosCreados = await Promise.all(
       cursos.map(async (curso: any) => {
         const gradoId = gradoIdMap.get(curso.gradoId);
@@ -108,13 +111,29 @@ export async function POST(request: NextRequest) {
         }
         
         console.log(`Creando curso: ${curso.nombre} para grado ID: ${gradoId}`);
-        return await prisma.cursos.create({
-          data: {
+        console.log('Datos del curso:', {
+          nombre: curso.nombre,
+          grado_id: gradoId,
+          institucion_id: institucionId
+        });
+        
+        try {
+          return await prisma.cursos.create({
+            data: {
+              nombre: curso.nombre,
+              grado_id: gradoId,
+              institucion_id: institucionId
+            }
+          });
+        } catch (error) {
+          console.error('Error creando curso específico:', error);
+          console.error('Datos que causaron el error:', {
             nombre: curso.nombre,
             grado_id: gradoId,
             institucion_id: institucionId
-          }
-        });
+          });
+          throw error;
+        }
       })
     );
 

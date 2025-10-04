@@ -225,6 +225,7 @@ exports.Prisma.DocentesScalarFieldEnum = {
   email: 'email',
   institucion_id: 'institucion_id',
   sede_id: 'sede_id',
+  auth_user_id: 'auth_user_id',
   activo: 'activo',
   created_at: 'created_at',
   updated_at: 'updated_at'
@@ -233,6 +234,7 @@ exports.Prisma.DocentesScalarFieldEnum = {
 exports.Prisma.DocenteAsignacionesScalarFieldEnum = {
   id: 'id',
   docente_id: 'docente_id',
+  grado_id: 'grado_id',
   curso_id: 'curso_id',
   materia_id: 'materia_id',
   created_at: 'created_at'

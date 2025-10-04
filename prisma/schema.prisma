@@ -95,6 +95,7 @@ model Grados {
   institucion    Instituciones   @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
   cursos         Cursos[]
   materiaGrados  MateriaGrados[]
+  docenteAsignaciones DocenteAsignaciones[]
 
   @@map("Grados")
 }
@@ -167,6 +168,7 @@ model Docentes {
   email               String                @unique @db.VarChar(255)
   institucion_id      Int
   sede_id             Int?
+  auth_user_id        String?               @db.VarChar(255)
   activo              Boolean               @default(true)
   created_at          DateTime              @default(now()) @map("created_at")
   updated_at          DateTime              @updatedAt @map("updated_at")
@@ -180,14 +182,16 @@ model Docentes {
 model DocenteAsignaciones {
   id         Int      @id @default(autoincrement())
   docente_id Int
+  grado_id   Int
   curso_id   Int
   materia_id Int
   created_at DateTime @default(now()) @map("created_at")
   docente    Docentes @relation(fields: [docente_id], references: [id], onDelete: Cascade)
+  grado      Grados   @relation(fields: [grado_id], references: [id], onDelete: Cascade)
   curso      Cursos   @relation(fields: [curso_id], references: [id], onDelete: Cascade)
   materia    Materias @relation(fields: [materia_id], references: [id], onDelete: Cascade)
 
-  @@unique([docente_id, curso_id, materia_id])
+  @@unique([docente_id, grado_id, curso_id, materia_id])
   @@map("DocenteAsignaciones")
 }
 
