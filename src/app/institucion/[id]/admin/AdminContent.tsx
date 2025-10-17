@@ -114,9 +114,16 @@ export default function AdminContent() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Filtrar solo números para campos de teléfono
+    let processedValue = value;
+    if (name === 'telefono') {
+      processedValue = value.replace(/[^0-9]/g, '');
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
 
     // Validación en tiempo real para el correo
@@ -604,6 +611,7 @@ export default function AdminContent() {
                     onChange={handleInputChange}
                     required
                     disabled={!canProceedToPassword}
+                    maxLength={12}
                     className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 ${
                       !canProceedToPassword
                         ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'

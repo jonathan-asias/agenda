@@ -94,6 +94,7 @@ model Grados {
   updated_at     DateTime        @updatedAt @map("updated_at")
   institucion    Instituciones   @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
   cursos         Cursos[]
+  estudiantes    Estudiantes[]
   materiaGrados  MateriaGrados[]
   docenteAsignaciones DocenteAsignaciones[]
 
@@ -203,11 +204,13 @@ model Estudiantes {
   nombre_acudiente    String        @db.VarChar(255)
   correo_acudiente    String?       @db.VarChar(255)
   telefono_acudiente  String        @db.VarChar(20)
+  grado_id            Int
   curso_id            Int
   institucion_id      Int
   activo              Boolean       @default(true)
   created_at          DateTime      @default(now()) @map("created_at")
   updated_at          DateTime      @updatedAt @map("updated_at")
+  grado               Grados        @relation(fields: [grado_id], references: [id], onDelete: Cascade)
   curso               Cursos        @relation(fields: [curso_id], references: [id], onDelete: Cascade)
   institucion         Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
 

@@ -720,7 +720,7 @@ export default function RegistroInstitucion() {
                     : 'border-slate-200'
                 }`}
                 placeholder="Ingrese el teléfono (solo números)"
-                maxLength={20}
+                maxLength={12}
               />
               {formData.telefono_contacto && !isValidPhone(formData.telefono_contacto) && (
                 <p className="mt-1 text-xs text-red-600">El teléfono debe contener al menos 10 dígitos numéricos</p>

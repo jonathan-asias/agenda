@@ -248,6 +248,7 @@ exports.Prisma.EstudiantesScalarFieldEnum = {
   nombre_acudiente: 'nombre_acudiente',
   correo_acudiente: 'correo_acudiente',
   telefono_acudiente: 'telefono_acudiente',
+  grado_id: 'grado_id',
   curso_id: 'curso_id',
   institucion_id: 'institucion_id',
   activo: 'activo',

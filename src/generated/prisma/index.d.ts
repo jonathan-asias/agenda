@@ -2005,12 +2005,14 @@ export namespace Prisma {
 
   export type GradosCountOutputType = {
     cursos: number
+    estudiantes: number
     materiaGrados: number
     docenteAsignaciones: number
   }
 
   export type GradosCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     cursos?: boolean | GradosCountOutputTypeCountCursosArgs
+    estudiantes?: boolean | GradosCountOutputTypeCountEstudiantesArgs
     materiaGrados?: boolean | GradosCountOutputTypeCountMateriaGradosArgs
     docenteAsignaciones?: boolean | GradosCountOutputTypeCountDocenteAsignacionesArgs
   }
@@ -2031,6 +2033,13 @@ export namespace Prisma {
    */
   export type GradosCountOutputTypeCountCursosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CursosWhereInput
+  }
+
+  /**
+   * GradosCountOutputType without action
+   */
+  export type GradosCountOutputTypeCountEstudiantesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EstudiantesWhereInput
   }
 
   /**
@@ -7269,6 +7278,7 @@ export namespace Prisma {
     updated_at?: boolean
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
     cursos?: boolean | Grados$cursosArgs<ExtArgs>
+    estudiantes?: boolean | Grados$estudiantesArgs<ExtArgs>
     materiaGrados?: boolean | Grados$materiaGradosArgs<ExtArgs>
     docenteAsignaciones?: boolean | Grados$docenteAsignacionesArgs<ExtArgs>
     _count?: boolean | GradosCountOutputTypeDefaultArgs<ExtArgs>
@@ -7310,6 +7320,7 @@ export namespace Prisma {
   export type GradosInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
     cursos?: boolean | Grados$cursosArgs<ExtArgs>
+    estudiantes?: boolean | Grados$estudiantesArgs<ExtArgs>
     materiaGrados?: boolean | Grados$materiaGradosArgs<ExtArgs>
     docenteAsignaciones?: boolean | Grados$docenteAsignacionesArgs<ExtArgs>
     _count?: boolean | GradosCountOutputTypeDefaultArgs<ExtArgs>
@@ -7326,6 +7337,7 @@ export namespace Prisma {
     objects: {
       institucion: Prisma.$InstitucionesPayload<ExtArgs>
       cursos: Prisma.$CursosPayload<ExtArgs>[]
+      estudiantes: Prisma.$EstudiantesPayload<ExtArgs>[]
       materiaGrados: Prisma.$MateriaGradosPayload<ExtArgs>[]
       docenteAsignaciones: Prisma.$DocenteAsignacionesPayload<ExtArgs>[]
     }
@@ -7733,6 +7745,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     cursos<T extends Grados$cursosArgs<ExtArgs> = {}>(args?: Subset<T, Grados$cursosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CursosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    estudiantes<T extends Grados$estudiantesArgs<ExtArgs> = {}>(args?: Subset<T, Grados$estudiantesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstudiantesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     materiaGrados<T extends Grados$materiaGradosArgs<ExtArgs> = {}>(args?: Subset<T, Grados$materiaGradosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MateriaGradosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     docenteAsignaciones<T extends Grados$docenteAsignacionesArgs<ExtArgs> = {}>(args?: Subset<T, Grados$docenteAsignacionesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocenteAsignacionesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -8188,6 +8201,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: CursosScalarFieldEnum | CursosScalarFieldEnum[]
+  }
+
+  /**
+   * Grados.estudiantes
+   */
+  export type Grados$estudiantesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Estudiantes
+     */
+    select?: EstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Estudiantes
+     */
+    omit?: EstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EstudiantesInclude<ExtArgs> | null
+    where?: EstudiantesWhereInput
+    orderBy?: EstudiantesOrderByWithRelationInput | EstudiantesOrderByWithRelationInput[]
+    cursor?: EstudiantesWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EstudiantesScalarFieldEnum | EstudiantesScalarFieldEnum[]
   }
 
   /**
@@ -15330,12 +15367,14 @@ export namespace Prisma {
 
   export type EstudiantesAvgAggregateOutputType = {
     id: number | null
+    grado_id: number | null
     curso_id: number | null
     institucion_id: number | null
   }
 
   export type EstudiantesSumAggregateOutputType = {
     id: number | null
+    grado_id: number | null
     curso_id: number | null
     institucion_id: number | null
   }
@@ -15348,6 +15387,7 @@ export namespace Prisma {
     nombre_acudiente: string | null
     correo_acudiente: string | null
     telefono_acudiente: string | null
+    grado_id: number | null
     curso_id: number | null
     institucion_id: number | null
     activo: boolean | null
@@ -15363,6 +15403,7 @@ export namespace Prisma {
     nombre_acudiente: string | null
     correo_acudiente: string | null
     telefono_acudiente: string | null
+    grado_id: number | null
     curso_id: number | null
     institucion_id: number | null
     activo: boolean | null
@@ -15378,6 +15419,7 @@ export namespace Prisma {
     nombre_acudiente: number
     correo_acudiente: number
     telefono_acudiente: number
+    grado_id: number
     curso_id: number
     institucion_id: number
     activo: number
@@ -15389,12 +15431,14 @@ export namespace Prisma {
 
   export type EstudiantesAvgAggregateInputType = {
     id?: true
+    grado_id?: true
     curso_id?: true
     institucion_id?: true
   }
 
   export type EstudiantesSumAggregateInputType = {
     id?: true
+    grado_id?: true
     curso_id?: true
     institucion_id?: true
   }
@@ -15407,6 +15451,7 @@ export namespace Prisma {
     nombre_acudiente?: true
     correo_acudiente?: true
     telefono_acudiente?: true
+    grado_id?: true
     curso_id?: true
     institucion_id?: true
     activo?: true
@@ -15422,6 +15467,7 @@ export namespace Prisma {
     nombre_acudiente?: true
     correo_acudiente?: true
     telefono_acudiente?: true
+    grado_id?: true
     curso_id?: true
     institucion_id?: true
     activo?: true
@@ -15437,6 +15483,7 @@ export namespace Prisma {
     nombre_acudiente?: true
     correo_acudiente?: true
     telefono_acudiente?: true
+    grado_id?: true
     curso_id?: true
     institucion_id?: true
     activo?: true
@@ -15539,6 +15586,7 @@ export namespace Prisma {
     nombre_acudiente: string
     correo_acudiente: string | null
     telefono_acudiente: string
+    grado_id: number
     curso_id: number
     institucion_id: number
     activo: boolean
@@ -15573,11 +15621,13 @@ export namespace Prisma {
     nombre_acudiente?: boolean
     correo_acudiente?: boolean
     telefono_acudiente?: boolean
+    grado_id?: boolean
     curso_id?: boolean
     institucion_id?: boolean
     activo?: boolean
     created_at?: boolean
     updated_at?: boolean
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
     curso?: boolean | CursosDefaultArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["estudiantes"]>
@@ -15590,11 +15640,13 @@ export namespace Prisma {
     nombre_acudiente?: boolean
     correo_acudiente?: boolean
     telefono_acudiente?: boolean
+    grado_id?: boolean
     curso_id?: boolean
     institucion_id?: boolean
     activo?: boolean
     created_at?: boolean
     updated_at?: boolean
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
     curso?: boolean | CursosDefaultArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["estudiantes"]>
@@ -15607,11 +15659,13 @@ export namespace Prisma {
     nombre_acudiente?: boolean
     correo_acudiente?: boolean
     telefono_acudiente?: boolean
+    grado_id?: boolean
     curso_id?: boolean
     institucion_id?: boolean
     activo?: boolean
     created_at?: boolean
     updated_at?: boolean
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
     curso?: boolean | CursosDefaultArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["estudiantes"]>
@@ -15624,6 +15678,7 @@ export namespace Prisma {
     nombre_acudiente?: boolean
     correo_acudiente?: boolean
     telefono_acudiente?: boolean
+    grado_id?: boolean
     curso_id?: boolean
     institucion_id?: boolean
     activo?: boolean
@@ -15631,16 +15686,19 @@ export namespace Prisma {
     updated_at?: boolean
   }
 
-  export type EstudiantesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "apellidos" | "nombres" | "codigo_estudiantil" | "nombre_acudiente" | "correo_acudiente" | "telefono_acudiente" | "curso_id" | "institucion_id" | "activo" | "created_at" | "updated_at", ExtArgs["result"]["estudiantes"]>
+  export type EstudiantesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "apellidos" | "nombres" | "codigo_estudiantil" | "nombre_acudiente" | "correo_acudiente" | "telefono_acudiente" | "grado_id" | "curso_id" | "institucion_id" | "activo" | "created_at" | "updated_at", ExtArgs["result"]["estudiantes"]>
   export type EstudiantesInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
     curso?: boolean | CursosDefaultArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
   }
   export type EstudiantesIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
     curso?: boolean | CursosDefaultArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
   }
   export type EstudiantesIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
     curso?: boolean | CursosDefaultArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
   }
@@ -15648,6 +15706,7 @@ export namespace Prisma {
   export type $EstudiantesPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Estudiantes"
     objects: {
+      grado: Prisma.$GradosPayload<ExtArgs>
       curso: Prisma.$CursosPayload<ExtArgs>
       institucion: Prisma.$InstitucionesPayload<ExtArgs>
     }
@@ -15659,6 +15718,7 @@ export namespace Prisma {
       nombre_acudiente: string
       correo_acudiente: string | null
       telefono_acudiente: string
+      grado_id: number
       curso_id: number
       institucion_id: number
       activo: boolean
@@ -16058,6 +16118,7 @@ export namespace Prisma {
    */
   export interface Prisma__EstudiantesClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    grado<T extends GradosDefaultArgs<ExtArgs> = {}>(args?: Subset<T, GradosDefaultArgs<ExtArgs>>): Prisma__GradosClient<$Result.GetResult<Prisma.$GradosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     curso<T extends CursosDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CursosDefaultArgs<ExtArgs>>): Prisma__CursosClient<$Result.GetResult<Prisma.$CursosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
@@ -16096,6 +16157,7 @@ export namespace Prisma {
     readonly nombre_acudiente: FieldRef<"Estudiantes", 'String'>
     readonly correo_acudiente: FieldRef<"Estudiantes", 'String'>
     readonly telefono_acudiente: FieldRef<"Estudiantes", 'String'>
+    readonly grado_id: FieldRef<"Estudiantes", 'Int'>
     readonly curso_id: FieldRef<"Estudiantes", 'Int'>
     readonly institucion_id: FieldRef<"Estudiantes", 'Int'>
     readonly activo: FieldRef<"Estudiantes", 'Boolean'>
@@ -16690,6 +16752,7 @@ export namespace Prisma {
     nombre_acudiente: 'nombre_acudiente',
     correo_acudiente: 'correo_acudiente',
     telefono_acudiente: 'telefono_acudiente',
+    grado_id: 'grado_id',
     curso_id: 'curso_id',
     institucion_id: 'institucion_id',
     activo: 'activo',
@@ -17151,6 +17214,7 @@ export namespace Prisma {
     updated_at?: DateTimeFilter<"Grados"> | Date | string
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
     cursos?: CursosListRelationFilter
+    estudiantes?: EstudiantesListRelationFilter
     materiaGrados?: MateriaGradosListRelationFilter
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
   }
@@ -17165,6 +17229,7 @@ export namespace Prisma {
     updated_at?: SortOrder
     institucion?: InstitucionesOrderByWithRelationInput
     cursos?: CursosOrderByRelationAggregateInput
+    estudiantes?: EstudiantesOrderByRelationAggregateInput
     materiaGrados?: MateriaGradosOrderByRelationAggregateInput
     docenteAsignaciones?: DocenteAsignacionesOrderByRelationAggregateInput
   }
@@ -17182,6 +17247,7 @@ export namespace Prisma {
     updated_at?: DateTimeFilter<"Grados"> | Date | string
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
     cursos?: CursosListRelationFilter
+    estudiantes?: EstudiantesListRelationFilter
     materiaGrados?: MateriaGradosListRelationFilter
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
   }, "id">
@@ -17676,11 +17742,13 @@ export namespace Prisma {
     nombre_acudiente?: StringFilter<"Estudiantes"> | string
     correo_acudiente?: StringNullableFilter<"Estudiantes"> | string | null
     telefono_acudiente?: StringFilter<"Estudiantes"> | string
+    grado_id?: IntFilter<"Estudiantes"> | number
     curso_id?: IntFilter<"Estudiantes"> | number
     institucion_id?: IntFilter<"Estudiantes"> | number
     activo?: BoolFilter<"Estudiantes"> | boolean
     created_at?: DateTimeFilter<"Estudiantes"> | Date | string
     updated_at?: DateTimeFilter<"Estudiantes"> | Date | string
+    grado?: XOR<GradosScalarRelationFilter, GradosWhereInput>
     curso?: XOR<CursosScalarRelationFilter, CursosWhereInput>
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
   }
@@ -17693,11 +17761,13 @@ export namespace Prisma {
     nombre_acudiente?: SortOrder
     correo_acudiente?: SortOrderInput | SortOrder
     telefono_acudiente?: SortOrder
+    grado_id?: SortOrder
     curso_id?: SortOrder
     institucion_id?: SortOrder
     activo?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
+    grado?: GradosOrderByWithRelationInput
     curso?: CursosOrderByWithRelationInput
     institucion?: InstitucionesOrderByWithRelationInput
   }
@@ -17714,11 +17784,13 @@ export namespace Prisma {
     nombre_acudiente?: StringFilter<"Estudiantes"> | string
     correo_acudiente?: StringNullableFilter<"Estudiantes"> | string | null
     telefono_acudiente?: StringFilter<"Estudiantes"> | string
+    grado_id?: IntFilter<"Estudiantes"> | number
     curso_id?: IntFilter<"Estudiantes"> | number
     institucion_id?: IntFilter<"Estudiantes"> | number
     activo?: BoolFilter<"Estudiantes"> | boolean
     created_at?: DateTimeFilter<"Estudiantes"> | Date | string
     updated_at?: DateTimeFilter<"Estudiantes"> | Date | string
+    grado?: XOR<GradosScalarRelationFilter, GradosWhereInput>
     curso?: XOR<CursosScalarRelationFilter, CursosWhereInput>
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
   }, "id" | "codigo_estudiantil_institucion_id">
@@ -17731,6 +17803,7 @@ export namespace Prisma {
     nombre_acudiente?: SortOrder
     correo_acudiente?: SortOrderInput | SortOrder
     telefono_acudiente?: SortOrder
+    grado_id?: SortOrder
     curso_id?: SortOrder
     institucion_id?: SortOrder
     activo?: SortOrder
@@ -17754,6 +17827,7 @@ export namespace Prisma {
     nombre_acudiente?: StringWithAggregatesFilter<"Estudiantes"> | string
     correo_acudiente?: StringNullableWithAggregatesFilter<"Estudiantes"> | string | null
     telefono_acudiente?: StringWithAggregatesFilter<"Estudiantes"> | string
+    grado_id?: IntWithAggregatesFilter<"Estudiantes"> | number
     curso_id?: IntWithAggregatesFilter<"Estudiantes"> | number
     institucion_id?: IntWithAggregatesFilter<"Estudiantes"> | number
     activo?: BoolWithAggregatesFilter<"Estudiantes"> | boolean
@@ -18141,6 +18215,7 @@ export namespace Prisma {
     updated_at?: Date | string
     institucion: InstitucionesCreateNestedOneWithoutGradosInput
     cursos?: CursosCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
   }
@@ -18154,6 +18229,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
   }
@@ -18166,6 +18242,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     institucion?: InstitucionesUpdateOneRequiredWithoutGradosNestedInput
     cursos?: CursosUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
   }
@@ -18179,6 +18256,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
   }
@@ -18640,6 +18718,7 @@ export namespace Prisma {
     activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    grado: GradosCreateNestedOneWithoutEstudiantesInput
     curso: CursosCreateNestedOneWithoutEstudiantesInput
     institucion: InstitucionesCreateNestedOneWithoutEstudiantesInput
   }
@@ -18652,6 +18731,7 @@ export namespace Prisma {
     nombre_acudiente: string
     correo_acudiente?: string | null
     telefono_acudiente: string
+    grado_id: number
     curso_id: number
     institucion_id: number
     activo?: boolean
@@ -18669,6 +18749,7 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    grado?: GradosUpdateOneRequiredWithoutEstudiantesNestedInput
     curso?: CursosUpdateOneRequiredWithoutEstudiantesNestedInput
     institucion?: InstitucionesUpdateOneRequiredWithoutEstudiantesNestedInput
   }
@@ -18681,6 +18762,7 @@ export namespace Prisma {
     nombre_acudiente?: StringFieldUpdateOperationsInput | string
     correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
     telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
     curso_id?: IntFieldUpdateOperationsInput | number
     institucion_id?: IntFieldUpdateOperationsInput | number
     activo?: BoolFieldUpdateOperationsInput | boolean
@@ -18696,6 +18778,7 @@ export namespace Prisma {
     nombre_acudiente: string
     correo_acudiente?: string | null
     telefono_acudiente: string
+    grado_id: number
     curso_id: number
     institucion_id: number
     activo?: boolean
@@ -18723,6 +18806,7 @@ export namespace Prisma {
     nombre_acudiente?: StringFieldUpdateOperationsInput | string
     correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
     telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
     curso_id?: IntFieldUpdateOperationsInput | number
     institucion_id?: IntFieldUpdateOperationsInput | number
     activo?: BoolFieldUpdateOperationsInput | boolean
@@ -19545,6 +19629,7 @@ export namespace Prisma {
     nombre_acudiente?: SortOrder
     correo_acudiente?: SortOrder
     telefono_acudiente?: SortOrder
+    grado_id?: SortOrder
     curso_id?: SortOrder
     institucion_id?: SortOrder
     activo?: SortOrder
@@ -19554,6 +19639,7 @@ export namespace Prisma {
 
   export type EstudiantesAvgOrderByAggregateInput = {
     id?: SortOrder
+    grado_id?: SortOrder
     curso_id?: SortOrder
     institucion_id?: SortOrder
   }
@@ -19566,6 +19652,7 @@ export namespace Prisma {
     nombre_acudiente?: SortOrder
     correo_acudiente?: SortOrder
     telefono_acudiente?: SortOrder
+    grado_id?: SortOrder
     curso_id?: SortOrder
     institucion_id?: SortOrder
     activo?: SortOrder
@@ -19581,6 +19668,7 @@ export namespace Prisma {
     nombre_acudiente?: SortOrder
     correo_acudiente?: SortOrder
     telefono_acudiente?: SortOrder
+    grado_id?: SortOrder
     curso_id?: SortOrder
     institucion_id?: SortOrder
     activo?: SortOrder
@@ -19590,6 +19678,7 @@ export namespace Prisma {
 
   export type EstudiantesSumOrderByAggregateInput = {
     id?: SortOrder
+    grado_id?: SortOrder
     curso_id?: SortOrder
     institucion_id?: SortOrder
   }
@@ -20163,6 +20252,13 @@ export namespace Prisma {
     connect?: CursosWhereUniqueInput | CursosWhereUniqueInput[]
   }
 
+  export type EstudiantesCreateNestedManyWithoutGradoInput = {
+    create?: XOR<EstudiantesCreateWithoutGradoInput, EstudiantesUncheckedCreateWithoutGradoInput> | EstudiantesCreateWithoutGradoInput[] | EstudiantesUncheckedCreateWithoutGradoInput[]
+    connectOrCreate?: EstudiantesCreateOrConnectWithoutGradoInput | EstudiantesCreateOrConnectWithoutGradoInput[]
+    createMany?: EstudiantesCreateManyGradoInputEnvelope
+    connect?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+  }
+
   export type MateriaGradosCreateNestedManyWithoutGradoInput = {
     create?: XOR<MateriaGradosCreateWithoutGradoInput, MateriaGradosUncheckedCreateWithoutGradoInput> | MateriaGradosCreateWithoutGradoInput[] | MateriaGradosUncheckedCreateWithoutGradoInput[]
     connectOrCreate?: MateriaGradosCreateOrConnectWithoutGradoInput | MateriaGradosCreateOrConnectWithoutGradoInput[]
@@ -20182,6 +20278,13 @@ export namespace Prisma {
     connectOrCreate?: CursosCreateOrConnectWithoutGradoInput | CursosCreateOrConnectWithoutGradoInput[]
     createMany?: CursosCreateManyGradoInputEnvelope
     connect?: CursosWhereUniqueInput | CursosWhereUniqueInput[]
+  }
+
+  export type EstudiantesUncheckedCreateNestedManyWithoutGradoInput = {
+    create?: XOR<EstudiantesCreateWithoutGradoInput, EstudiantesUncheckedCreateWithoutGradoInput> | EstudiantesCreateWithoutGradoInput[] | EstudiantesUncheckedCreateWithoutGradoInput[]
+    connectOrCreate?: EstudiantesCreateOrConnectWithoutGradoInput | EstudiantesCreateOrConnectWithoutGradoInput[]
+    createMany?: EstudiantesCreateManyGradoInputEnvelope
+    connect?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
   }
 
   export type MateriaGradosUncheckedCreateNestedManyWithoutGradoInput = {
@@ -20218,6 +20321,20 @@ export namespace Prisma {
     update?: CursosUpdateWithWhereUniqueWithoutGradoInput | CursosUpdateWithWhereUniqueWithoutGradoInput[]
     updateMany?: CursosUpdateManyWithWhereWithoutGradoInput | CursosUpdateManyWithWhereWithoutGradoInput[]
     deleteMany?: CursosScalarWhereInput | CursosScalarWhereInput[]
+  }
+
+  export type EstudiantesUpdateManyWithoutGradoNestedInput = {
+    create?: XOR<EstudiantesCreateWithoutGradoInput, EstudiantesUncheckedCreateWithoutGradoInput> | EstudiantesCreateWithoutGradoInput[] | EstudiantesUncheckedCreateWithoutGradoInput[]
+    connectOrCreate?: EstudiantesCreateOrConnectWithoutGradoInput | EstudiantesCreateOrConnectWithoutGradoInput[]
+    upsert?: EstudiantesUpsertWithWhereUniqueWithoutGradoInput | EstudiantesUpsertWithWhereUniqueWithoutGradoInput[]
+    createMany?: EstudiantesCreateManyGradoInputEnvelope
+    set?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+    disconnect?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+    delete?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+    connect?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+    update?: EstudiantesUpdateWithWhereUniqueWithoutGradoInput | EstudiantesUpdateWithWhereUniqueWithoutGradoInput[]
+    updateMany?: EstudiantesUpdateManyWithWhereWithoutGradoInput | EstudiantesUpdateManyWithWhereWithoutGradoInput[]
+    deleteMany?: EstudiantesScalarWhereInput | EstudiantesScalarWhereInput[]
   }
 
   export type MateriaGradosUpdateManyWithoutGradoNestedInput = {
@@ -20260,6 +20377,20 @@ export namespace Prisma {
     update?: CursosUpdateWithWhereUniqueWithoutGradoInput | CursosUpdateWithWhereUniqueWithoutGradoInput[]
     updateMany?: CursosUpdateManyWithWhereWithoutGradoInput | CursosUpdateManyWithWhereWithoutGradoInput[]
     deleteMany?: CursosScalarWhereInput | CursosScalarWhereInput[]
+  }
+
+  export type EstudiantesUncheckedUpdateManyWithoutGradoNestedInput = {
+    create?: XOR<EstudiantesCreateWithoutGradoInput, EstudiantesUncheckedCreateWithoutGradoInput> | EstudiantesCreateWithoutGradoInput[] | EstudiantesUncheckedCreateWithoutGradoInput[]
+    connectOrCreate?: EstudiantesCreateOrConnectWithoutGradoInput | EstudiantesCreateOrConnectWithoutGradoInput[]
+    upsert?: EstudiantesUpsertWithWhereUniqueWithoutGradoInput | EstudiantesUpsertWithWhereUniqueWithoutGradoInput[]
+    createMany?: EstudiantesCreateManyGradoInputEnvelope
+    set?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+    disconnect?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+    delete?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+    connect?: EstudiantesWhereUniqueInput | EstudiantesWhereUniqueInput[]
+    update?: EstudiantesUpdateWithWhereUniqueWithoutGradoInput | EstudiantesUpdateWithWhereUniqueWithoutGradoInput[]
+    updateMany?: EstudiantesUpdateManyWithWhereWithoutGradoInput | EstudiantesUpdateManyWithWhereWithoutGradoInput[]
+    deleteMany?: EstudiantesScalarWhereInput | EstudiantesScalarWhereInput[]
   }
 
   export type MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput = {
@@ -20742,6 +20873,12 @@ export namespace Prisma {
     update?: XOR<XOR<MateriasUpdateToOneWithWhereWithoutDocenteAsignacionesInput, MateriasUpdateWithoutDocenteAsignacionesInput>, MateriasUncheckedUpdateWithoutDocenteAsignacionesInput>
   }
 
+  export type GradosCreateNestedOneWithoutEstudiantesInput = {
+    create?: XOR<GradosCreateWithoutEstudiantesInput, GradosUncheckedCreateWithoutEstudiantesInput>
+    connectOrCreate?: GradosCreateOrConnectWithoutEstudiantesInput
+    connect?: GradosWhereUniqueInput
+  }
+
   export type CursosCreateNestedOneWithoutEstudiantesInput = {
     create?: XOR<CursosCreateWithoutEstudiantesInput, CursosUncheckedCreateWithoutEstudiantesInput>
     connectOrCreate?: CursosCreateOrConnectWithoutEstudiantesInput
@@ -20752,6 +20889,14 @@ export namespace Prisma {
     create?: XOR<InstitucionesCreateWithoutEstudiantesInput, InstitucionesUncheckedCreateWithoutEstudiantesInput>
     connectOrCreate?: InstitucionesCreateOrConnectWithoutEstudiantesInput
     connect?: InstitucionesWhereUniqueInput
+  }
+
+  export type GradosUpdateOneRequiredWithoutEstudiantesNestedInput = {
+    create?: XOR<GradosCreateWithoutEstudiantesInput, GradosUncheckedCreateWithoutEstudiantesInput>
+    connectOrCreate?: GradosCreateOrConnectWithoutEstudiantesInput
+    upsert?: GradosUpsertWithoutEstudiantesInput
+    connect?: GradosWhereUniqueInput
+    update?: XOR<XOR<GradosUpdateToOneWithWhereWithoutEstudiantesInput, GradosUpdateWithoutEstudiantesInput>, GradosUncheckedUpdateWithoutEstudiantesInput>
   }
 
   export type CursosUpdateOneRequiredWithoutEstudiantesNestedInput = {
@@ -21021,6 +21166,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     cursos?: CursosCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
   }
@@ -21033,6 +21179,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
   }
@@ -21187,6 +21334,7 @@ export namespace Prisma {
     activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    grado: GradosCreateNestedOneWithoutEstudiantesInput
     curso: CursosCreateNestedOneWithoutEstudiantesInput
   }
 
@@ -21198,6 +21346,7 @@ export namespace Prisma {
     nombre_acudiente: string
     correo_acudiente?: string | null
     telefono_acudiente: string
+    grado_id: number
     curso_id: number
     activo?: boolean
     created_at?: Date | string
@@ -21453,6 +21602,7 @@ export namespace Prisma {
     nombre_acudiente?: StringFilter<"Estudiantes"> | string
     correo_acudiente?: StringNullableFilter<"Estudiantes"> | string | null
     telefono_acudiente?: StringFilter<"Estudiantes"> | string
+    grado_id?: IntFilter<"Estudiantes"> | number
     curso_id?: IntFilter<"Estudiantes"> | number
     institucion_id?: IntFilter<"Estudiantes"> | number
     activo?: BoolFilter<"Estudiantes"> | boolean
@@ -21958,6 +22108,45 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type EstudiantesCreateWithoutGradoInput = {
+    apellidos: string
+    nombres: string
+    codigo_estudiantil: string
+    nombre_acudiente: string
+    correo_acudiente?: string | null
+    telefono_acudiente: string
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    curso: CursosCreateNestedOneWithoutEstudiantesInput
+    institucion: InstitucionesCreateNestedOneWithoutEstudiantesInput
+  }
+
+  export type EstudiantesUncheckedCreateWithoutGradoInput = {
+    id?: number
+    apellidos: string
+    nombres: string
+    codigo_estudiantil: string
+    nombre_acudiente: string
+    correo_acudiente?: string | null
+    telefono_acudiente: string
+    curso_id: number
+    institucion_id: number
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type EstudiantesCreateOrConnectWithoutGradoInput = {
+    where: EstudiantesWhereUniqueInput
+    create: XOR<EstudiantesCreateWithoutGradoInput, EstudiantesUncheckedCreateWithoutGradoInput>
+  }
+
+  export type EstudiantesCreateManyGradoInputEnvelope = {
+    data: EstudiantesCreateManyGradoInput | EstudiantesCreateManyGradoInput[]
+    skipDuplicates?: boolean
+  }
+
   export type MateriaGradosCreateWithoutGradoInput = {
     created_at?: Date | string
     materia: MateriasCreateNestedOneWithoutMateriaGradosInput
@@ -22074,6 +22263,22 @@ export namespace Prisma {
     data: XOR<CursosUpdateManyMutationInput, CursosUncheckedUpdateManyWithoutGradoInput>
   }
 
+  export type EstudiantesUpsertWithWhereUniqueWithoutGradoInput = {
+    where: EstudiantesWhereUniqueInput
+    update: XOR<EstudiantesUpdateWithoutGradoInput, EstudiantesUncheckedUpdateWithoutGradoInput>
+    create: XOR<EstudiantesCreateWithoutGradoInput, EstudiantesUncheckedCreateWithoutGradoInput>
+  }
+
+  export type EstudiantesUpdateWithWhereUniqueWithoutGradoInput = {
+    where: EstudiantesWhereUniqueInput
+    data: XOR<EstudiantesUpdateWithoutGradoInput, EstudiantesUncheckedUpdateWithoutGradoInput>
+  }
+
+  export type EstudiantesUpdateManyWithWhereWithoutGradoInput = {
+    where: EstudiantesScalarWhereInput
+    data: XOR<EstudiantesUpdateManyMutationInput, EstudiantesUncheckedUpdateManyWithoutGradoInput>
+  }
+
   export type MateriaGradosUpsertWithWhereUniqueWithoutGradoInput = {
     where: MateriaGradosWhereUniqueInput
     update: XOR<MateriaGradosUpdateWithoutGradoInput, MateriaGradosUncheckedUpdateWithoutGradoInput>
@@ -22135,6 +22340,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     institucion: InstitucionesCreateNestedOneWithoutGradosInput
+    estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
   }
@@ -22147,6 +22353,7 @@ export namespace Prisma {
     institucion_id: number
     created_at?: Date | string
     updated_at?: Date | string
+    estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
   }
@@ -22240,6 +22447,7 @@ export namespace Prisma {
     activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    grado: GradosCreateNestedOneWithoutEstudiantesInput
     institucion: InstitucionesCreateNestedOneWithoutEstudiantesInput
   }
 
@@ -22251,6 +22459,7 @@ export namespace Prisma {
     nombre_acudiente: string
     correo_acudiente?: string | null
     telefono_acudiente: string
+    grado_id: number
     institucion_id: number
     activo?: boolean
     created_at?: Date | string
@@ -22310,6 +22519,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     institucion?: InstitucionesUpdateOneRequiredWithoutGradosNestedInput
+    estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
   }
@@ -22322,6 +22532,7 @@ export namespace Prisma {
     institucion_id?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
   }
@@ -22861,6 +23072,7 @@ export namespace Prisma {
     updated_at?: Date | string
     institucion: InstitucionesCreateNestedOneWithoutGradosInput
     cursos?: CursosCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
   }
 
@@ -22873,6 +23085,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
   }
 
@@ -22930,6 +23143,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     institucion?: InstitucionesUpdateOneRequiredWithoutGradosNestedInput
     cursos?: CursosUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
   }
 
@@ -22942,6 +23156,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
   }
 
@@ -23186,6 +23401,7 @@ export namespace Prisma {
     updated_at?: Date | string
     institucion: InstitucionesCreateNestedOneWithoutGradosInput
     cursos?: CursosCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
   }
 
@@ -23198,6 +23414,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
   }
 
@@ -23315,6 +23532,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     institucion?: InstitucionesUpdateOneRequiredWithoutGradosNestedInput
     cursos?: CursosUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
   }
 
@@ -23327,6 +23545,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
   }
 
@@ -23392,6 +23611,36 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutMateriaNestedInput
+  }
+
+  export type GradosCreateWithoutEstudiantesInput = {
+    nombre: string
+    nivel: string
+    orden: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    institucion: InstitucionesCreateNestedOneWithoutGradosInput
+    cursos?: CursosCreateNestedManyWithoutGradoInput
+    materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
+    docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
+  }
+
+  export type GradosUncheckedCreateWithoutEstudiantesInput = {
+    id?: number
+    nombre: string
+    nivel: string
+    orden: number
+    institucion_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
+    materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
+    docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
+  }
+
+  export type GradosCreateOrConnectWithoutEstudiantesInput = {
+    where: GradosWhereUniqueInput
+    create: XOR<GradosCreateWithoutEstudiantesInput, GradosUncheckedCreateWithoutEstudiantesInput>
   }
 
   export type CursosCreateWithoutEstudiantesInput = {
@@ -23468,6 +23717,42 @@ export namespace Prisma {
   export type InstitucionesCreateOrConnectWithoutEstudiantesInput = {
     where: InstitucionesWhereUniqueInput
     create: XOR<InstitucionesCreateWithoutEstudiantesInput, InstitucionesUncheckedCreateWithoutEstudiantesInput>
+  }
+
+  export type GradosUpsertWithoutEstudiantesInput = {
+    update: XOR<GradosUpdateWithoutEstudiantesInput, GradosUncheckedUpdateWithoutEstudiantesInput>
+    create: XOR<GradosCreateWithoutEstudiantesInput, GradosUncheckedCreateWithoutEstudiantesInput>
+    where?: GradosWhereInput
+  }
+
+  export type GradosUpdateToOneWithWhereWithoutEstudiantesInput = {
+    where?: GradosWhereInput
+    data: XOR<GradosUpdateWithoutEstudiantesInput, GradosUncheckedUpdateWithoutEstudiantesInput>
+  }
+
+  export type GradosUpdateWithoutEstudiantesInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    nivel?: StringFieldUpdateOperationsInput | string
+    orden?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    institucion?: InstitucionesUpdateOneRequiredWithoutGradosNestedInput
+    cursos?: CursosUpdateManyWithoutGradoNestedInput
+    materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
+  }
+
+  export type GradosUncheckedUpdateWithoutEstudiantesInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    nivel?: StringFieldUpdateOperationsInput | string
+    orden?: IntFieldUpdateOperationsInput | number
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
+    materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
   }
 
   export type CursosUpsertWithoutEstudiantesInput = {
@@ -23638,6 +23923,7 @@ export namespace Prisma {
     nombre_acudiente: string
     correo_acudiente?: string | null
     telefono_acudiente: string
+    grado_id: number
     curso_id: number
     activo?: boolean
     created_at?: Date | string
@@ -23721,6 +24007,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     cursos?: CursosUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
   }
@@ -23733,6 +24020,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
   }
@@ -23887,6 +24175,7 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    grado?: GradosUpdateOneRequiredWithoutEstudiantesNestedInput
     curso?: CursosUpdateOneRequiredWithoutEstudiantesNestedInput
   }
 
@@ -23898,6 +24187,7 @@ export namespace Prisma {
     nombre_acudiente?: StringFieldUpdateOperationsInput | string
     correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
     telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
     curso_id?: IntFieldUpdateOperationsInput | number
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23912,6 +24202,7 @@ export namespace Prisma {
     nombre_acudiente?: StringFieldUpdateOperationsInput | string
     correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
     telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
     curso_id?: IntFieldUpdateOperationsInput | number
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24079,6 +24370,21 @@ export namespace Prisma {
     updated_at?: Date | string
   }
 
+  export type EstudiantesCreateManyGradoInput = {
+    id?: number
+    apellidos: string
+    nombres: string
+    codigo_estudiantil: string
+    nombre_acudiente: string
+    correo_acudiente?: string | null
+    telefono_acudiente: string
+    curso_id: number
+    institucion_id: number
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
   export type MateriaGradosCreateManyGradoInput = {
     id?: number
     materia_id: number
@@ -24122,6 +24428,50 @@ export namespace Prisma {
     jornada?: NullableStringFieldUpdateOperationsInput | string | null
     sede_id?: NullableIntFieldUpdateOperationsInput | number | null
     institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstudiantesUpdateWithoutGradoInput = {
+    apellidos?: StringFieldUpdateOperationsInput | string
+    nombres?: StringFieldUpdateOperationsInput | string
+    codigo_estudiantil?: StringFieldUpdateOperationsInput | string
+    nombre_acudiente?: StringFieldUpdateOperationsInput | string
+    correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    curso?: CursosUpdateOneRequiredWithoutEstudiantesNestedInput
+    institucion?: InstitucionesUpdateOneRequiredWithoutEstudiantesNestedInput
+  }
+
+  export type EstudiantesUncheckedUpdateWithoutGradoInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    apellidos?: StringFieldUpdateOperationsInput | string
+    nombres?: StringFieldUpdateOperationsInput | string
+    codigo_estudiantil?: StringFieldUpdateOperationsInput | string
+    nombre_acudiente?: StringFieldUpdateOperationsInput | string
+    correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    curso_id?: IntFieldUpdateOperationsInput | number
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstudiantesUncheckedUpdateManyWithoutGradoInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    apellidos?: StringFieldUpdateOperationsInput | string
+    nombres?: StringFieldUpdateOperationsInput | string
+    codigo_estudiantil?: StringFieldUpdateOperationsInput | string
+    nombre_acudiente?: StringFieldUpdateOperationsInput | string
+    correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    curso_id?: IntFieldUpdateOperationsInput | number
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -24174,6 +24524,7 @@ export namespace Prisma {
     nombre_acudiente: string
     correo_acudiente?: string | null
     telefono_acudiente: string
+    grado_id: number
     institucion_id: number
     activo?: boolean
     created_at?: Date | string
@@ -24198,6 +24549,7 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    grado?: GradosUpdateOneRequiredWithoutEstudiantesNestedInput
     institucion?: InstitucionesUpdateOneRequiredWithoutEstudiantesNestedInput
   }
 
@@ -24209,6 +24561,7 @@ export namespace Prisma {
     nombre_acudiente?: StringFieldUpdateOperationsInput | string
     correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
     telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
     institucion_id?: IntFieldUpdateOperationsInput | number
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24223,6 +24576,7 @@ export namespace Prisma {
     nombre_acudiente?: StringFieldUpdateOperationsInput | string
     correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
     telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
     institucion_id?: IntFieldUpdateOperationsInput | number
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string

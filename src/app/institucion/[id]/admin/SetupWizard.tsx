@@ -44,6 +44,31 @@ interface DocenteForm {
   password: string;
 }
 
+interface Estudiante {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  codigo_estudiantil: string;
+  nombre_acudiente: string;
+  correo_acudiente: string;
+  telefono_acudiente: string;
+  grado_id: number;
+  curso_id: number;
+  institucion_id: number;
+  activo: boolean;
+}
+
+interface EstudianteForm {
+  nombres: string;
+  apellidos: string;
+  codigo_estudiantil: string;
+  nombre_acudiente: string;
+  correo_acudiente: string;
+  telefono_acudiente: string;
+  grado_id: number;
+  curso_id: number;
+}
+
 interface AsignacionDocente {
   docenteId: number;
   materiaId: number;
@@ -70,6 +95,26 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     email: '',
     password: ''
   });
+  
+  // Estados para estudiantes
+  const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
+  const [estudianteActual, setEstudianteActual] = useState<EstudianteForm>({
+    nombres: '',
+    apellidos: '',
+    codigo_estudiantil: '',
+    nombre_acudiente: '',
+    correo_acudiente: '',
+    telefono_acudiente: '',
+    grado_id: 0,
+    curso_id: 0
+  });
+  
+  // Estados para grados y cursos
+  const [gradosDisponibles, setGradosDisponibles] = useState<any[]>([]);
+  const [cursosDisponibles, setCursosDisponibles] = useState<any[]>([]);
+  const [todosLosCursos, setTodosLosCursos] = useState<any[]>([]); // Para mantener todos los cursos cargados
+  const [cargandoGrados, setCargandoGrados] = useState(false);
+  const [cargandoCursos, setCargandoCursos] = useState(false);
   const [asignacionesDocente, setAsignacionesDocente] = useState<AsignacionDocente[]>([]);
   const [asignacionesPorDocente, setAsignacionesPorDocente] = useState<{[key: number]: {
     asignaciones: {
@@ -140,6 +185,29 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     email: false,
     password: false
   });
+  
+  // Estados de validación para estudiantes
+  const [erroresValidacionEstudiante, setErroresValidacionEstudiante] = useState<{[key: string]: string}>({});
+  const [camposHabilitadosEstudiante, setCamposHabilitadosEstudiante] = useState<{[key: string]: boolean}>({
+    nombres: true,
+    apellidos: false,
+    codigo_estudiantil: false,
+    nombre_acudiente: false,
+    correo_acudiente: false,
+    telefono_acudiente: false,
+    grado_id: false,
+    curso_id: false
+  });
+  const [camposValidadosEstudiante, setCamposValidadosEstudiante] = useState<{[key: string]: boolean}>({
+    nombres: false,
+    apellidos: false,
+    codigo_estudiantil: false,
+    nombre_acudiente: false,
+    correo_acudiente: false,
+    telefono_acudiente: false,
+    grado_id: false,
+    curso_id: false
+  });
   const [verificandoEmail, setVerificandoEmail] = useState(false);
   const [emailVerificado, setEmailVerificado] = useState(false);
 
@@ -159,7 +227,6 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   const [gradosGuardados, setGradosGuardados] = useState<any[]>([]);
   const [cursosGuardados, setCursosGuardados] = useState<any[]>([]);
   const [gradosCargados, setGradosCargados] = useState<any[]>([]);
-  const [cargandoGrados, setCargandoGrados] = useState(false);
 
   // Grados predeterminados
   const gradosPredeterminados = [
@@ -242,6 +309,59 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       console.error('Error cargando grados:', error);
     } finally {
       setCargandoGrados(false);
+    }
+  };
+
+  // Función para cargar grados para estudiantes
+  const cargarGradosEstudiantes = async () => {
+    setCargandoGrados(true);
+    try {
+      const response = await fetch(`/api/setup/grados/${institucionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGradosDisponibles(data.grados);
+        console.log('Grados disponibles para estudiantes:', data.grados);
+      } else {
+        console.error('Error cargando grados para estudiantes');
+      }
+    } catch (error) {
+      console.error('Error cargando grados para estudiantes:', error);
+    } finally {
+      setCargandoGrados(false);
+    }
+  };
+
+  // Función para cargar cursos según el grado seleccionado
+  const cargarCursosPorGrado = async (gradoId: number) => {
+    setCargandoCursos(true);
+    try {
+      const response = await fetch(`/api/setup/grados/${institucionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const grados = data.grados;
+        const gradoSeleccionado = grados.find((g: any) => g.id === gradoId);
+        if (gradoSeleccionado && gradoSeleccionado.cursos) {
+          setCursosDisponibles(gradoSeleccionado.cursos);
+          // Agregar estos cursos a la lista de todos los cursos si no existen
+          setTodosLosCursos(prev => {
+            const cursosExistentes = prev.map(c => c.id);
+            const nuevosCursos = gradoSeleccionado.cursos.filter((curso: any) => !cursosExistentes.includes(curso.id));
+            return [...prev, ...nuevosCursos];
+          });
+          console.log('Cursos disponibles para grado', gradoId, ':', gradoSeleccionado.cursos);
+        } else {
+          setCursosDisponibles([]);
+          console.log('No hay cursos disponibles para el grado seleccionado');
+        }
+      } else {
+        console.error('Error cargando cursos');
+        setCursosDisponibles([]);
+      }
+    } catch (error) {
+      console.error('Error cargando cursos:', error);
+      setCursosDisponibles([]);
+    } finally {
+      setCargandoCursos(false);
     }
   };
 
@@ -402,6 +522,44 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       grados: false,
       materias: false
     });
+  };
+
+  const limpiarFormularioEstudiante = () => {
+    setEstudianteActual({
+      nombres: '',
+      apellidos: '',
+      codigo_estudiantil: '',
+      nombre_acudiente: '',
+      correo_acudiente: '',
+      telefono_acudiente: '',
+      grado_id: 0,
+      curso_id: 0
+    });
+    setErroresValidacionEstudiante({});
+    setCamposHabilitadosEstudiante({
+      nombres: true,
+      apellidos: false,
+      codigo_estudiantil: false,
+      nombre_acudiente: false,
+      correo_acudiente: false,
+      telefono_acudiente: false,
+      grado_id: false,
+      curso_id: false
+    });
+    setCamposValidadosEstudiante({
+      nombres: false,
+      apellidos: false,
+      codigo_estudiantil: false,
+      nombre_acudiente: false,
+      correo_acudiente: false,
+      telefono_acudiente: false,
+      grado_id: false,
+      curso_id: false
+    });
+    setCursosDisponibles([]);
+    // No limpiar todosLosCursos para mantener la referencia a los cursos ya cargados
+    
+    console.log('🧹 Formulario de estudiante limpiado');
   };
 
   // Función para verificar si el email ya existe en Supabase Auth
@@ -803,6 +961,119 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     return false;
   };
 
+  // Función para validar campos de estudiantes
+  const validarCampoEstudiante = async (campo: string, valor: string | number) => {
+    const errores = { ...erroresValidacionEstudiante };
+    const habilitados = { ...camposHabilitadosEstudiante };
+    const validados = { ...camposValidadosEstudiante };
+    
+    switch (campo) {
+      case 'nombres':
+        if (valor && typeof valor === 'string' && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          errores[campo] = 'Solo se permiten letras y espacios';
+          validados[campo] = false;
+        } else if (valor && typeof valor === 'string' && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          delete errores[campo];
+          validados[campo] = true;
+          habilitados.apellidos = true;
+        } else {
+          delete errores[campo];
+          validados[campo] = false;
+        }
+        break;
+      case 'apellidos':
+        if (valor && typeof valor === 'string' && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          errores[campo] = 'Solo se permiten letras y espacios';
+          validados[campo] = false;
+        } else if (valor && typeof valor === 'string' && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          delete errores[campo];
+          validados[campo] = true;
+          habilitados.codigo_estudiantil = true;
+        } else {
+          delete errores[campo];
+          validados[campo] = false;
+        }
+        break;
+      case 'codigo_estudiantil':
+        if (valor && typeof valor === 'string' && valor.trim().length < 3) {
+          errores[campo] = 'Mínimo 3 caracteres';
+          validados[campo] = false;
+        } else if (valor && typeof valor === 'string' && valor.trim().length >= 3) {
+          delete errores[campo];
+          validados[campo] = true;
+          habilitados.nombre_acudiente = true;
+        } else {
+          delete errores[campo];
+          validados[campo] = false;
+        }
+        break;
+      case 'nombre_acudiente':
+        if (valor && typeof valor === 'string' && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          errores[campo] = 'Solo se permiten letras y espacios';
+          validados[campo] = false;
+        } else if (valor && typeof valor === 'string' && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          delete errores[campo];
+          validados[campo] = true;
+          habilitados.correo_acudiente = true;
+        } else {
+          delete errores[campo];
+          validados[campo] = false;
+        }
+        break;
+      case 'correo_acudiente':
+        if (valor && typeof valor === 'string' && !validarEmail(valor.trim())) {
+          errores[campo] = 'Formato de email inválido';
+          validados[campo] = false;
+        } else if (valor && typeof valor === 'string' && validarEmail(valor.trim())) {
+          delete errores[campo];
+          validados[campo] = true;
+          habilitados.telefono_acudiente = true;
+        } else {
+          delete errores[campo];
+          validados[campo] = false;
+        }
+        break;
+      case 'telefono_acudiente':
+        if (valor && typeof valor === 'string' && !validarTelefonoColombiano(valor.trim())) {
+          errores[campo] = 'Número de celular colombiano inválido';
+          validados[campo] = false;
+        } else if (valor && typeof valor === 'string' && validarTelefonoColombiano(valor.trim())) {
+          delete errores[campo];
+          validados[campo] = true;
+          habilitados.grado_id = true;
+        } else {
+          delete errores[campo];
+          validados[campo] = false;
+        }
+        break;
+      case 'grado_id':
+        if (valor && typeof valor === 'number' && valor > 0) {
+          delete errores[campo];
+          validados[campo] = true;
+          habilitados.curso_id = true;
+          // Cargar cursos cuando se selecciona un grado
+          cargarCursosPorGrado(valor);
+        } else {
+          delete errores[campo];
+          validados[campo] = false;
+        }
+        break;
+      case 'curso_id':
+        if (valor && typeof valor === 'number' && valor > 0) {
+          delete errores[campo];
+          validados[campo] = true;
+        } else {
+          delete errores[campo];
+          validados[campo] = false;
+        }
+        break;
+    }
+    
+    setErroresValidacionEstudiante(errores);
+    setCamposHabilitadosEstudiante(habilitados);
+    setCamposValidadosEstudiante(validados);
+  };
+
   // Función para agregar docente
   const handleAgregarDocente = () => {
     // Validaciones básicas
@@ -900,6 +1171,76 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     }
   };
 
+  // Función para agregar estudiante
+  const handleAgregarEstudiante = () => {
+    // Validaciones básicas
+    if (!estudianteActual.nombres.trim() || !estudianteActual.apellidos.trim() || 
+        !estudianteActual.codigo_estudiantil.trim() || !estudianteActual.nombre_acudiente.trim() ||
+        !estudianteActual.correo_acudiente.trim() || !estudianteActual.telefono_acudiente.trim() ||
+        estudianteActual.grado_id === 0 || estudianteActual.curso_id === 0) {
+      alert('❌ Por favor completa todos los campos');
+      return;
+    }
+
+    // Validar email del acudiente
+    if (!validarEmail(estudianteActual.correo_acudiente.trim())) {
+      alert('❌ Por favor ingresa un email válido para el acudiente');
+      return;
+    }
+
+    // Validar teléfono del acudiente
+    if (!validarTelefonoColombiano(estudianteActual.telefono_acudiente.trim())) {
+      alert('❌ Por favor ingresa un número de celular colombiano válido para el acudiente');
+      return;
+    }
+
+    // Verificar que no haya errores de validación
+    if (Object.keys(erroresValidacionEstudiante).length > 0) {
+      alert('❌ Por favor corrige los errores antes de continuar');
+      return;
+    }
+
+    // Verificar que no exista un estudiante con el mismo código
+    const estudianteExistente = estudiantes.find(e => e.codigo_estudiantil === estudianteActual.codigo_estudiantil.trim());
+    if (estudianteExistente) {
+      alert('❌ Ya existe un estudiante con este código');
+      return;
+    }
+
+    // Crear nuevo estudiante
+    const nuevoEstudiante: Estudiante = {
+      id: Date.now(), // ID temporal
+      nombres: estudianteActual.nombres.trim(),
+      apellidos: estudianteActual.apellidos.trim(),
+      codigo_estudiantil: estudianteActual.codigo_estudiantil.trim(),
+      nombre_acudiente: estudianteActual.nombre_acudiente.trim(),
+      correo_acudiente: estudianteActual.correo_acudiente.trim().toLowerCase(),
+      telefono_acudiente: estudianteActual.telefono_acudiente.trim(),
+      grado_id: estudianteActual.grado_id,
+      curso_id: estudianteActual.curso_id,
+      institucion_id: institucionId,
+      activo: true
+    };
+
+    // Agregar a la lista
+    setEstudiantes([...estudiantes, nuevoEstudiante]);
+    
+    limpiarFormularioEstudiante();
+    alert('✅ Estudiante agregado correctamente');
+  };
+
+  // Función para eliminar un estudiante de la lista
+  const eliminarEstudiante = (estudianteId: number) => {
+    // Confirmar eliminación
+    if (confirm('¿Estás seguro de que quieres eliminar este estudiante?')) {
+      // Remover de la lista de estudiantes
+      setEstudiantes(prev => prev.filter(e => e.id !== estudianteId));
+      
+      console.log(`🗑️ Estudiante eliminado: ${estudianteId}`);
+      alert('✅ Estudiante eliminado correctamente');
+    }
+  };
+
   // Función para alternar la expansión de asignaciones
   const toggleAsignaciones = (docenteId: number) => {
     setAsignacionesExpandidas(prev => ({
@@ -948,13 +1289,48 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         const password = generarPasswordAleatoria();
         
         // Obtener asignaciones del docente desde las asignaciones guardadas
-        const asignaciones = asignacionesPorDocente[docente.id] || {
+        const asignacionesRaw = asignacionesPorDocente[docente.id] || { asignaciones: [] };
+        
+        console.log('Asignaciones raw para este docente:', asignacionesRaw);
+        
+        // Convertir asignacionesGradoCurso a la estructura esperada por el backend
+        const asignaciones = {
           grados: [],
           cursos: {},
           materias: {}
         };
         
-        console.log('Asignaciones para este docente:', asignaciones);
+        // Procesar cada asignación grado-curso
+        asignacionesRaw.asignaciones.forEach(asignacion => {
+          const gradoId = asignacion.gradoId;
+          const cursoId = asignacion.cursoId;
+          const materiaIds = asignacion.materiasSeleccionadas;
+          
+          // Agregar grado si no existe
+          if (!asignaciones.grados.includes(gradoId)) {
+            asignaciones.grados.push(gradoId);
+          }
+          
+          // Agregar curso al grado
+          if (!asignaciones.cursos[gradoId]) {
+            asignaciones.cursos[gradoId] = [];
+          }
+          if (!asignaciones.cursos[gradoId].includes(cursoId)) {
+            asignaciones.cursos[gradoId].push(cursoId);
+          }
+          
+          // Agregar materias al grado
+          if (!asignaciones.materias[gradoId]) {
+            asignaciones.materias[gradoId] = [];
+          }
+          materiaIds.forEach(materiaId => {
+            if (!asignaciones.materias[gradoId].includes(materiaId)) {
+              asignaciones.materias[gradoId].push(materiaId);
+            }
+          });
+        });
+        
+        console.log('Asignaciones procesadas para este docente:', asignaciones);
         
         const datosAEnviar = {
           institucionId,
@@ -1007,6 +1383,78 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         setCurrentStep(4);
       } else {
         alert('❌ No se pudo crear ningún docente. Revisa los errores mostrados.');
+      }
+      
+    } catch (error) {
+      console.error('Error de conexión:', error);
+      alert('❌ Error de conexión: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Función para guardar estudiantes
+  const guardarEstudiantes = async () => {
+    setSaving(true);
+    try {
+      console.log('=== GUARDANDO ESTUDIANTES ===');
+      console.log('Estudiantes a guardar:', estudiantes.length);
+      console.log('Institución ID:', institucionId);
+      console.log('Estudiantes completos:', estudiantes);
+
+      // Procesar cada estudiante individualmente
+      const resultados = [];
+      
+      for (let i = 0; i < estudiantes.length; i++) {
+        const estudiante = estudiantes[i];
+        
+        console.log(`=== PROCESANDO ESTUDIANTE ${i + 1}/${estudiantes.length} ===`);
+        console.log('Estudiante:', estudiante);
+        
+        const datosAEnviar = {
+          institucionId,
+          estudiantes: [estudiante]
+        };
+
+        console.log('Datos que se envían:', JSON.stringify(datosAEnviar, null, 2));
+
+        const response = await fetch('/api/setup/estudiantes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datosAEnviar)
+        });
+        
+        console.log('Status de respuesta:', response.status);
+        
+        const responseData = await response.json();
+        console.log('Respuesta del servidor:', responseData);
+        
+        resultados.push({
+          estudiante: estudiante.codigo_estudiantil,
+          success: response.ok,
+          data: responseData
+        });
+        
+        if (!response.ok) {
+          console.error(`Error guardando estudiante ${estudiante.codigo_estudiantil}:`, responseData);
+          alert(`❌ Error guardando ${estudiante.nombres} ${estudiante.apellidos}: ${responseData.error || responseData.details || 'Error desconocido'}`);
+        }
+      }
+      
+      // Resumir resultados
+      const exitosos = resultados.filter(r => r.success).length;
+      const fallidos = resultados.filter(r => !r.success).length;
+      
+      console.log('=== RESUMEN DE RESULTADOS ===');
+      console.log('Exitosos:', exitosos);
+      console.log('Fallidos:', fallidos);
+      
+      if (exitosos > 0) {
+        alert(`✅ Se crearon ${exitosos} estudiante(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}`);
+        // Avanzar al siguiente paso solo si se crearon estudiantes exitosamente
+        setCurrentStep(5);
+      } else {
+        alert('❌ No se pudo crear ningún estudiante. Revisa los errores mostrados.');
       }
       
     } catch (error) {
@@ -1194,6 +1642,12 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   useEffect(() => {
     if (currentStep === 3 && areasCargadas.length === 0) {
       cargarAreasMaterias();
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (currentStep === 4 && gradosDisponibles.length === 0) {
+      cargarGradosEstudiantes();
     }
   }, [currentStep]);
 
@@ -2149,14 +2603,17 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                       type="tel"
                       value={docenteActual.telefono}
                       onChange={(e) => {
-                        setDocenteActual(prev => ({ ...prev, telefono: e.target.value }));
-                        validarCampo('telefono', e.target.value);
+                        // Filtrar solo números
+                        const valorNumerico = e.target.value.replace(/[^0-9]/g, '');
+                        setDocenteActual(prev => ({ ...prev, telefono: valorNumerico }));
+                        validarCampo('telefono', valorNumerico);
                       }}
                       disabled={!camposHabilitados.telefono}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
                         erroresValidacion.telefono ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitados.telefono ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="3001234567"
+                      maxLength={12}
                     />
                     {erroresValidacion.telefono && (
                       <p className="text-red-500 text-xs mt-1">{erroresValidacion.telefono}</p>
@@ -2799,12 +3256,385 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
           {currentStep === 4 && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
-                Paso 4: Estudiantes
-              </h3>
-              <p className="text-slate-600">
-                En construcción...
-              </p>
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
+                  Paso 4: Creación de Estudiantes
+                </h3>
+                <p className="text-slate-600">
+                  Crea los estudiantes y asígnalos a los grados y cursos correspondientes
+                </p>
+              </div>
+
+              {/* Formulario de Estudiante */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                  Agregar Estudiante
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Nombres */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Nombres del Estudiante *
+                    </label>
+                    <input
+                      type="text"
+                      value={estudianteActual.nombres}
+                      onChange={(e) => {
+                        setEstudianteActual(prev => ({ ...prev, nombres: e.target.value }));
+                        validarCampoEstudiante('nombres', e.target.value);
+                      }}
+                      disabled={!camposHabilitadosEstudiante.nombres}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        erroresValidacionEstudiante.nombres ? 'border-red-500' : 'border-slate-300'
+                      } ${!camposHabilitadosEstudiante.nombres ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="Ingresa los nombres"
+                    />
+                    {erroresValidacionEstudiante.nombres && (
+                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.nombres}</p>
+                    )}
+                    {camposValidadosEstudiante.nombres && !erroresValidacionEstudiante.nombres && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        ✓ Válido
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Apellidos */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Apellidos del Estudiante *
+                    </label>
+                    <input
+                      type="text"
+                      value={estudianteActual.apellidos}
+                      onChange={(e) => {
+                        setEstudianteActual(prev => ({ ...prev, apellidos: e.target.value }));
+                        validarCampoEstudiante('apellidos', e.target.value);
+                      }}
+                      disabled={!camposHabilitadosEstudiante.apellidos}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        erroresValidacionEstudiante.apellidos ? 'border-red-500' : 'border-slate-300'
+                      } ${!camposHabilitadosEstudiante.apellidos ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="Ingresa los apellidos"
+                    />
+                    {erroresValidacionEstudiante.apellidos && (
+                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.apellidos}</p>
+                    )}
+                    {camposValidadosEstudiante.apellidos && !erroresValidacionEstudiante.apellidos && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        ✓ Válido
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Código del Estudiante */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Código del Estudiante *
+                    </label>
+                    <input
+                      type="text"
+                      value={estudianteActual.codigo_estudiantil}
+                      onChange={(e) => {
+                        setEstudianteActual(prev => ({ ...prev, codigo_estudiantil: e.target.value }));
+                        validarCampoEstudiante('codigo_estudiantil', e.target.value);
+                      }}
+                      disabled={!camposHabilitadosEstudiante.codigo_estudiantil}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        erroresValidacionEstudiante.codigo_estudiantil ? 'border-red-500' : 'border-slate-300'
+                      } ${!camposHabilitadosEstudiante.codigo_estudiantil ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="Ej: EST001"
+                    />
+                    {erroresValidacionEstudiante.codigo_estudiantil && (
+                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.codigo_estudiantil}</p>
+                    )}
+                    {camposValidadosEstudiante.codigo_estudiantil && !erroresValidacionEstudiante.codigo_estudiantil && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        ✓ Válido
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Nombre del Acudiente */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Nombre del Acudiente *
+                    </label>
+                    <input
+                      type="text"
+                      value={estudianteActual.nombre_acudiente}
+                      onChange={(e) => {
+                        setEstudianteActual(prev => ({ ...prev, nombre_acudiente: e.target.value }));
+                        validarCampoEstudiante('nombre_acudiente', e.target.value);
+                      }}
+                      disabled={!camposHabilitadosEstudiante.nombre_acudiente}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        erroresValidacionEstudiante.nombre_acudiente ? 'border-red-500' : 'border-slate-300'
+                      } ${!camposHabilitadosEstudiante.nombre_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="Nombre completo del acudiente"
+                    />
+                    {erroresValidacionEstudiante.nombre_acudiente && (
+                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.nombre_acudiente}</p>
+                    )}
+                    {camposValidadosEstudiante.nombre_acudiente && !erroresValidacionEstudiante.nombre_acudiente && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        ✓ Válido
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Correo del Acudiente */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Correo del Acudiente *
+                    </label>
+                    <input
+                      type="email"
+                      value={estudianteActual.correo_acudiente}
+                      onChange={(e) => {
+                        setEstudianteActual(prev => ({ ...prev, correo_acudiente: e.target.value }));
+                        validarCampoEstudiante('correo_acudiente', e.target.value);
+                      }}
+                      disabled={!camposHabilitadosEstudiante.correo_acudiente}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        erroresValidacionEstudiante.correo_acudiente ? 'border-red-500' : 'border-slate-300'
+                      } ${!camposHabilitadosEstudiante.correo_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="correo@ejemplo.com"
+                    />
+                    {erroresValidacionEstudiante.correo_acudiente && (
+                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.correo_acudiente}</p>
+                    )}
+                    {camposValidadosEstudiante.correo_acudiente && !erroresValidacionEstudiante.correo_acudiente && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        ✓ Válido
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Teléfono del Acudiente */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Teléfono del Acudiente *
+                    </label>
+                    <input
+                      type="tel"
+                      value={estudianteActual.telefono_acudiente}
+                      onChange={(e) => {
+                        // Filtrar solo números
+                        const valorNumerico = e.target.value.replace(/[^0-9]/g, '');
+                        setEstudianteActual(prev => ({ ...prev, telefono_acudiente: valorNumerico }));
+                        validarCampoEstudiante('telefono_acudiente', valorNumerico);
+                      }}
+                      disabled={!camposHabilitadosEstudiante.telefono_acudiente}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        erroresValidacionEstudiante.telefono_acudiente ? 'border-red-500' : 'border-slate-300'
+                      } ${!camposHabilitadosEstudiante.telefono_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="3001234567"
+                      maxLength={12}
+                    />
+                    {erroresValidacionEstudiante.telefono_acudiente && (
+                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.telefono_acudiente}</p>
+                    )}
+                    {camposValidadosEstudiante.telefono_acudiente && !erroresValidacionEstudiante.telefono_acudiente && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        ✓ Válido
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Grado */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Grado *
+                    </label>
+                    <select
+                      value={estudianteActual.grado_id}
+                      onChange={(e) => {
+                        const gradoId = parseInt(e.target.value);
+                        setEstudianteActual(prev => ({ ...prev, grado_id: gradoId, curso_id: 0 }));
+                        validarCampoEstudiante('grado_id', gradoId);
+                      }}
+                      disabled={!camposHabilitadosEstudiante.grado_id}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        erroresValidacionEstudiante.grado_id ? 'border-red-500' : 'border-slate-300'
+                      } ${!camposHabilitadosEstudiante.grado_id ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value={0}>Selecciona un grado</option>
+                      {gradosDisponibles.map((grado) => (
+                        <option key={grado.id} value={grado.id}>
+                          {grado.nombre} - {grado.nivel}
+                        </option>
+                      ))}
+                    </select>
+                    {erroresValidacionEstudiante.grado_id && (
+                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.grado_id}</p>
+                    )}
+                    {camposValidadosEstudiante.grado_id && !erroresValidacionEstudiante.grado_id && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        ✓ Válido
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Curso */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Curso *
+                    </label>
+                    <select
+                      value={estudianteActual.curso_id}
+                      onChange={(e) => {
+                        const cursoId = parseInt(e.target.value);
+                        setEstudianteActual(prev => ({ ...prev, curso_id: cursoId }));
+                        validarCampoEstudiante('curso_id', cursoId);
+                      }}
+                      disabled={!camposHabilitadosEstudiante.curso_id || cursosDisponibles.length === 0}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        erroresValidacionEstudiante.curso_id ? 'border-red-500' : 'border-slate-300'
+                      } ${!camposHabilitadosEstudiante.curso_id || cursosDisponibles.length === 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value={0}>
+                        {cursosDisponibles.length === 0 ? 'Selecciona un grado primero' : 'Selecciona un curso'}
+                      </option>
+                      {cursosDisponibles.map((curso) => (
+                        <option key={curso.id} value={curso.id}>
+                          {curso.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    {erroresValidacionEstudiante.curso_id && (
+                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.curso_id}</p>
+                    )}
+                    {camposValidadosEstudiante.curso_id && !erroresValidacionEstudiante.curso_id && (
+                      <p className="text-green-600 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        ✓ Válido
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Botones */}
+                <div className="flex justify-between items-center mt-6">
+                  <button
+                    onClick={limpiarFormularioEstudiante}
+                    className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                  >
+                    Limpiar formulario
+                  </button>
+                  <button
+                    onClick={handleAgregarEstudiante}
+                    disabled={Object.keys(erroresValidacionEstudiante).length > 0}
+                    className={`px-6 py-2 rounded-lg transition-colors flex items-center ${
+                      Object.keys(erroresValidacionEstudiante).length > 0
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Agregar Estudiante
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de Estudiantes */}
+              {estudiantes.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                    Estudiantes Agregados ({estudiantes.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {estudiantes.map((estudiante) => (
+                      <div key={estudiante.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <div>
+                              <p className="font-medium text-slate-900">
+                                {estudiante.nombres} {estudiante.apellidos}
+                              </p>
+                              <p className="text-sm text-slate-600">
+                                Código: {estudiante.codigo_estudiantil} | 
+                                Acudiente: {estudiante.nombre_acudiente} | 
+                                Tel: {estudiante.telefono_acudiente}
+                              </p>
+                              <p className="text-sm text-slate-500">
+                                Grado: {gradosDisponibles.find(g => g.id === estudiante.grado_id)?.nombre || 'N/A'} | 
+                                Curso: {todosLosCursos.find(c => c.id === estudiante.curso_id)?.nombre || 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => eliminarEstudiante(estudiante.id)}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Botón para guardar estudiantes */}
+              {estudiantes.length > 0 && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={guardarEstudiantes}
+                    disabled={saving}
+                    className={`px-8 py-3 rounded-lg transition-colors flex items-center text-lg font-medium ${
+                      saving
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    {saving ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Guardar {estudiantes.length} Estudiante{estudiantes.length !== 1 ? 's' : ''}
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
