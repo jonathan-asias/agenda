@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ViewDocenteModal from './modals/ViewDocenteModal';
 import EditDocenteModal from './modals/EditDocenteModal';
 import DeleteDocenteModal from './modals/DeleteDocenteModal';
@@ -121,6 +121,16 @@ export default function DashboardSections({
   const [showDeleteEstudianteModal, setShowDeleteEstudianteModal] = useState(false);
   const [deletingEstudiante, setDeletingEstudiante] = useState<Estudiante | null>(null);
 
+  // Estados para filtros de estudiantes
+  const [filtrosEstudiantes, setFiltrosEstudiantes] = useState({
+    grado: '',
+    curso: '',
+    estado: '',
+    acudiente: '',
+    codigo: ''
+  });
+  const [estudiantesFiltrados, setEstudiantesFiltrados] = useState<Estudiante[]>([]);
+
   const handleViewDocente = (docente: Docente) => {
     setSelectedDocente(docente);
     setShowViewModal(true);
@@ -201,6 +211,100 @@ export default function DashboardSections({
     // Recargar la página para actualizar los datos
     window.location.reload();
   };
+
+  // Función para aplicar filtros a estudiantes
+  const aplicarFiltrosEstudiantes = () => {
+    let estudiantesFiltrados = [...estudiantes];
+
+    // Debug: Mostrar información de estudiantes y filtros
+    console.log('🔍 Debug Filtros Estudiantes:');
+    console.log('Filtros aplicados:', filtrosEstudiantes);
+    console.log('Total estudiantes:', estudiantes.length);
+    console.log('Primer estudiante:', estudiantes[0]);
+
+    // Filtro por grado
+    if (filtrosEstudiantes.grado) {
+      console.log('🎯 Aplicando filtro por grado:', filtrosEstudiantes.grado);
+      const antes = estudiantesFiltrados.length;
+      estudiantesFiltrados = estudiantesFiltrados.filter(
+        estudiante => {
+          const gradoId = estudiante.grado_id;
+          const coincide = gradoId && gradoId.toString() === filtrosEstudiantes.grado;
+          console.log(`Estudiante ${estudiante.nombres}: grado_id=${gradoId}, coincide=${coincide}`);
+          return coincide;
+        }
+      );
+      console.log(`Filtro grado: ${antes} -> ${estudiantesFiltrados.length}`);
+    }
+
+    // Filtro por curso
+    if (filtrosEstudiantes.curso) {
+      console.log('🎯 Aplicando filtro por curso:', filtrosEstudiantes.curso);
+      const antes = estudiantesFiltrados.length;
+      estudiantesFiltrados = estudiantesFiltrados.filter(
+        estudiante => {
+          const cursoId = estudiante.curso_id;
+          const coincide = cursoId && cursoId.toString() === filtrosEstudiantes.curso;
+          console.log(`Estudiante ${estudiante.nombres}: curso_id=${cursoId}, coincide=${coincide}`);
+          return coincide;
+        }
+      );
+      console.log(`Filtro curso: ${antes} -> ${estudiantesFiltrados.length}`);
+    }
+
+    // Filtro por estado
+    if (filtrosEstudiantes.estado) {
+      const esActivo = filtrosEstudiantes.estado === 'activo';
+      estudiantesFiltrados = estudiantesFiltrados.filter(
+        estudiante => estudiante.activo === esActivo
+      );
+    }
+
+    // Filtro por acudiente
+    if (filtrosEstudiantes.acudiente) {
+      estudiantesFiltrados = estudiantesFiltrados.filter(
+        estudiante => 
+          estudiante.nombre_acudiente.toLowerCase().includes(filtrosEstudiantes.acudiente.toLowerCase())
+      );
+    }
+
+    // Filtro por código
+    if (filtrosEstudiantes.codigo) {
+      estudiantesFiltrados = estudiantesFiltrados.filter(
+        estudiante => 
+          estudiante.codigo_estudiantil.toLowerCase().includes(filtrosEstudiantes.codigo.toLowerCase())
+      );
+    }
+
+    console.log('📊 Resultado final:', estudiantesFiltrados.length, 'estudiantes filtrados');
+    console.log('Estudiantes filtrados:', estudiantesFiltrados);
+    setEstudiantesFiltrados(estudiantesFiltrados);
+  };
+
+  // Función para limpiar filtros
+  const limpiarFiltrosEstudiantes = () => {
+    setFiltrosEstudiantes({
+      grado: '',
+      curso: '',
+      estado: '',
+      acudiente: '',
+      codigo: ''
+    });
+    setEstudiantesFiltrados([]);
+  };
+
+  // Función para manejar cambios en filtros
+  const handleFiltroChange = (campo: string, valor: string) => {
+    setFiltrosEstudiantes(prev => ({
+      ...prev,
+      [campo]: valor
+    }));
+  };
+
+  // Aplicar filtros automáticamente cuando cambien
+  useEffect(() => {
+    aplicarFiltrosEstudiantes();
+  }, [filtrosEstudiantes, estudiantes]);
 
   return (
     <div className="space-y-8">
@@ -465,12 +569,122 @@ export default function DashboardSections({
             Estudiantes ({estudiantes.length})
           </h3>
         </div>
+        
+        {/* Filtros de Estudiantes */}
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Filtro por Grado */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Grado</label>
+              <select
+                value={filtrosEstudiantes.grado}
+                onChange={(e) => handleFiltroChange('grado', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+              >
+                <option value="">Todos los grados</option>
+                {grados.map((grado) => (
+                  <option key={grado.id} value={grado.id.toString()}>
+                    {grado.nombre} - {grado.nivel}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por Curso */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Curso</label>
+              <select
+                value={filtrosEstudiantes.curso}
+                onChange={(e) => handleFiltroChange('curso', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+              >
+                <option value="">Todos los cursos</option>
+                {cursos.map((curso) => (
+                  <option key={curso.id} value={curso.id.toString()}>
+                    {curso.nombre} {curso.jornada ? `(${curso.jornada})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por Estado */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+              <select
+                value={filtrosEstudiantes.estado}
+                onChange={(e) => handleFiltroChange('estado', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+              >
+                <option value="">Todos los estados</option>
+                <option value="activo">Activos</option>
+                <option value="inactivo">Inactivos</option>
+              </select>
+            </div>
+
+            {/* Filtro por Acudiente */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Acudiente</label>
+              <input
+                type="text"
+                placeholder="Buscar por acudiente..."
+                value={filtrosEstudiantes.acudiente}
+                onChange={(e) => handleFiltroChange('acudiente', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+              />
+            </div>
+
+            {/* Filtro por Código */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Código</label>
+              <input
+                type="text"
+                placeholder="Buscar por código..."
+                value={filtrosEstudiantes.codigo}
+                onChange={(e) => handleFiltroChange('codigo', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+              />
+            </div>
+          </div>
+
+          {/* Botón para limpiar filtros */}
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={limpiarFiltrosEstudiantes}
+              className="px-4 py-2 text-sm bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Limpiar filtros
+            </button>
+          </div>
+        </div>
+
         <div className="p-6">
           {estudiantes.length === 0 ? (
             <p className="text-slate-500 text-center py-4">No hay estudiantes registrados</p>
           ) : (
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {estudiantes.map((estudiante) => (
+            <>
+              {/* Mensaje cuando hay filtros pero no hay resultados */}
+              {estudiantesFiltrados.length === 0 && (filtrosEstudiantes.grado || filtrosEstudiantes.curso || filtrosEstudiantes.estado || filtrosEstudiantes.acudiente || filtrosEstudiantes.codigo) ? (
+                <div className="text-center py-8">
+                  <svg className="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-slate-900">No se encontraron estudiantes</h3>
+                  <p className="mt-1 text-sm text-slate-500">Intenta ajustar los filtros de búsqueda</p>
+                  <div className="mt-4">
+                    <button
+                      onClick={limpiarFiltrosEstudiantes}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-pink-600 bg-pink-100 hover:bg-pink-200"
+                    >
+                      Limpiar filtros
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {(estudiantesFiltrados.length > 0 ? estudiantesFiltrados : estudiantes).map((estudiante) => (
                 <div key={estudiante.id} className="p-4 bg-slate-50 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -517,8 +731,10 @@ export default function DashboardSections({
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
