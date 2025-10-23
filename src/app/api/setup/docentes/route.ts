@@ -200,6 +200,41 @@ export async function POST(request: NextRequest) {
               
               asignacionesCreadas = asignacionesCreadasResult.count;
               console.log(`Asignaciones creadas para docente ${docenteCreado.id}: ${asignacionesCreadas}`);
+              
+              // Crear relaciones MateriaGrados para que las materias aparezcan asignadas a grados
+              console.log('=== CREANDO RELACIONES MATERIA-GRADOS ===');
+              const materiaGradosData = [];
+              
+              // Para cada grado seleccionado
+              asignaciones.grados.forEach(gradoId => {
+                const materias = asignaciones.materias[gradoId] || [];
+                console.log(`Procesando grado ${gradoId} con materias:`, materias);
+                
+                // Para cada materia del grado, crear relación con el grado
+                materias.forEach(materiaId => {
+                  materiaGradosData.push({
+                    materia_id: materiaId,
+                    grado_id: gradoId
+                  });
+                });
+              });
+              
+              console.log('Relaciones MateriaGrados a crear:', JSON.stringify(materiaGradosData, null, 2));
+              
+              if (materiaGradosData.length > 0) {
+                try {
+                  const materiaGradosCreadas = await prisma.materiaGrados.createMany({
+                    data: materiaGradosData,
+                    skipDuplicates: true
+                  });
+                  
+                  console.log(`Relaciones MateriaGrados creadas: ${materiaGradosCreadas.count}`);
+                } catch (materiaGradosError) {
+                  console.error('Error creando relaciones MateriaGrados:', materiaGradosError);
+                  console.error('Stack trace del error de MateriaGrados:', materiaGradosError instanceof Error ? materiaGradosError.stack : 'No stack trace');
+                  // No fallar por error en MateriaGrados, pero registrar el error
+                }
+              }
             } catch (asignError) {
               console.error('Error creando asignaciones:', asignError);
               console.error('Stack trace del error de asignaciones:', asignError instanceof Error ? asignError.stack : 'No stack trace');

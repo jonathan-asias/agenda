@@ -1,40 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '../../../../../generated/prisma';
+
+const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { institucionId: string } }
+  { params }: { params: Promise<{ institucionId: string }> }
 ) {
   try {
-    const institucionId = parseInt(params.institucionId);
+    const { institucionId } = await params;
+    const id = parseInt(institucionId);
 
-    if (isNaN(institucionId)) {
+    if (isNaN(id)) {
       return NextResponse.json(
-        { success: false, error: 'ID de institución inválido' },
+        { error: 'ID de institución inválido' },
         { status: 400 }
       );
     }
 
-    // Buscar áreas de la institución
     const areas = await prisma.areas.findMany({
-      where: { institucion_id: institucionId },
-      orderBy: { nombre: 'asc' }
+      where: { institucion_id: id },
+      orderBy: { orden: 'asc' }
     });
 
-    return NextResponse.json({
-      success: true,
-      areas: areas
-    });
+    return NextResponse.json({ areas });
 
   } catch (error) {
-    console.error('Error cargando áreas:', error);
+    console.error('Error fetching areas:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido'
-      },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

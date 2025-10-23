@@ -562,6 +562,114 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     console.log('🧹 Formulario de estudiante limpiado');
   };
 
+  // Función para limpiar todos los datos en caché al finalizar la configuración
+  const limpiarDatosCompletos = () => {
+    console.log('🧹 Limpiando todos los datos en caché...');
+    
+    // Limpiar datos de docentes
+    setDocentes([]);
+    setDocenteActual({
+      nombres: '',
+      apellidos: '',
+      telefono: '',
+      email: '',
+      password: ''
+    });
+    setAsignacionesDocente([]);
+    setAsignacionesPorDocente({});
+    
+    // Limpiar datos de estudiantes
+    setEstudiantes([]);
+    setEstudianteActual({
+      nombres: '',
+      apellidos: '',
+      codigo_estudiantil: '',
+      nombre_acudiente: '',
+      correo_acudiente: '',
+      telefono_acudiente: '',
+      grado_id: 0,
+      curso_id: 0
+    });
+    setGradosDisponibles([]);
+    setCursosDisponibles([]);
+    setTodosLosCursos([]);
+    
+    // Limpiar datos de materias y grados
+    setMaterias([]);
+    setMateriasGradosCargados([]);
+    setGradosGuardados([]);
+    setCursosGuardados([]);
+    setGradosCargados([]);
+    
+    // Limpiar estados de validación
+    setErroresValidacion({
+      nombres: '',
+      apellidos: '',
+      telefono: '',
+      email: '',
+      password: ''
+    });
+    setCamposHabilitados({
+      nombres: false,
+      apellidos: false,
+      telefono: false,
+      email: false,
+      password: false
+    });
+    setCamposValidados({
+      nombres: false,
+      apellidos: false,
+      telefono: false,
+      email: false,
+      password: false
+    });
+    
+    setErroresValidacionEstudiante({
+      nombres: '',
+      apellidos: '',
+      codigo_estudiantil: '',
+      nombre_acudiente: '',
+      correo_acudiente: '',
+      telefono_acudiente: '',
+      grado_id: '',
+      curso_id: ''
+    });
+    setCamposHabilitadosEstudiante({
+      nombres: false,
+      apellidos: false,
+      codigo_estudiantil: false,
+      nombre_acudiente: false,
+      correo_acudiente: false,
+      telefono_acudiente: false,
+      grado_id: false,
+      curso_id: false
+    });
+    setCamposValidadosEstudiante({
+      nombres: false,
+      apellidos: false,
+      codigo_estudiantil: false,
+      nombre_acudiente: false,
+      correo_acudiente: false,
+      telefono_acudiente: false,
+      grado_id: false,
+      curso_id: false
+    });
+    
+    // Limpiar estados de carga
+    setCargandoGrados(false);
+    setCargandoCursos(false);
+    setCargandoAreasMaterias(false);
+    
+    // Limpiar estados de resumen
+    setMostrarResumen(false);
+    setMostrarResumenAreas(false);
+    
+    // Resetear al paso inicial
+    setCurrentStep(1);
+    
+    console.log('✅ Todos los datos en caché han sido limpiados');
+  };
+
   // Función para verificar si el email ya existe en Supabase Auth
   const verificarEmailExistente = async (email: string) => {
     if (!email.trim() || !validarEmail(email.trim())) {
@@ -1294,7 +1402,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         console.log('Asignaciones raw para este docente:', asignacionesRaw);
         
         // Convertir asignacionesGradoCurso a la estructura esperada por el backend
-        const asignaciones = {
+        const asignaciones: {
+          grados: number[];
+          cursos: { [key: number]: number[] };
+          materias: { [key: number]: number[] };
+        } = {
           grados: [],
           cursos: {},
           materias: {}
@@ -3640,12 +3752,208 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
           {currentStep === 5 && (
             <div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
-                Paso 5: Resumen y Confirmación
-              </h3>
-              <p className="text-slate-600">
-                En construcción...
-              </p>
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                  🎉 ¡Configuración Completada!
+                </h3>
+                <p className="text-slate-600">
+                  Revisa el resumen de toda la configuración realizada para tu institución
+                </p>
+              </div>
+
+              {/* Cards de Estadísticas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {/* Total Docentes */}
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-100 text-sm font-medium">Total Docentes</p>
+                      <p className="text-3xl font-bold">{docentes.length}</p>
+                    </div>
+                    <div className="bg-blue-400 bg-opacity-30 rounded-full p-3">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Estudiantes */}
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-100 text-sm font-medium">Total Estudiantes</p>
+                      <p className="text-3xl font-bold">{estudiantes.length}</p>
+                    </div>
+                    <div className="bg-green-400 bg-opacity-30 rounded-full p-3">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Materias */}
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-100 text-sm font-medium">Total Materias</p>
+                      <p className="text-3xl font-bold">{materias.length}</p>
+                    </div>
+                    <div className="bg-purple-400 bg-opacity-30 rounded-full p-3">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Grados */}
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-100 text-sm font-medium">Total Grados</p>
+                      <p className="text-3xl font-bold">{gradosDisponibles.length}</p>
+                    </div>
+                    <div className="bg-orange-400 bg-opacity-30 rounded-full p-3">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Resumen Detallado */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Resumen de Docentes */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
+                    Docentes Registrados
+                  </h4>
+                  {docentes.length > 0 ? (
+                    <div className="space-y-3">
+                      {docentes.slice(0, 3).map((docente) => (
+                        <div key={docente.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-slate-900">{docente.nombres} {docente.apellidos}</p>
+                            <p className="text-sm text-slate-600">{docente.email}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-blue-600 font-medium">
+                              {Object.values(asignacionesPorDocente).reduce((total, asign) => total + asign.asignaciones.length, 0)} asignaciones
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {docentes.length > 3 && (
+                        <p className="text-sm text-slate-500 text-center">
+                          ... y {docentes.length - 3} docente(s) más
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-center py-4">No hay docentes registrados</p>
+                  )}
+                </div>
+
+                {/* Resumen de Estudiantes */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                    Estudiantes Matriculados
+                  </h4>
+                  {estudiantes.length > 0 ? (
+                    <div className="space-y-3">
+                      {estudiantes.slice(0, 3).map((estudiante) => (
+                        <div key={estudiante.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-slate-900">{estudiante.nombres} {estudiante.apellidos}</p>
+                            <p className="text-sm text-slate-600">Código: {estudiante.codigo_estudiantil}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-green-600 font-medium">
+                              Grado {gradosDisponibles.find(g => g.id === estudiante.grado_id)?.nombre || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {estudiantes.length > 3 && (
+                        <p className="text-sm text-slate-500 text-center">
+                          ... y {estudiantes.length - 3} estudiante(s) más
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-center py-4">No hay estudiantes matriculados</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Estructura Académica */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+                <h4 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  Estructura Académica
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {gradosDisponibles.slice(0, 6).map((grado) => (
+                    <div key={grado.id} className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <h5 className="font-semibold text-slate-900">{grado.nombre}</h5>
+                      <p className="text-sm text-slate-600 mb-2">{grado.nivel}</p>
+                      <div className="flex justify-between text-xs text-slate-500">
+                        <span>Cursos: {grado.cursos?.length || 0}</span>
+                        <span>Materias: {materiasGradosCargados.filter(mg => mg.grado_id === grado.id).length}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {gradosDisponibles.length > 6 && (
+                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center">
+                      <p className="text-sm text-slate-500">
+                        +{gradosDisponibles.length - 6} grados más
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Botones de Acción */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => setCurrentStep(4)}
+                  className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Volver a Editar
+                </button>
+                
+                <button
+                  onClick={() => {
+                    // Limpiar todos los datos en caché
+                    limpiarDatosCompletos();
+                    
+                    alert('🎉 ¡Configuración completada exitosamente!\n\nTu institución está lista para comenzar a usar el sistema de agenda virtual.');
+                    onClose();
+                  }}
+                  className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-lg font-medium"
+                >
+                  <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Finalizar Configuración
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -3686,7 +3994,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
       {/* Modal de Confirmación de Guardado */}
       {mostrarConfirmacionGuardado && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4">
               <div className="flex items-center">

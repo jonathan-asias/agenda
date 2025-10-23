@@ -1,168 +1,114 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== INICIO ENDPOINT GRADOS-CURSOS ===');
-    
-    const body = await request.json();
-    console.log('Body recibido:', JSON.stringify(body, null, 2));
-    console.log('Tipo de body:', typeof body);
-    console.log('Keys del body:', Object.keys(body));
-    
-    const { institucionId, grados, cursos } = body;
-    console.log('Datos extraídos:', { 
-      institucionId, 
-      grados: grados?.length, 
-      cursos: cursos?.length 
-    });
+    const { institucionId, gradosCursos } = await request.json();
 
-    if (!institucionId) {
-      throw new Error('institucionId es requerido');
+    if (!institucionId || !gradosCursos || !Array.isArray(gradosCursos)) {
+      return NextResponse.json(
+        { error: 'institucionId y gradosCursos son requeridos' },
+        { status: 400 }
+      );
     }
-
-    if (!grados || !Array.isArray(grados)) {
-      throw new Error('grados debe ser un array');
-    }
-
-    if (!cursos || !Array.isArray(cursos)) {
-      throw new Error('cursos debe ser un array');
-    }
-
-    console.log('Datos validados:', { 
-      institucionId, 
-      gradosCount: grados.length, 
-      cursosCount: cursos.length 
-    });
 
     // Verificar que la institución existe
-    const institucion = await prisma.instituciones.findUnique({
+    const institucion = await prisma.Instituciones.findUnique({
       where: { id: institucionId }
     });
 
     if (!institucion) {
-      throw new Error(`Institución con ID ${institucionId} no encontrada`);
+      return NextResponse.json(
+        { error: 'Institución no encontrada' },
+        { status: 404 }
+      );
     }
 
-    console.log('Institución encontrada:', institucion.nombre);
+    // Grados predeterminados (mismos que en el modal)
+    const gradosPredeterminados = [
+      { id: 1, nombre: 'PÁRVULOS', nivel: 'Educación Inicial', orden: 1 },
+      { id: 2, nombre: 'PRE-JARDÍN', nivel: 'Educación Inicial', orden: 2 },
+      { id: 3, nombre: 'JARDÍN', nivel: 'Educación Inicial', orden: 3 },
+      { id: 4, nombre: 'TRANSICIÓN', nivel: 'Educación Inicial', orden: 4 },
+      { id: 5, nombre: '1°', nivel: 'Primaria', orden: 5 },
+      { id: 6, nombre: '2°', nivel: 'Primaria', orden: 6 },
+      { id: 7, nombre: '3°', nivel: 'Primaria', orden: 7 },
+      { id: 8, nombre: '4°', nivel: 'Primaria', orden: 8 },
+      { id: 9, nombre: '5°', nivel: 'Primaria', orden: 9 },
+      { id: 10, nombre: '6°', nivel: 'Secundaria', orden: 10 },
+      { id: 11, nombre: '7°', nivel: 'Secundaria', orden: 11 },
+      { id: 12, nombre: '8°', nivel: 'Secundaria', orden: 12 },
+      { id: 13, nombre: '9°', nivel: 'Secundaria', orden: 13 },
+      { id: 14, nombre: '10°', nivel: 'Media', orden: 14 },
+      { id: 15, nombre: '11°', nivel: 'Media', orden: 15 }
+    ];
 
-    // Verificar si ya existen grados para esta institución
-    const gradosExistentes = await prisma.grados.findMany({
-      where: { institucion_id: institucionId }
-    });
+    const cursosCreados = [];
 
-    if (gradosExistentes.length > 0) {
-      console.log('Ya existen grados para esta institución, eliminando...');
-      // Primero eliminar cursos asociados
-      await prisma.cursos.deleteMany({
-        where: { institucion_id: institucionId }
+    for (const gradoCurso of gradosCursos) {
+      const gradoId = gradoCurso.grado_id;
+      
+      // Buscar el grado en los predeterminados
+      const gradoPredeterminado = gradosPredeterminados.find(g => g.id === gradoId);
+      if (!gradoPredeterminado) {
+        return NextResponse.json(
+          { error: `Grado con ID ${gradoId} no es válido` },
+          { status: 400 }
+        );
+      }
+
+      // Verificar si el grado ya existe en la base de datos
+      let grado = await prisma.Grados.findFirst({
+        where: { 
+          nombre: gradoPredeterminado.nombre,
+          institucion_id: institucionId 
+        }
       });
-      // Luego eliminar grados
-      await prisma.grados.deleteMany({
-        where: { institucion_id: institucionId }
-      });
-    }
 
-    // Validar que todos los grados tienen cursos
-    const gradosSinCursos = grados.filter(grado => 
-      !cursos.some(curso => curso.gradoId === grado.id)
-    );
-    
-    if (gradosSinCursos.length > 0) {
-      console.warn('Grados sin cursos detectados:', gradosSinCursos.map(g => g.nombre));
-    }
-
-    // Guardar solo los grados que tienen cursos
-    console.log('Creando grados (solo los que tienen cursos)...');
-    const gradosCreados = await Promise.all(
-      grados.map(async (grado: any) => {
-        console.log('Creando grado:', grado.nombre);
-        return await prisma.grados.create({
+      // Si no existe, crearlo
+      if (!grado) {
+        console.log(`Creando grado: ${gradoPredeterminado.nombre} (${gradoPredeterminado.nivel})`);
+        grado = await prisma.Grados.create({
           data: {
-            nombre: grado.nombre,
-            nivel: grado.nivel,
-            orden: grado.orden,
+            nombre: gradoPredeterminado.nombre,
+            nivel: gradoPredeterminado.nivel,
+            orden: gradoPredeterminado.orden,
             institucion_id: institucionId
           }
         });
-      })
-    );
+        console.log(`Grado creado con ID: ${grado.id}`);
+      } else {
+        console.log(`Usando grado existente: ${grado.nombre} (ID: ${grado.id})`);
+      }
 
-    console.log('Grados creados exitosamente:', gradosCreados.length);
-
-    // Crear un mapa de gradoId (del frontend) a id (de la base de datos)
-    const gradoIdMap = new Map();
-    gradosCreados.forEach(grado => {
-      gradoIdMap.set(grado.orden, grado.id);
-    });
-
-    console.log('Mapa de grados:', Object.fromEntries(gradoIdMap));
-
-    // Guardar cursos
-    console.log('Creando cursos...');
-    console.log('Datos de cursos a crear:', JSON.stringify(cursos, null, 2));
-    console.log('Mapa de grados:', Object.fromEntries(gradoIdMap));
-    
-    const cursosCreados = await Promise.all(
-      cursos.map(async (curso: any) => {
-        const gradoId = gradoIdMap.get(curso.gradoId);
-        if (!gradoId) {
-          throw new Error(`No se encontró el grado con orden ${curso.gradoId}`);
-        }
+      // Crear los cursos para este grado
+      for (const cursoData of gradoCurso.cursos) {
+        console.log(`Creando curso: ${cursoData.nombre} para grado: ${grado.nombre}`);
         
-        console.log(`Creando curso: ${curso.nombre} para grado ID: ${gradoId}`);
-        console.log('Datos del curso:', {
-          nombre: curso.nombre,
-          grado_id: gradoId,
-          institucion_id: institucionId
+        const curso = await prisma.Cursos.create({
+          data: {
+            nombre: cursoData.nombre,
+            grado_id: grado.id,
+            institucion_id: institucionId
+          }
         });
         
-        try {
-          return await prisma.cursos.create({
-            data: {
-              nombre: curso.nombre,
-              grado_id: gradoId,
-              institucion_id: institucionId
-            }
-          });
-        } catch (error) {
-          console.error('Error creando curso específico:', error);
-          console.error('Datos que causaron el error:', {
-            nombre: curso.nombre,
-            grado_id: gradoId,
-            institucion_id: institucionId
-          });
-          throw error;
-        }
-      })
-    );
+        cursosCreados.push(curso);
+        console.log(`✅ Curso ${curso.nombre} creado exitosamente`);
+      }
+    }
 
-    console.log('Cursos creados exitosamente:', cursosCreados.length);
-
-    const response = {
+    return NextResponse.json({
       success: true,
-      grados: gradosCreados.length,
-      cursos: cursosCreados.length,
-      data: { gradosCreados, cursosCreados }
-    };
-
-    console.log('=== FIN ENDPOINT GRADOS-CURSOS ===');
-    return NextResponse.json(response);
+      message: `${cursosCreados.length} curso(s) creado(s) exitosamente`,
+      cursos: cursosCreados
+    });
 
   } catch (error) {
-    console.error('=== ERROR EN ENDPOINT GRADOS-CURSOS ===');
-    console.error('Error completo:', error);
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
-    
+    console.error('Error creating cursos:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Error al guardar',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-        stack: error instanceof Error ? error.stack : undefined
-      },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }
 }
-
