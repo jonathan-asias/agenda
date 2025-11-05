@@ -5,6 +5,8 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Swal from 'sweetalert2';
 import AddRecordatorioModal from './AddRecordatorioModal';
+import ViewRecordatorioModal from './ViewRecordatorioModal';
+import EditRecordatorioModal from './EditRecordatorioModal';
 
 interface Asignacion {
   id: number;
@@ -51,6 +53,8 @@ interface Recordatorio {
   descripcion: string;
   fecha: string;
   tipo: string;
+  created_at?: string;
+  updated_at?: string;
   grado: {
     id: number;
     nombre: string;
@@ -88,6 +92,10 @@ export default function DocenteDashboardContent() {
   const [showRecordatorioModal, setShowRecordatorioModal] = useState(false);
   const [recordatorios, setRecordatorios] = useState<Recordatorio[]>([]);
   const [loadingRecordatorios, setLoadingRecordatorios] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedRecordatorio, setSelectedRecordatorio] = useState<Recordatorio | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [recordatorioToEdit, setRecordatorioToEdit] = useState<Recordatorio | null>(null);
 
   useEffect(() => {
     const fetchDocenteData = async () => {
@@ -100,7 +108,7 @@ export default function DocenteDashboardContent() {
           setDocente(data.docente);
           setInstitucionId(data.docente?.institucion?.id || null);
           
-          // Cargar recordatorios después de obtener el docente
+          // Cargar recordatorios una sola vez al inicio (no se recargan automáticamente después)
           if (data.docente?.id) {
             fetchRecordatorios(data.docente.id);
           }
@@ -119,14 +127,124 @@ export default function DocenteDashboardContent() {
     setLoadingRecordatorios(true);
     try {
       const response = await fetch(`/api/recordatorios/by-docente/${docenteId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setRecordatorios(data.recordatorios || []);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        console.error('Error en la respuesta de la API:', errorData);
+        await Swal.fire({
+          title: 'Error',
+          text: errorData.error || 'Error al cargar los recordatorios. Por favor, intenta nuevamente.',
+          icon: 'error',
+          confirmButtonColor: '#dc2626',
+          customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-lg'
+          }
+        });
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Recordatorios recibidos:', data);
+      setRecordatorios(data.recordatorios || []);
+      
+      if (!data.recordatorios || data.recordatorios.length === 0) {
+        console.log('No se encontraron recordatorios para el docente:', docenteId);
       }
     } catch (error) {
       console.error('Error fetching recordatorios:', error);
+      await Swal.fire({
+        title: 'Error',
+        text: 'Error al cargar los recordatorios. Por favor, intenta nuevamente.',
+        icon: 'error',
+        confirmButtonColor: '#dc2626',
+        customClass: {
+          popup: 'rounded-2xl',
+          confirmButton: 'rounded-lg'
+        }
+      });
     } finally {
       setLoadingRecordatorios(false);
+    }
+  };
+
+  const handleDeleteRecordatorio = async (recordatorioId: number, recordatorioNombre: string) => {
+    // Mostrar mensaje de advertencia
+    const result = await Swal.fire({
+      title: '¿Eliminar recordatorio?',
+      html: `
+        <div style="text-align: left; margin-top: 1rem;">
+          <p style="margin-bottom: 1rem; color: #334155;">Estás a punto de eliminar el siguiente recordatorio:</p>
+          <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
+            <p style="font-weight: 600; color: #991b1b; margin-bottom: 0.5rem; font-size: 0.875rem;">⚠️ Advertencia:</p>
+            <p style="color: #7f1d1d; font-size: 0.875rem; margin: 0; line-height: 1.6;">
+              "<strong>${recordatorioNombre}</strong>"
+            </p>
+          </div>
+          <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
+            <p style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem; font-size: 0.875rem;">ℹ️ Información importante:</p>
+            <ul style="color: #1e3a8a; font-size: 0.875rem; padding-left: 1.5rem; margin: 0; line-height: 1.8;">
+              <li>Esta acción no se puede deshacer</li>
+              <li>Se eliminarán todos los datos asociados al recordatorio</li>
+              <li>Los estudiantes ya no podrán ver este recordatorio</li>
+            </ul>
+          </div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      focusCancel: true,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-lg',
+        cancelButton: 'rounded-lg'
+      }
+    });
+
+    // Si el usuario confirma, proceder con la eliminación
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`/api/recordatorios/${recordatorioId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al eliminar el recordatorio');
+        }
+
+        // Mostrar mensaje de éxito
+        await Swal.fire({
+          title: '¡Recordatorio eliminado!',
+          text: 'El recordatorio ha sido eliminado exitosamente. Usa el botón "Actualizar" para ver los cambios.',
+          icon: 'success',
+          timer: 3000,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rounded-2xl'
+          }
+        });
+
+        // Eliminar el recordatorio de la lista local (sin recargar automáticamente)
+        setRecordatorios(prev => prev.filter(r => r.id !== recordatorioId));
+      } catch (error) {
+        console.error('Error al eliminar recordatorio:', error);
+        await Swal.fire({
+          title: 'Error',
+          text: error instanceof Error ? error.message : 'Hubo un problema al eliminar el recordatorio. Por favor, intenta nuevamente.',
+          icon: 'error',
+          confirmButtonColor: '#dc2626',
+          customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-lg'
+          }
+        });
+      }
     }
   };
 
@@ -337,15 +455,31 @@ export default function DocenteDashboardContent() {
                 </svg>
                 Recordatorios
               </h3>
-              <button
-                onClick={() => setShowRecordatorioModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Agregar Recordatorio
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (docente?.id) {
+                      fetchRecordatorios(docente.id);
+                    }
+                  }}
+                  disabled={loadingRecordatorios || !docente?.id}
+                  className="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className={`w-4 h-4 mr-2 ${loadingRecordatorios ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {loadingRecordatorios ? 'Actualizando...' : 'Actualizar'}
+                </button>
+                <button
+                  onClick={() => setShowRecordatorioModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Agregar Recordatorio
+                </button>
+              </div>
             </div>
             
             {/* Lista de recordatorios */}
@@ -377,10 +511,15 @@ export default function DocenteDashboardContent() {
                     otro: 'Otro'
                   };
 
+                  // Truncar descripción a 150 caracteres
+                  const descripcionTruncada = recordatorio.descripcion.length > 150
+                    ? recordatorio.descripcion.substring(0, 150) + '...'
+                    : recordatorio.descripcion;
+
                   return (
                     <div
                       key={recordatorio.id}
-                      className={`p-6 rounded-xl border-2 transition-all hover:shadow-md ${
+                      className={`p-5 rounded-xl border-2 transition-all hover:shadow-md ${
                         esPasado
                           ? 'bg-slate-50 border-slate-200'
                           : esHoy
@@ -388,9 +527,9 @@ export default function DocenteDashboardContent() {
                           : 'bg-white border-slate-200'
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <h4 className="text-lg font-semibold text-slate-900">
                               {recordatorio.nombre}
                             </h4>
@@ -412,71 +551,76 @@ export default function DocenteDashboardContent() {
                               </span>
                             )}
                           </div>
-                          <p className="text-slate-700 mb-3">{recordatorio.descripcion}</p>
+                          <p className="text-slate-700 mb-3 text-sm">{descripcionTruncada}</p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                         <div className="flex items-center text-sm text-slate-600">
                           <svg className="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                           </svg>
-                          <span className="font-medium">
-                            {fechaRecordatorio.toLocaleDateString('es-ES', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </span>
+                          <span className="font-medium">{recordatorio.area.nombre}</span>
                         </div>
                         <div className="flex items-center text-sm text-slate-600">
                           <svg className="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                           </svg>
-                          <span>
-                            {recordatorio.materia.nombre} - {recordatorio.area.nombre}
-                          </span>
+                          <span className="font-medium">{recordatorio.materia.nombre}</span>
                         </div>
-                        <div className="flex items-center text-sm text-slate-600">
-                          <svg className="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                          </svg>
-                          <span>
-                            {recordatorio.grado.nombre} ({recordatorio.grado.nivel}) - {recordatorio.curso.nombre}
-                            {recordatorio.curso.jornada && ` (${recordatorio.curso.jornada})`}
-                          </span>
-                        </div>
-                        <div className="flex items-center text-sm text-slate-600">
-                          <svg className="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <span>
-                            {recordatorio.estudiantes.length} estudiante{recordatorio.estudiantes.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
+                        {recordatorio.updated_at && recordatorio.updated_at !== recordatorio.created_at && (
+                          <div className="flex items-center text-sm text-green-600 col-span-1 md:col-span-2">
+                            <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span className="font-medium text-xs">
+                              Modificado: {new Date(recordatorio.updated_at).toLocaleDateString('es-ES', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {recordatorio.estudiantes.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                          <p className="text-xs font-medium text-slate-600 mb-2">Estudiantes asignados:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {recordatorio.estudiantes.map((est, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs"
-                              >
-                                {est.estudiante.nombres} {est.estudiante.apellidos}
-                                {est.estudiante.codigo_estudiantil && (
-                                  <span className="text-slate-500 ml-1">
-                                    ({est.estudiante.codigo_estudiantil})
-                                  </span>
-                                )}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                        <button
+                          onClick={() => {
+                            setSelectedRecordatorio(recordatorio);
+                            setShowViewModal(true);
+                          }}
+                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Ver información
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRecordatorioToEdit(recordatorio);
+                            setShowEditModal(true);
+                          }}
+                          className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRecordatorio(recordatorio.id, recordatorio.nombre)}
+                          className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -488,8 +632,16 @@ export default function DocenteDashboardContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <p className="text-slate-600">No hay recordatorios aún</p>
-                <p className="text-sm text-slate-500 mt-2">Crea tu primer recordatorio para empezar</p>
+                <p className="text-slate-600">
+                  {recordatorios.length === 0 && !loadingRecordatorios
+                    ? 'No hay recordatorios cargados'
+                    : 'No hay recordatorios aún'}
+                </p>
+                <p className="text-sm text-slate-500 mt-2">
+                  {recordatorios.length === 0 && !loadingRecordatorios
+                    ? 'Haz clic en el botón "Actualizar" para cargar tus recordatorios o crea tu primer recordatorio'
+                    : 'Crea tu primer recordatorio para empezar'}
+                </p>
               </div>
             )}
           </div>
@@ -504,24 +656,59 @@ export default function DocenteDashboardContent() {
           onSuccess={async () => {
             await Swal.fire({
               title: '¡Recordatorio creado!',
-              text: 'El recordatorio ha sido creado exitosamente.',
+              text: 'El recordatorio ha sido creado exitosamente. Usa el botón "Actualizar" para ver los nuevos recordatorios.',
               icon: 'success',
-              timer: 2000,
+              timer: 3000,
               showConfirmButton: false,
               customClass: {
                 popup: 'rounded-2xl'
               }
             });
-            // Recargar recordatorios después de crear uno nuevo
-            if (docente?.id) {
-              fetchRecordatorios(docente.id);
-            }
+            // No recargar automáticamente - el usuario debe usar el botón de actualizar
           }}
           docenteId={docente.id}
           institucionId={docente.institucion.id}
           asignaciones={docente.docenteAsignaciones || []}
         />
       )}
+
+      {/* Modal para Ver Información del Recordatorio */}
+      <ViewRecordatorioModal
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedRecordatorio(null);
+        }}
+        recordatorio={selectedRecordatorio}
+      />
+
+      {/* Modal para Editar Recordatorio */}
+      <EditRecordatorioModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setRecordatorioToEdit(null);
+        }}
+        onSuccess={async (updatedRecordatorio?: Recordatorio) => {
+          await Swal.fire({
+            title: '¡Recordatorio actualizado!',
+            text: 'El recordatorio ha sido actualizado exitosamente.',
+            icon: 'success',
+            timer: 3000,
+            showConfirmButton: false,
+            customClass: {
+              popup: 'rounded-2xl'
+            }
+          });
+          // Actualizar el recordatorio en la lista local
+          if (updatedRecordatorio && recordatorioToEdit) {
+            setRecordatorios(prev => 
+              prev.map(r => r.id === recordatorioToEdit.id ? updatedRecordatorio : r)
+            );
+          }
+        }}
+        recordatorio={recordatorioToEdit}
+      />
     </div>
   );
 }
