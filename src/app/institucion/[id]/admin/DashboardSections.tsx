@@ -41,19 +41,6 @@ interface Curso {
   _count: { estudiantes: number };
 }
 
-interface Docente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  email: string;
-  telefono: string;
-  sede: { nombre: string } | null;
-  docenteAsignaciones: {
-    grado: { nombre: string };
-    curso: { nombre: string };
-    materia: { nombre: string };
-  }[];
-}
 
 interface Estudiante {
   id: number;
@@ -86,9 +73,9 @@ interface Docente {
   telefono: string;
   sede: { nombre: string } | null;
   docenteAsignaciones: {
-    grado: { nombre: string; nivel: string };
-    curso: { nombre: string };
-    materia: { nombre: string };
+    grado: { id: number; nombre: string; nivel: string };
+    curso: { id: number; nombre: string };
+    materia: { id: number; nombre: string; area: { id: number; nombre: string } };
   }[];
 }
 
@@ -130,6 +117,16 @@ export default function DashboardSections({
     codigo: ''
   });
   const [estudiantesFiltrados, setEstudiantesFiltrados] = useState<Estudiante[]>([]);
+
+  // Estados para filtros de docentes
+  const [filtrosDocentes, setFiltrosDocentes] = useState({
+    grado: '',
+    curso: '',
+    nombre: '',
+    area: '',
+    materia: ''
+  });
+  const [docentesFiltrados, setDocentesFiltrados] = useState<Docente[]>([]);
 
   const handleViewDocente = (docente: Docente) => {
     setSelectedDocente(docente);
@@ -293,9 +290,85 @@ export default function DashboardSections({
     setEstudiantesFiltrados([]);
   };
 
-  // Función para manejar cambios en filtros
+  // Función para aplicar filtros a docentes
+  const aplicarFiltrosDocentes = () => {
+    let docentesFiltrados = [...docentes];
+
+    // Debug: Mostrar información de docentes y filtros
+    console.log('🔍 Debug Filtros Docentes:');
+    console.log('Filtros aplicados:', filtrosDocentes);
+    console.log('Total docentes:', docentes.length);
+
+    // Filtro por grado
+    if (filtrosDocentes.grado) {
+      docentesFiltrados = docentesFiltrados.filter(docente => 
+        docente.docenteAsignaciones.some(asignacion => 
+          asignacion.grado.id.toString() === filtrosDocentes.grado
+        )
+      );
+    }
+
+    // Filtro por curso
+    if (filtrosDocentes.curso) {
+      docentesFiltrados = docentesFiltrados.filter(docente => 
+        docente.docenteAsignaciones.some(asignacion => 
+          asignacion.curso.id.toString() === filtrosDocentes.curso
+        )
+      );
+    }
+
+    // Filtro por nombre del docente
+    if (filtrosDocentes.nombre) {
+      docentesFiltrados = docentesFiltrados.filter(docente => 
+        `${docente.nombres} ${docente.apellidos}`.toLowerCase().includes(filtrosDocentes.nombre.toLowerCase())
+      );
+    }
+
+    // Filtro por área
+    if (filtrosDocentes.area) {
+      docentesFiltrados = docentesFiltrados.filter(docente => 
+        docente.docenteAsignaciones.some(asignacion => 
+          asignacion.materia.area.id.toString() === filtrosDocentes.area
+        )
+      );
+    }
+
+    // Filtro por materia
+    if (filtrosDocentes.materia) {
+      docentesFiltrados = docentesFiltrados.filter(docente => 
+        docente.docenteAsignaciones.some(asignacion => 
+          asignacion.materia.id.toString() === filtrosDocentes.materia
+        )
+      );
+    }
+
+    console.log('📊 Resultado final:', docentesFiltrados.length, 'docentes filtrados');
+    setDocentesFiltrados(docentesFiltrados);
+  };
+
+  // Función para limpiar filtros de docentes
+  const limpiarFiltrosDocentes = () => {
+    setFiltrosDocentes({
+      grado: '',
+      curso: '',
+      nombre: '',
+      area: '',
+      materia: ''
+    });
+    setDocentesFiltrados([]);
+  };
+
+  // Función para manejar cambios en filtros de estudiantes
   const handleFiltroChange = (campo: string, valor: string) => {
     setFiltrosEstudiantes(prev => ({
+      ...prev,
+      [campo]: valor
+    }));
+  };
+
+  // Función para manejar cambios en filtros de docentes
+  const handleFiltroDocenteChange = (campo: string, valor: string) => {
+    setFiltrosDocentes(prev => ({
       ...prev,
       [campo]: valor
     }));
@@ -305,6 +378,10 @@ export default function DashboardSections({
   useEffect(() => {
     aplicarFiltrosEstudiantes();
   }, [filtrosEstudiantes, estudiantes]);
+
+  useEffect(() => {
+    aplicarFiltrosDocentes();
+  }, [filtrosDocentes, docentes]);
 
   return (
     <div className="space-y-8">
@@ -479,21 +556,138 @@ export default function DashboardSections({
             Docentes ({docentes.length})
           </h3>
         </div>
+        
+        {/* Filtros de Docentes */}
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Filtro por Grado */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Grado</label>
+              <select
+                value={filtrosDocentes.grado}
+                onChange={(e) => handleFiltroDocenteChange('grado', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+              >
+                <option value="">Todos los grados</option>
+                {grados.map((grado) => (
+                  <option key={grado.id} value={grado.id.toString()}>
+                    {grado.nombre} - {grado.nivel}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por Curso */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Curso</label>
+              <select
+                value={filtrosDocentes.curso}
+                onChange={(e) => handleFiltroDocenteChange('curso', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+              >
+                <option value="">Todos los cursos</option>
+                {cursos.map((curso) => (
+                  <option key={curso.id} value={curso.id.toString()}>
+                    {curso.nombre} {curso.jornada ? `(${curso.jornada})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por Nombre del Docente */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+              <input
+                type="text"
+                placeholder="Buscar por nombre..."
+                value={filtrosDocentes.nombre}
+                onChange={(e) => handleFiltroDocenteChange('nombre', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+              />
+            </div>
+
+            {/* Filtro por Área */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Área</label>
+              <select
+                value={filtrosDocentes.area}
+                onChange={(e) => handleFiltroDocenteChange('area', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+              >
+                <option value="">Todas las áreas</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id.toString()}>
+                    {area.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por Materia */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Materia</label>
+              <select
+                value={filtrosDocentes.materia}
+                onChange={(e) => handleFiltroDocenteChange('materia', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+              >
+                <option value="">Todas las materias</option>
+                {materias.map((materia) => (
+                  <option key={materia.id} value={materia.id.toString()}>
+                    {materia.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Botón para limpiar filtros */}
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={limpiarFiltrosDocentes}
+              className="px-4 py-2 text-sm bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Limpiar filtros
+            </button>
+          </div>
+        </div>
         <div className="p-6">
           {docentes.length === 0 ? (
             <p className="text-slate-500 text-center py-4">No hay docentes registrados</p>
           ) : (
             <>
-              {docentes.some(d => !d.docenteAsignaciones || d.docenteAsignaciones.length === 0) && (
-                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-amber-800 text-sm">
-                    <span className="font-medium">⚠️ Nota:</span> Algunos docentes no tienen asignaciones. 
-                    Los docentes deben ser asignados a grados, cursos y materias desde el Setup Wizard o el modal correspondiente.
-                  </p>
+              {/* Mensaje cuando hay filtros pero no hay resultados */}
+              {docentesFiltrados.length === 0 && (filtrosDocentes.grado || filtrosDocentes.curso || filtrosDocentes.nombre || filtrosDocentes.area || filtrosDocentes.materia) ? (
+                <div className="text-center py-8">
+                  <svg className="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-slate-900">No se encontraron docentes</h3>
+                  <p className="mt-1 text-sm text-slate-500">Intenta ajustar los filtros de búsqueda</p>
+                  <div className="mt-4">
+                    <button
+                      onClick={limpiarFiltrosDocentes}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 bg-indigo-100 hover:bg-indigo-200"
+                    >
+                      Limpiar filtros
+                    </button>
+                  </div>
                 </div>
-              )}
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {docentes.map((docente) => (
+              ) : (
+                <>
+                  {docentes.some(d => !d.docenteAsignaciones || d.docenteAsignaciones.length === 0) && (
+                    <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-amber-800 text-sm">
+                        <span className="font-medium">⚠️ Nota:</span> Algunos docentes no tienen asignaciones. 
+                        Los docentes deben ser asignados a grados, cursos y materias desde el Setup Wizard o el modal correspondiente.
+                      </p>
+                    </div>
+                  )}
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {(docentesFiltrados.length > 0 ? docentesFiltrados : docentes).map((docente) => (
                 <div key={docente.id} className="p-4 bg-slate-50 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -552,8 +746,10 @@ export default function DashboardSections({
                     </button>
                   </div>
                 </div>
-              ))}
-              </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>

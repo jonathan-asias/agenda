@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
 import InstitucionAuthGuard from './InstitucionAuthGuard';
+import AddAdministradorModal from './AddAdministradorModal';
 
 interface Institucion {
   id: number;
@@ -43,6 +44,7 @@ export default function InstitucionPage() {
   const [institucion, setInstitucion] = useState<Institucion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
 
   useEffect(() => {
     const fetchInstitucion = async () => {
@@ -133,15 +135,15 @@ export default function InstitucionPage() {
                 </svg>
                 Ver Perfil
               </Link>
-              <Link
-                href={`/institucion/${params.id}/admin`}
+              <button
+                onClick={() => setShowAddAdminModal(true)}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                 </svg>
                 Gestionar Administradores
-              </Link>
+              </button>
               <Link
                 href={`/institucion/${params.id}/configuracion`}
                 className="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
@@ -267,7 +269,9 @@ export default function InstitucionPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500">No hay sedes configuradas</p>
+              <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                <h3 className="font-medium text-slate-800">Sede Principal</h3>
+              </div>
             )}
           </div>
         </div>
@@ -276,15 +280,15 @@ export default function InstitucionPage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-slate-800">Administradores</h2>
-            <Link
-              href={`/institucion/${params.id}/admin`}
+            <button
+              onClick={() => setShowAddAdminModal(true)}
               className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Agregar Administrador
-            </Link>
+            </button>
           </div>
           
           {institucion.administradores && institucion.administradores.length > 0 ? (
@@ -316,16 +320,30 @@ export default function InstitucionPage() {
                 </svg>
               </div>
               <p className="text-slate-500 mb-4">No hay administradores registrados</p>
-              <Link
-                href={`/institucion/${params.id}/admin`}
+              <button
+                onClick={() => setShowAddAdminModal(true)}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Agregar Primer Administrador
-              </Link>
+              </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Modal para Agregar Administrador */}
+      <AddAdministradorModal
+        isOpen={showAddAdminModal}
+        onClose={() => setShowAddAdminModal(false)}
+        onSuccess={() => {
+          // Recargar la información de la institución
+          fetch(`/api/instituciones/${params.id}`)
+            .then(res => res.json())
+            .then(data => setInstitucion(data))
+            .catch(err => console.error('Error al recargar institución:', err));
+        }}
+        institucionId={parseInt(params.id as string)}
+      />
     </div>
     </InstitucionAuthGuard>
   );

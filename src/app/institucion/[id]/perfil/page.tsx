@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../../contexts/AuthContext';
 import InstitucionAuthGuard from '../InstitucionAuthGuard';
+import Swal from 'sweetalert2';
+import AddAdministradorModal from '../AddAdministradorModal';
 
 interface Institucion {
   id: number;
@@ -33,6 +35,7 @@ export default function PerfilPage() {
   const [institucion, setInstitucion] = useState<Institucion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
 
   useEffect(() => {
     const fetchInstitucion = async () => {
@@ -57,11 +60,66 @@ export default function PerfilPage() {
   }, [params.id]);
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      router.push('/');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+    // Mostrar diálogo informativo antes de cerrar sesión
+    const result = await Swal.fire({
+      title: '¿Cerrar sesión?',
+      html: `
+        <div style="text-align: left; margin-top: 1rem;">
+          <p style="margin-bottom: 1rem; color: #334155;">Estás a punto de cerrar sesión de tu cuenta.</p>
+          <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
+            <p style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem; font-size: 0.875rem;">ℹ️ Información importante:</p>
+            <ul style="color: #1e3a8a; font-size: 0.875rem; padding-left: 1.5rem; margin: 0; line-height: 1.8;">
+              <li>Tu sesión será finalizada de forma segura</li>
+              <li>Deberás iniciar sesión nuevamente para acceder</li>
+              <li>Tus datos y configuraciones se mantendrán guardados</li>
+            </ul>
+          </div>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, cerrar sesión',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      focusCancel: true,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'rounded-lg',
+        cancelButton: 'rounded-lg'
+      }
+    });
+
+    // Si el usuario confirma, proceder con el cierre de sesión
+    if (result.isConfirmed) {
+      try {
+        await signOut();
+        // Mostrar mensaje de éxito antes de redirigir
+        await Swal.fire({
+          title: 'Sesión cerrada',
+          text: 'Has cerrado sesión exitosamente. ¡Hasta pronto!',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rounded-2xl'
+          }
+        });
+        router.push('/');
+      } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+        await Swal.fire({
+          title: 'Error',
+          text: 'Hubo un problema al cerrar sesión. Por favor, intenta nuevamente.',
+          icon: 'error',
+          confirmButtonColor: '#dc2626',
+          customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-lg'
+          }
+        });
+      }
     }
   };
 
@@ -249,13 +307,8 @@ export default function PerfilPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <p className="text-slate-500">No hay sedes configuradas</p>
+              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <h3 className="font-medium text-slate-800">Sede Principal</h3>
               </div>
             )}
           </div>
@@ -265,9 +318,9 @@ export default function PerfilPage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
           <h2 className="text-xl font-semibold text-slate-800 mb-4">Acciones Rápidas</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link
-              href={`/institucion/${params.id}/admin`}
-              className="flex items-center p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+            <button
+              onClick={() => setShowAddAdminModal(true)}
+              className="w-full flex items-center p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors text-left"
             >
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -278,7 +331,7 @@ export default function PerfilPage() {
                 <h3 className="font-medium text-slate-800">Gestionar Administradores</h3>
                 <p className="text-sm text-slate-600">Agregar y administrar usuarios</p>
               </div>
-            </Link>
+            </button>
 
             <Link
               href={`/institucion/${params.id}/configuracion`}
@@ -313,6 +366,20 @@ export default function PerfilPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal para Agregar Administrador */}
+      <AddAdministradorModal
+        isOpen={showAddAdminModal}
+        onClose={() => setShowAddAdminModal(false)}
+        onSuccess={() => {
+          // Recargar la información de la institución
+          fetch(`/api/instituciones/${params.id}`)
+            .then(res => res.json())
+            .then(data => setInstitucion(data))
+            .catch(err => console.error('Error al recargar institución:', err));
+        }}
+        institucionId={parseInt(params.id as string)}
+      />
     </div>
     </InstitucionAuthGuard>
   );

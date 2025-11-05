@@ -73,6 +73,16 @@ export type DocenteAsignaciones = $Result.DefaultSelection<Prisma.$DocenteAsigna
  * 
  */
 export type Estudiantes = $Result.DefaultSelection<Prisma.$EstudiantesPayload>
+/**
+ * Model Recordatorios
+ * 
+ */
+export type Recordatorios = $Result.DefaultSelection<Prisma.$RecordatoriosPayload>
+/**
+ * Model RecordatorioEstudiantes
+ * 
+ */
+export type RecordatorioEstudiantes = $Result.DefaultSelection<Prisma.$RecordatorioEstudiantesPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -311,6 +321,26 @@ export class PrismaClient<
     * ```
     */
   get estudiantes(): Prisma.EstudiantesDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.recordatorios`: Exposes CRUD operations for the **Recordatorios** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Recordatorios
+    * const recordatorios = await prisma.recordatorios.findMany()
+    * ```
+    */
+  get recordatorios(): Prisma.RecordatoriosDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.recordatorioEstudiantes`: Exposes CRUD operations for the **RecordatorioEstudiantes** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RecordatorioEstudiantes
+    * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.findMany()
+    * ```
+    */
+  get recordatorioEstudiantes(): Prisma.RecordatorioEstudiantesDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -762,7 +792,9 @@ export namespace Prisma {
     MateriaGrados: 'MateriaGrados',
     Docentes: 'Docentes',
     DocenteAsignaciones: 'DocenteAsignaciones',
-    Estudiantes: 'Estudiantes'
+    Estudiantes: 'Estudiantes',
+    Recordatorios: 'Recordatorios',
+    RecordatorioEstudiantes: 'RecordatorioEstudiantes'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -781,7 +813,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "instituciones" | "sedes" | "administradores" | "passwordResetTokens" | "grados" | "cursos" | "areas" | "materias" | "materiaGrados" | "docentes" | "docenteAsignaciones" | "estudiantes"
+      modelProps: "instituciones" | "sedes" | "administradores" | "passwordResetTokens" | "grados" | "cursos" | "areas" | "materias" | "materiaGrados" | "docentes" | "docenteAsignaciones" | "estudiantes" | "recordatorios" | "recordatorioEstudiantes"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1673,6 +1705,154 @@ export namespace Prisma {
           }
         }
       }
+      Recordatorios: {
+        payload: Prisma.$RecordatoriosPayload<ExtArgs>
+        fields: Prisma.RecordatoriosFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RecordatoriosFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RecordatoriosFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>
+          }
+          findFirst: {
+            args: Prisma.RecordatoriosFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RecordatoriosFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>
+          }
+          findMany: {
+            args: Prisma.RecordatoriosFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>[]
+          }
+          create: {
+            args: Prisma.RecordatoriosCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>
+          }
+          createMany: {
+            args: Prisma.RecordatoriosCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.RecordatoriosCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>[]
+          }
+          delete: {
+            args: Prisma.RecordatoriosDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>
+          }
+          update: {
+            args: Prisma.RecordatoriosUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>
+          }
+          deleteMany: {
+            args: Prisma.RecordatoriosDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RecordatoriosUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.RecordatoriosUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>[]
+          }
+          upsert: {
+            args: Prisma.RecordatoriosUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatoriosPayload>
+          }
+          aggregate: {
+            args: Prisma.RecordatoriosAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRecordatorios>
+          }
+          groupBy: {
+            args: Prisma.RecordatoriosGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RecordatoriosGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RecordatoriosCountArgs<ExtArgs>
+            result: $Utils.Optional<RecordatoriosCountAggregateOutputType> | number
+          }
+        }
+      }
+      RecordatorioEstudiantes: {
+        payload: Prisma.$RecordatorioEstudiantesPayload<ExtArgs>
+        fields: Prisma.RecordatorioEstudiantesFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RecordatorioEstudiantesFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RecordatorioEstudiantesFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>
+          }
+          findFirst: {
+            args: Prisma.RecordatorioEstudiantesFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RecordatorioEstudiantesFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>
+          }
+          findMany: {
+            args: Prisma.RecordatorioEstudiantesFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>[]
+          }
+          create: {
+            args: Prisma.RecordatorioEstudiantesCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>
+          }
+          createMany: {
+            args: Prisma.RecordatorioEstudiantesCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.RecordatorioEstudiantesCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>[]
+          }
+          delete: {
+            args: Prisma.RecordatorioEstudiantesDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>
+          }
+          update: {
+            args: Prisma.RecordatorioEstudiantesUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>
+          }
+          deleteMany: {
+            args: Prisma.RecordatorioEstudiantesDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RecordatorioEstudiantesUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.RecordatorioEstudiantesUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>[]
+          }
+          upsert: {
+            args: Prisma.RecordatorioEstudiantesUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecordatorioEstudiantesPayload>
+          }
+          aggregate: {
+            args: Prisma.RecordatorioEstudiantesAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRecordatorioEstudiantes>
+          }
+          groupBy: {
+            args: Prisma.RecordatorioEstudiantesGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RecordatorioEstudiantesGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RecordatorioEstudiantesCountArgs<ExtArgs>
+            result: $Utils.Optional<RecordatorioEstudiantesCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1781,6 +1961,8 @@ export namespace Prisma {
     docentes?: DocentesOmit
     docenteAsignaciones?: DocenteAsignacionesOmit
     estudiantes?: EstudiantesOmit
+    recordatorios?: RecordatoriosOmit
+    recordatorioEstudiantes?: RecordatorioEstudiantesOmit
   }
 
   /* Types for Logging */
@@ -2008,6 +2190,7 @@ export namespace Prisma {
     estudiantes: number
     materiaGrados: number
     docenteAsignaciones: number
+    recordatorios: number
   }
 
   export type GradosCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2015,6 +2198,7 @@ export namespace Prisma {
     estudiantes?: boolean | GradosCountOutputTypeCountEstudiantesArgs
     materiaGrados?: boolean | GradosCountOutputTypeCountMateriaGradosArgs
     docenteAsignaciones?: boolean | GradosCountOutputTypeCountDocenteAsignacionesArgs
+    recordatorios?: boolean | GradosCountOutputTypeCountRecordatoriosArgs
   }
 
   // Custom InputTypes
@@ -2056,6 +2240,13 @@ export namespace Prisma {
     where?: DocenteAsignacionesWhereInput
   }
 
+  /**
+   * GradosCountOutputType without action
+   */
+  export type GradosCountOutputTypeCountRecordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatoriosWhereInput
+  }
+
 
   /**
    * Count Type CursosCountOutputType
@@ -2064,11 +2255,13 @@ export namespace Prisma {
   export type CursosCountOutputType = {
     estudiantes: number
     docenteAsignaciones: number
+    recordatorios: number
   }
 
   export type CursosCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     estudiantes?: boolean | CursosCountOutputTypeCountEstudiantesArgs
     docenteAsignaciones?: boolean | CursosCountOutputTypeCountDocenteAsignacionesArgs
+    recordatorios?: boolean | CursosCountOutputTypeCountRecordatoriosArgs
   }
 
   // Custom InputTypes
@@ -2096,6 +2289,13 @@ export namespace Prisma {
     where?: DocenteAsignacionesWhereInput
   }
 
+  /**
+   * CursosCountOutputType without action
+   */
+  export type CursosCountOutputTypeCountRecordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatoriosWhereInput
+  }
+
 
   /**
    * Count Type AreasCountOutputType
@@ -2103,10 +2303,12 @@ export namespace Prisma {
 
   export type AreasCountOutputType = {
     materias: number
+    recordatorios: number
   }
 
   export type AreasCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     materias?: boolean | AreasCountOutputTypeCountMateriasArgs
+    recordatorios?: boolean | AreasCountOutputTypeCountRecordatoriosArgs
   }
 
   // Custom InputTypes
@@ -2127,6 +2329,13 @@ export namespace Prisma {
     where?: MateriasWhereInput
   }
 
+  /**
+   * AreasCountOutputType without action
+   */
+  export type AreasCountOutputTypeCountRecordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatoriosWhereInput
+  }
+
 
   /**
    * Count Type MateriasCountOutputType
@@ -2135,11 +2344,13 @@ export namespace Prisma {
   export type MateriasCountOutputType = {
     materiaGrados: number
     docenteAsignaciones: number
+    recordatorios: number
   }
 
   export type MateriasCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     materiaGrados?: boolean | MateriasCountOutputTypeCountMateriaGradosArgs
     docenteAsignaciones?: boolean | MateriasCountOutputTypeCountDocenteAsignacionesArgs
+    recordatorios?: boolean | MateriasCountOutputTypeCountRecordatoriosArgs
   }
 
   // Custom InputTypes
@@ -2167,6 +2378,13 @@ export namespace Prisma {
     where?: DocenteAsignacionesWhereInput
   }
 
+  /**
+   * MateriasCountOutputType without action
+   */
+  export type MateriasCountOutputTypeCountRecordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatoriosWhereInput
+  }
+
 
   /**
    * Count Type DocentesCountOutputType
@@ -2174,10 +2392,12 @@ export namespace Prisma {
 
   export type DocentesCountOutputType = {
     docenteAsignaciones: number
+    recordatorios: number
   }
 
   export type DocentesCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     docenteAsignaciones?: boolean | DocentesCountOutputTypeCountDocenteAsignacionesArgs
+    recordatorios?: boolean | DocentesCountOutputTypeCountRecordatoriosArgs
   }
 
   // Custom InputTypes
@@ -2196,6 +2416,75 @@ export namespace Prisma {
    */
   export type DocentesCountOutputTypeCountDocenteAsignacionesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: DocenteAsignacionesWhereInput
+  }
+
+  /**
+   * DocentesCountOutputType without action
+   */
+  export type DocentesCountOutputTypeCountRecordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatoriosWhereInput
+  }
+
+
+  /**
+   * Count Type EstudiantesCountOutputType
+   */
+
+  export type EstudiantesCountOutputType = {
+    recordatorioEstudiantes: number
+  }
+
+  export type EstudiantesCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    recordatorioEstudiantes?: boolean | EstudiantesCountOutputTypeCountRecordatorioEstudiantesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * EstudiantesCountOutputType without action
+   */
+  export type EstudiantesCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EstudiantesCountOutputType
+     */
+    select?: EstudiantesCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * EstudiantesCountOutputType without action
+   */
+  export type EstudiantesCountOutputTypeCountRecordatorioEstudiantesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatorioEstudiantesWhereInput
+  }
+
+
+  /**
+   * Count Type RecordatoriosCountOutputType
+   */
+
+  export type RecordatoriosCountOutputType = {
+    estudiantes: number
+  }
+
+  export type RecordatoriosCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    estudiantes?: boolean | RecordatoriosCountOutputTypeCountEstudiantesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * RecordatoriosCountOutputType without action
+   */
+  export type RecordatoriosCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatoriosCountOutputType
+     */
+    select?: RecordatoriosCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * RecordatoriosCountOutputType without action
+   */
+  export type RecordatoriosCountOutputTypeCountEstudiantesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatorioEstudiantesWhereInput
   }
 
 
@@ -7281,6 +7570,7 @@ export namespace Prisma {
     estudiantes?: boolean | Grados$estudiantesArgs<ExtArgs>
     materiaGrados?: boolean | Grados$materiaGradosArgs<ExtArgs>
     docenteAsignaciones?: boolean | Grados$docenteAsignacionesArgs<ExtArgs>
+    recordatorios?: boolean | Grados$recordatoriosArgs<ExtArgs>
     _count?: boolean | GradosCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["grados"]>
 
@@ -7323,6 +7613,7 @@ export namespace Prisma {
     estudiantes?: boolean | Grados$estudiantesArgs<ExtArgs>
     materiaGrados?: boolean | Grados$materiaGradosArgs<ExtArgs>
     docenteAsignaciones?: boolean | Grados$docenteAsignacionesArgs<ExtArgs>
+    recordatorios?: boolean | Grados$recordatoriosArgs<ExtArgs>
     _count?: boolean | GradosCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type GradosIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7340,6 +7631,7 @@ export namespace Prisma {
       estudiantes: Prisma.$EstudiantesPayload<ExtArgs>[]
       materiaGrados: Prisma.$MateriaGradosPayload<ExtArgs>[]
       docenteAsignaciones: Prisma.$DocenteAsignacionesPayload<ExtArgs>[]
+      recordatorios: Prisma.$RecordatoriosPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -7748,6 +8040,7 @@ export namespace Prisma {
     estudiantes<T extends Grados$estudiantesArgs<ExtArgs> = {}>(args?: Subset<T, Grados$estudiantesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstudiantesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     materiaGrados<T extends Grados$materiaGradosArgs<ExtArgs> = {}>(args?: Subset<T, Grados$materiaGradosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MateriaGradosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     docenteAsignaciones<T extends Grados$docenteAsignacionesArgs<ExtArgs> = {}>(args?: Subset<T, Grados$docenteAsignacionesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocenteAsignacionesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    recordatorios<T extends Grados$recordatoriosArgs<ExtArgs> = {}>(args?: Subset<T, Grados$recordatoriosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8276,6 +8569,30 @@ export namespace Prisma {
   }
 
   /**
+   * Grados.recordatorios
+   */
+  export type Grados$recordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    where?: RecordatoriosWhereInput
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    cursor?: RecordatoriosWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RecordatoriosScalarFieldEnum | RecordatoriosScalarFieldEnum[]
+  }
+
+  /**
    * Grados without action
    */
   export type GradosDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8533,6 +8850,7 @@ export namespace Prisma {
     sede?: boolean | Cursos$sedeArgs<ExtArgs>
     estudiantes?: boolean | Cursos$estudiantesArgs<ExtArgs>
     docenteAsignaciones?: boolean | Cursos$docenteAsignacionesArgs<ExtArgs>
+    recordatorios?: boolean | Cursos$recordatoriosArgs<ExtArgs>
     _count?: boolean | CursosCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["cursos"]>
 
@@ -8582,6 +8900,7 @@ export namespace Prisma {
     sede?: boolean | Cursos$sedeArgs<ExtArgs>
     estudiantes?: boolean | Cursos$estudiantesArgs<ExtArgs>
     docenteAsignaciones?: boolean | Cursos$docenteAsignacionesArgs<ExtArgs>
+    recordatorios?: boolean | Cursos$recordatoriosArgs<ExtArgs>
     _count?: boolean | CursosCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type CursosIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8603,6 +8922,7 @@ export namespace Prisma {
       sede: Prisma.$SedesPayload<ExtArgs> | null
       estudiantes: Prisma.$EstudiantesPayload<ExtArgs>[]
       docenteAsignaciones: Prisma.$DocenteAsignacionesPayload<ExtArgs>[]
+      recordatorios: Prisma.$RecordatoriosPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -9012,6 +9332,7 @@ export namespace Prisma {
     sede<T extends Cursos$sedeArgs<ExtArgs> = {}>(args?: Subset<T, Cursos$sedeArgs<ExtArgs>>): Prisma__SedesClient<$Result.GetResult<Prisma.$SedesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     estudiantes<T extends Cursos$estudiantesArgs<ExtArgs> = {}>(args?: Subset<T, Cursos$estudiantesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EstudiantesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     docenteAsignaciones<T extends Cursos$docenteAsignacionesArgs<ExtArgs> = {}>(args?: Subset<T, Cursos$docenteAsignacionesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocenteAsignacionesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    recordatorios<T extends Cursos$recordatoriosArgs<ExtArgs> = {}>(args?: Subset<T, Cursos$recordatoriosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9512,6 +9833,30 @@ export namespace Prisma {
   }
 
   /**
+   * Cursos.recordatorios
+   */
+  export type Cursos$recordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    where?: RecordatoriosWhereInput
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    cursor?: RecordatoriosWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RecordatoriosScalarFieldEnum | RecordatoriosScalarFieldEnum[]
+  }
+
+  /**
    * Cursos without action
    */
   export type CursosDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -9762,6 +10107,7 @@ export namespace Prisma {
     updated_at?: boolean
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
     materias?: boolean | Areas$materiasArgs<ExtArgs>
+    recordatorios?: boolean | Areas$recordatoriosArgs<ExtArgs>
     _count?: boolean | AreasCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["areas"]>
 
@@ -9804,6 +10150,7 @@ export namespace Prisma {
   export type AreasInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
     materias?: boolean | Areas$materiasArgs<ExtArgs>
+    recordatorios?: boolean | Areas$recordatoriosArgs<ExtArgs>
     _count?: boolean | AreasCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type AreasIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -9818,6 +10165,7 @@ export namespace Prisma {
     objects: {
       institucion: Prisma.$InstitucionesPayload<ExtArgs>
       materias: Prisma.$MateriasPayload<ExtArgs>[]
+      recordatorios: Prisma.$RecordatoriosPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -10224,6 +10572,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     materias<T extends Areas$materiasArgs<ExtArgs> = {}>(args?: Subset<T, Areas$materiasArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MateriasPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    recordatorios<T extends Areas$recordatoriosArgs<ExtArgs> = {}>(args?: Subset<T, Areas$recordatoriosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -10681,6 +11030,30 @@ export namespace Prisma {
   }
 
   /**
+   * Areas.recordatorios
+   */
+  export type Areas$recordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    where?: RecordatoriosWhereInput
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    cursor?: RecordatoriosWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RecordatoriosScalarFieldEnum | RecordatoriosScalarFieldEnum[]
+  }
+
+  /**
    * Areas without action
    */
   export type AreasDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -10917,6 +11290,7 @@ export namespace Prisma {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
     materiaGrados?: boolean | Materias$materiaGradosArgs<ExtArgs>
     docenteAsignaciones?: boolean | Materias$docenteAsignacionesArgs<ExtArgs>
+    recordatorios?: boolean | Materias$recordatoriosArgs<ExtArgs>
     _count?: boolean | MateriasCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["materias"]>
 
@@ -10957,6 +11331,7 @@ export namespace Prisma {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
     materiaGrados?: boolean | Materias$materiaGradosArgs<ExtArgs>
     docenteAsignaciones?: boolean | Materias$docenteAsignacionesArgs<ExtArgs>
+    recordatorios?: boolean | Materias$recordatoriosArgs<ExtArgs>
     _count?: boolean | MateriasCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type MateriasIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -10975,6 +11350,7 @@ export namespace Prisma {
       institucion: Prisma.$InstitucionesPayload<ExtArgs>
       materiaGrados: Prisma.$MateriaGradosPayload<ExtArgs>[]
       docenteAsignaciones: Prisma.$DocenteAsignacionesPayload<ExtArgs>[]
+      recordatorios: Prisma.$RecordatoriosPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -11381,6 +11757,7 @@ export namespace Prisma {
     institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     materiaGrados<T extends Materias$materiaGradosArgs<ExtArgs> = {}>(args?: Subset<T, Materias$materiaGradosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MateriaGradosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     docenteAsignaciones<T extends Materias$docenteAsignacionesArgs<ExtArgs> = {}>(args?: Subset<T, Materias$docenteAsignacionesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocenteAsignacionesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    recordatorios<T extends Materias$recordatoriosArgs<ExtArgs> = {}>(args?: Subset<T, Materias$recordatoriosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -11857,6 +12234,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: DocenteAsignacionesScalarFieldEnum | DocenteAsignacionesScalarFieldEnum[]
+  }
+
+  /**
+   * Materias.recordatorios
+   */
+  export type Materias$recordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    where?: RecordatoriosWhereInput
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    cursor?: RecordatoriosWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RecordatoriosScalarFieldEnum | RecordatoriosScalarFieldEnum[]
   }
 
   /**
@@ -13230,6 +13631,7 @@ export namespace Prisma {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
     sede?: boolean | Docentes$sedeArgs<ExtArgs>
     docenteAsignaciones?: boolean | Docentes$docenteAsignacionesArgs<ExtArgs>
+    recordatorios?: boolean | Docentes$recordatoriosArgs<ExtArgs>
     _count?: boolean | DocentesCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["docentes"]>
 
@@ -13284,6 +13686,7 @@ export namespace Prisma {
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
     sede?: boolean | Docentes$sedeArgs<ExtArgs>
     docenteAsignaciones?: boolean | Docentes$docenteAsignacionesArgs<ExtArgs>
+    recordatorios?: boolean | Docentes$recordatoriosArgs<ExtArgs>
     _count?: boolean | DocentesCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type DocentesIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -13301,6 +13704,7 @@ export namespace Prisma {
       institucion: Prisma.$InstitucionesPayload<ExtArgs>
       sede: Prisma.$SedesPayload<ExtArgs> | null
       docenteAsignaciones: Prisma.$DocenteAsignacionesPayload<ExtArgs>[]
+      recordatorios: Prisma.$RecordatoriosPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -13711,6 +14115,7 @@ export namespace Prisma {
     institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     sede<T extends Docentes$sedeArgs<ExtArgs> = {}>(args?: Subset<T, Docentes$sedeArgs<ExtArgs>>): Prisma__SedesClient<$Result.GetResult<Prisma.$SedesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     docenteAsignaciones<T extends Docentes$docenteAsignacionesArgs<ExtArgs> = {}>(args?: Subset<T, Docentes$docenteAsignacionesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocenteAsignacionesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    recordatorios<T extends Docentes$recordatoriosArgs<ExtArgs> = {}>(args?: Subset<T, Docentes$recordatoriosArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -14187,6 +14592,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: DocenteAsignacionesScalarFieldEnum | DocenteAsignacionesScalarFieldEnum[]
+  }
+
+  /**
+   * Docentes.recordatorios
+   */
+  export type Docentes$recordatoriosArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    where?: RecordatoriosWhereInput
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    cursor?: RecordatoriosWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RecordatoriosScalarFieldEnum | RecordatoriosScalarFieldEnum[]
   }
 
   /**
@@ -15630,6 +16059,8 @@ export namespace Prisma {
     grado?: boolean | GradosDefaultArgs<ExtArgs>
     curso?: boolean | CursosDefaultArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    recordatorioEstudiantes?: boolean | Estudiantes$recordatorioEstudiantesArgs<ExtArgs>
+    _count?: boolean | EstudiantesCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["estudiantes"]>
 
   export type EstudiantesSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -15691,6 +16122,8 @@ export namespace Prisma {
     grado?: boolean | GradosDefaultArgs<ExtArgs>
     curso?: boolean | CursosDefaultArgs<ExtArgs>
     institucion?: boolean | InstitucionesDefaultArgs<ExtArgs>
+    recordatorioEstudiantes?: boolean | Estudiantes$recordatorioEstudiantesArgs<ExtArgs>
+    _count?: boolean | EstudiantesCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type EstudiantesIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     grado?: boolean | GradosDefaultArgs<ExtArgs>
@@ -15709,6 +16142,7 @@ export namespace Prisma {
       grado: Prisma.$GradosPayload<ExtArgs>
       curso: Prisma.$CursosPayload<ExtArgs>
       institucion: Prisma.$InstitucionesPayload<ExtArgs>
+      recordatorioEstudiantes: Prisma.$RecordatorioEstudiantesPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -16121,6 +16555,7 @@ export namespace Prisma {
     grado<T extends GradosDefaultArgs<ExtArgs> = {}>(args?: Subset<T, GradosDefaultArgs<ExtArgs>>): Prisma__GradosClient<$Result.GetResult<Prisma.$GradosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     curso<T extends CursosDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CursosDefaultArgs<ExtArgs>>): Prisma__CursosClient<$Result.GetResult<Prisma.$CursosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     institucion<T extends InstitucionesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, InstitucionesDefaultArgs<ExtArgs>>): Prisma__InstitucionesClient<$Result.GetResult<Prisma.$InstitucionesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    recordatorioEstudiantes<T extends Estudiantes$recordatorioEstudiantesArgs<ExtArgs> = {}>(args?: Subset<T, Estudiantes$recordatorioEstudiantesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -16559,6 +16994,30 @@ export namespace Prisma {
   }
 
   /**
+   * Estudiantes.recordatorioEstudiantes
+   */
+  export type Estudiantes$recordatorioEstudiantesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    where?: RecordatorioEstudiantesWhereInput
+    orderBy?: RecordatorioEstudiantesOrderByWithRelationInput | RecordatorioEstudiantesOrderByWithRelationInput[]
+    cursor?: RecordatorioEstudiantesWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RecordatorioEstudiantesScalarFieldEnum | RecordatorioEstudiantesScalarFieldEnum[]
+  }
+
+  /**
    * Estudiantes without action
    */
   export type EstudiantesDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -16574,6 +17033,2366 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: EstudiantesInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Recordatorios
+   */
+
+  export type AggregateRecordatorios = {
+    _count: RecordatoriosCountAggregateOutputType | null
+    _avg: RecordatoriosAvgAggregateOutputType | null
+    _sum: RecordatoriosSumAggregateOutputType | null
+    _min: RecordatoriosMinAggregateOutputType | null
+    _max: RecordatoriosMaxAggregateOutputType | null
+  }
+
+  export type RecordatoriosAvgAggregateOutputType = {
+    id: number | null
+    docente_id: number | null
+    grado_id: number | null
+    curso_id: number | null
+    area_id: number | null
+    materia_id: number | null
+  }
+
+  export type RecordatoriosSumAggregateOutputType = {
+    id: number | null
+    docente_id: number | null
+    grado_id: number | null
+    curso_id: number | null
+    area_id: number | null
+    materia_id: number | null
+  }
+
+  export type RecordatoriosMinAggregateOutputType = {
+    id: number | null
+    nombre: string | null
+    descripcion: string | null
+    fecha: Date | null
+    tipo: string | null
+    docente_id: number | null
+    grado_id: number | null
+    curso_id: number | null
+    area_id: number | null
+    materia_id: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type RecordatoriosMaxAggregateOutputType = {
+    id: number | null
+    nombre: string | null
+    descripcion: string | null
+    fecha: Date | null
+    tipo: string | null
+    docente_id: number | null
+    grado_id: number | null
+    curso_id: number | null
+    area_id: number | null
+    materia_id: number | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type RecordatoriosCountAggregateOutputType = {
+    id: number
+    nombre: number
+    descripcion: number
+    fecha: number
+    tipo: number
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type RecordatoriosAvgAggregateInputType = {
+    id?: true
+    docente_id?: true
+    grado_id?: true
+    curso_id?: true
+    area_id?: true
+    materia_id?: true
+  }
+
+  export type RecordatoriosSumAggregateInputType = {
+    id?: true
+    docente_id?: true
+    grado_id?: true
+    curso_id?: true
+    area_id?: true
+    materia_id?: true
+  }
+
+  export type RecordatoriosMinAggregateInputType = {
+    id?: true
+    nombre?: true
+    descripcion?: true
+    fecha?: true
+    tipo?: true
+    docente_id?: true
+    grado_id?: true
+    curso_id?: true
+    area_id?: true
+    materia_id?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type RecordatoriosMaxAggregateInputType = {
+    id?: true
+    nombre?: true
+    descripcion?: true
+    fecha?: true
+    tipo?: true
+    docente_id?: true
+    grado_id?: true
+    curso_id?: true
+    area_id?: true
+    materia_id?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type RecordatoriosCountAggregateInputType = {
+    id?: true
+    nombre?: true
+    descripcion?: true
+    fecha?: true
+    tipo?: true
+    docente_id?: true
+    grado_id?: true
+    curso_id?: true
+    area_id?: true
+    materia_id?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type RecordatoriosAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Recordatorios to aggregate.
+     */
+    where?: RecordatoriosWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Recordatorios to fetch.
+     */
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RecordatoriosWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Recordatorios from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Recordatorios.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Recordatorios
+    **/
+    _count?: true | RecordatoriosCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: RecordatoriosAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: RecordatoriosSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RecordatoriosMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RecordatoriosMaxAggregateInputType
+  }
+
+  export type GetRecordatoriosAggregateType<T extends RecordatoriosAggregateArgs> = {
+        [P in keyof T & keyof AggregateRecordatorios]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRecordatorios[P]>
+      : GetScalarType<T[P], AggregateRecordatorios[P]>
+  }
+
+
+
+
+  export type RecordatoriosGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatoriosWhereInput
+    orderBy?: RecordatoriosOrderByWithAggregationInput | RecordatoriosOrderByWithAggregationInput[]
+    by: RecordatoriosScalarFieldEnum[] | RecordatoriosScalarFieldEnum
+    having?: RecordatoriosScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RecordatoriosCountAggregateInputType | true
+    _avg?: RecordatoriosAvgAggregateInputType
+    _sum?: RecordatoriosSumAggregateInputType
+    _min?: RecordatoriosMinAggregateInputType
+    _max?: RecordatoriosMaxAggregateInputType
+  }
+
+  export type RecordatoriosGroupByOutputType = {
+    id: number
+    nombre: string
+    descripcion: string
+    fecha: Date
+    tipo: string
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at: Date
+    updated_at: Date
+    _count: RecordatoriosCountAggregateOutputType | null
+    _avg: RecordatoriosAvgAggregateOutputType | null
+    _sum: RecordatoriosSumAggregateOutputType | null
+    _min: RecordatoriosMinAggregateOutputType | null
+    _max: RecordatoriosMaxAggregateOutputType | null
+  }
+
+  type GetRecordatoriosGroupByPayload<T extends RecordatoriosGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RecordatoriosGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RecordatoriosGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RecordatoriosGroupByOutputType[P]>
+            : GetScalarType<T[P], RecordatoriosGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RecordatoriosSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nombre?: boolean
+    descripcion?: boolean
+    fecha?: boolean
+    tipo?: boolean
+    docente_id?: boolean
+    grado_id?: boolean
+    curso_id?: boolean
+    area_id?: boolean
+    materia_id?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    docente?: boolean | DocentesDefaultArgs<ExtArgs>
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
+    curso?: boolean | CursosDefaultArgs<ExtArgs>
+    area?: boolean | AreasDefaultArgs<ExtArgs>
+    materia?: boolean | MateriasDefaultArgs<ExtArgs>
+    estudiantes?: boolean | Recordatorios$estudiantesArgs<ExtArgs>
+    _count?: boolean | RecordatoriosCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["recordatorios"]>
+
+  export type RecordatoriosSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nombre?: boolean
+    descripcion?: boolean
+    fecha?: boolean
+    tipo?: boolean
+    docente_id?: boolean
+    grado_id?: boolean
+    curso_id?: boolean
+    area_id?: boolean
+    materia_id?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    docente?: boolean | DocentesDefaultArgs<ExtArgs>
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
+    curso?: boolean | CursosDefaultArgs<ExtArgs>
+    area?: boolean | AreasDefaultArgs<ExtArgs>
+    materia?: boolean | MateriasDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["recordatorios"]>
+
+  export type RecordatoriosSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    nombre?: boolean
+    descripcion?: boolean
+    fecha?: boolean
+    tipo?: boolean
+    docente_id?: boolean
+    grado_id?: boolean
+    curso_id?: boolean
+    area_id?: boolean
+    materia_id?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    docente?: boolean | DocentesDefaultArgs<ExtArgs>
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
+    curso?: boolean | CursosDefaultArgs<ExtArgs>
+    area?: boolean | AreasDefaultArgs<ExtArgs>
+    materia?: boolean | MateriasDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["recordatorios"]>
+
+  export type RecordatoriosSelectScalar = {
+    id?: boolean
+    nombre?: boolean
+    descripcion?: boolean
+    fecha?: boolean
+    tipo?: boolean
+    docente_id?: boolean
+    grado_id?: boolean
+    curso_id?: boolean
+    area_id?: boolean
+    materia_id?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type RecordatoriosOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "descripcion" | "fecha" | "tipo" | "docente_id" | "grado_id" | "curso_id" | "area_id" | "materia_id" | "created_at" | "updated_at", ExtArgs["result"]["recordatorios"]>
+  export type RecordatoriosInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    docente?: boolean | DocentesDefaultArgs<ExtArgs>
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
+    curso?: boolean | CursosDefaultArgs<ExtArgs>
+    area?: boolean | AreasDefaultArgs<ExtArgs>
+    materia?: boolean | MateriasDefaultArgs<ExtArgs>
+    estudiantes?: boolean | Recordatorios$estudiantesArgs<ExtArgs>
+    _count?: boolean | RecordatoriosCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type RecordatoriosIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    docente?: boolean | DocentesDefaultArgs<ExtArgs>
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
+    curso?: boolean | CursosDefaultArgs<ExtArgs>
+    area?: boolean | AreasDefaultArgs<ExtArgs>
+    materia?: boolean | MateriasDefaultArgs<ExtArgs>
+  }
+  export type RecordatoriosIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    docente?: boolean | DocentesDefaultArgs<ExtArgs>
+    grado?: boolean | GradosDefaultArgs<ExtArgs>
+    curso?: boolean | CursosDefaultArgs<ExtArgs>
+    area?: boolean | AreasDefaultArgs<ExtArgs>
+    materia?: boolean | MateriasDefaultArgs<ExtArgs>
+  }
+
+  export type $RecordatoriosPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Recordatorios"
+    objects: {
+      docente: Prisma.$DocentesPayload<ExtArgs>
+      grado: Prisma.$GradosPayload<ExtArgs>
+      curso: Prisma.$CursosPayload<ExtArgs>
+      area: Prisma.$AreasPayload<ExtArgs>
+      materia: Prisma.$MateriasPayload<ExtArgs>
+      estudiantes: Prisma.$RecordatorioEstudiantesPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      nombre: string
+      descripcion: string
+      fecha: Date
+      tipo: string
+      docente_id: number
+      grado_id: number
+      curso_id: number
+      area_id: number
+      materia_id: number
+      created_at: Date
+      updated_at: Date
+    }, ExtArgs["result"]["recordatorios"]>
+    composites: {}
+  }
+
+  type RecordatoriosGetPayload<S extends boolean | null | undefined | RecordatoriosDefaultArgs> = $Result.GetResult<Prisma.$RecordatoriosPayload, S>
+
+  type RecordatoriosCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RecordatoriosFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RecordatoriosCountAggregateInputType | true
+    }
+
+  export interface RecordatoriosDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Recordatorios'], meta: { name: 'Recordatorios' } }
+    /**
+     * Find zero or one Recordatorios that matches the filter.
+     * @param {RecordatoriosFindUniqueArgs} args - Arguments to find a Recordatorios
+     * @example
+     * // Get one Recordatorios
+     * const recordatorios = await prisma.recordatorios.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RecordatoriosFindUniqueArgs>(args: SelectSubset<T, RecordatoriosFindUniqueArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Recordatorios that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RecordatoriosFindUniqueOrThrowArgs} args - Arguments to find a Recordatorios
+     * @example
+     * // Get one Recordatorios
+     * const recordatorios = await prisma.recordatorios.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RecordatoriosFindUniqueOrThrowArgs>(args: SelectSubset<T, RecordatoriosFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Recordatorios that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatoriosFindFirstArgs} args - Arguments to find a Recordatorios
+     * @example
+     * // Get one Recordatorios
+     * const recordatorios = await prisma.recordatorios.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RecordatoriosFindFirstArgs>(args?: SelectSubset<T, RecordatoriosFindFirstArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Recordatorios that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatoriosFindFirstOrThrowArgs} args - Arguments to find a Recordatorios
+     * @example
+     * // Get one Recordatorios
+     * const recordatorios = await prisma.recordatorios.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RecordatoriosFindFirstOrThrowArgs>(args?: SelectSubset<T, RecordatoriosFindFirstOrThrowArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Recordatorios that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatoriosFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Recordatorios
+     * const recordatorios = await prisma.recordatorios.findMany()
+     * 
+     * // Get first 10 Recordatorios
+     * const recordatorios = await prisma.recordatorios.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const recordatoriosWithIdOnly = await prisma.recordatorios.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RecordatoriosFindManyArgs>(args?: SelectSubset<T, RecordatoriosFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Recordatorios.
+     * @param {RecordatoriosCreateArgs} args - Arguments to create a Recordatorios.
+     * @example
+     * // Create one Recordatorios
+     * const Recordatorios = await prisma.recordatorios.create({
+     *   data: {
+     *     // ... data to create a Recordatorios
+     *   }
+     * })
+     * 
+     */
+    create<T extends RecordatoriosCreateArgs>(args: SelectSubset<T, RecordatoriosCreateArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Recordatorios.
+     * @param {RecordatoriosCreateManyArgs} args - Arguments to create many Recordatorios.
+     * @example
+     * // Create many Recordatorios
+     * const recordatorios = await prisma.recordatorios.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RecordatoriosCreateManyArgs>(args?: SelectSubset<T, RecordatoriosCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Recordatorios and returns the data saved in the database.
+     * @param {RecordatoriosCreateManyAndReturnArgs} args - Arguments to create many Recordatorios.
+     * @example
+     * // Create many Recordatorios
+     * const recordatorios = await prisma.recordatorios.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Recordatorios and only return the `id`
+     * const recordatoriosWithIdOnly = await prisma.recordatorios.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends RecordatoriosCreateManyAndReturnArgs>(args?: SelectSubset<T, RecordatoriosCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Recordatorios.
+     * @param {RecordatoriosDeleteArgs} args - Arguments to delete one Recordatorios.
+     * @example
+     * // Delete one Recordatorios
+     * const Recordatorios = await prisma.recordatorios.delete({
+     *   where: {
+     *     // ... filter to delete one Recordatorios
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RecordatoriosDeleteArgs>(args: SelectSubset<T, RecordatoriosDeleteArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Recordatorios.
+     * @param {RecordatoriosUpdateArgs} args - Arguments to update one Recordatorios.
+     * @example
+     * // Update one Recordatorios
+     * const recordatorios = await prisma.recordatorios.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RecordatoriosUpdateArgs>(args: SelectSubset<T, RecordatoriosUpdateArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Recordatorios.
+     * @param {RecordatoriosDeleteManyArgs} args - Arguments to filter Recordatorios to delete.
+     * @example
+     * // Delete a few Recordatorios
+     * const { count } = await prisma.recordatorios.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RecordatoriosDeleteManyArgs>(args?: SelectSubset<T, RecordatoriosDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Recordatorios.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatoriosUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Recordatorios
+     * const recordatorios = await prisma.recordatorios.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RecordatoriosUpdateManyArgs>(args: SelectSubset<T, RecordatoriosUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Recordatorios and returns the data updated in the database.
+     * @param {RecordatoriosUpdateManyAndReturnArgs} args - Arguments to update many Recordatorios.
+     * @example
+     * // Update many Recordatorios
+     * const recordatorios = await prisma.recordatorios.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Recordatorios and only return the `id`
+     * const recordatoriosWithIdOnly = await prisma.recordatorios.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends RecordatoriosUpdateManyAndReturnArgs>(args: SelectSubset<T, RecordatoriosUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Recordatorios.
+     * @param {RecordatoriosUpsertArgs} args - Arguments to update or create a Recordatorios.
+     * @example
+     * // Update or create a Recordatorios
+     * const recordatorios = await prisma.recordatorios.upsert({
+     *   create: {
+     *     // ... data to create a Recordatorios
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Recordatorios we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RecordatoriosUpsertArgs>(args: SelectSubset<T, RecordatoriosUpsertArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Recordatorios.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatoriosCountArgs} args - Arguments to filter Recordatorios to count.
+     * @example
+     * // Count the number of Recordatorios
+     * const count = await prisma.recordatorios.count({
+     *   where: {
+     *     // ... the filter for the Recordatorios we want to count
+     *   }
+     * })
+    **/
+    count<T extends RecordatoriosCountArgs>(
+      args?: Subset<T, RecordatoriosCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RecordatoriosCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Recordatorios.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatoriosAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RecordatoriosAggregateArgs>(args: Subset<T, RecordatoriosAggregateArgs>): Prisma.PrismaPromise<GetRecordatoriosAggregateType<T>>
+
+    /**
+     * Group by Recordatorios.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatoriosGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RecordatoriosGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RecordatoriosGroupByArgs['orderBy'] }
+        : { orderBy?: RecordatoriosGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RecordatoriosGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRecordatoriosGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Recordatorios model
+   */
+  readonly fields: RecordatoriosFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Recordatorios.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RecordatoriosClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    docente<T extends DocentesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DocentesDefaultArgs<ExtArgs>>): Prisma__DocentesClient<$Result.GetResult<Prisma.$DocentesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    grado<T extends GradosDefaultArgs<ExtArgs> = {}>(args?: Subset<T, GradosDefaultArgs<ExtArgs>>): Prisma__GradosClient<$Result.GetResult<Prisma.$GradosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    curso<T extends CursosDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CursosDefaultArgs<ExtArgs>>): Prisma__CursosClient<$Result.GetResult<Prisma.$CursosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    area<T extends AreasDefaultArgs<ExtArgs> = {}>(args?: Subset<T, AreasDefaultArgs<ExtArgs>>): Prisma__AreasClient<$Result.GetResult<Prisma.$AreasPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    materia<T extends MateriasDefaultArgs<ExtArgs> = {}>(args?: Subset<T, MateriasDefaultArgs<ExtArgs>>): Prisma__MateriasClient<$Result.GetResult<Prisma.$MateriasPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    estudiantes<T extends Recordatorios$estudiantesArgs<ExtArgs> = {}>(args?: Subset<T, Recordatorios$estudiantesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Recordatorios model
+   */
+  interface RecordatoriosFieldRefs {
+    readonly id: FieldRef<"Recordatorios", 'Int'>
+    readonly nombre: FieldRef<"Recordatorios", 'String'>
+    readonly descripcion: FieldRef<"Recordatorios", 'String'>
+    readonly fecha: FieldRef<"Recordatorios", 'DateTime'>
+    readonly tipo: FieldRef<"Recordatorios", 'String'>
+    readonly docente_id: FieldRef<"Recordatorios", 'Int'>
+    readonly grado_id: FieldRef<"Recordatorios", 'Int'>
+    readonly curso_id: FieldRef<"Recordatorios", 'Int'>
+    readonly area_id: FieldRef<"Recordatorios", 'Int'>
+    readonly materia_id: FieldRef<"Recordatorios", 'Int'>
+    readonly created_at: FieldRef<"Recordatorios", 'DateTime'>
+    readonly updated_at: FieldRef<"Recordatorios", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Recordatorios findUnique
+   */
+  export type RecordatoriosFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * Filter, which Recordatorios to fetch.
+     */
+    where: RecordatoriosWhereUniqueInput
+  }
+
+  /**
+   * Recordatorios findUniqueOrThrow
+   */
+  export type RecordatoriosFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * Filter, which Recordatorios to fetch.
+     */
+    where: RecordatoriosWhereUniqueInput
+  }
+
+  /**
+   * Recordatorios findFirst
+   */
+  export type RecordatoriosFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * Filter, which Recordatorios to fetch.
+     */
+    where?: RecordatoriosWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Recordatorios to fetch.
+     */
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Recordatorios.
+     */
+    cursor?: RecordatoriosWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Recordatorios from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Recordatorios.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Recordatorios.
+     */
+    distinct?: RecordatoriosScalarFieldEnum | RecordatoriosScalarFieldEnum[]
+  }
+
+  /**
+   * Recordatorios findFirstOrThrow
+   */
+  export type RecordatoriosFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * Filter, which Recordatorios to fetch.
+     */
+    where?: RecordatoriosWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Recordatorios to fetch.
+     */
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Recordatorios.
+     */
+    cursor?: RecordatoriosWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Recordatorios from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Recordatorios.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Recordatorios.
+     */
+    distinct?: RecordatoriosScalarFieldEnum | RecordatoriosScalarFieldEnum[]
+  }
+
+  /**
+   * Recordatorios findMany
+   */
+  export type RecordatoriosFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * Filter, which Recordatorios to fetch.
+     */
+    where?: RecordatoriosWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Recordatorios to fetch.
+     */
+    orderBy?: RecordatoriosOrderByWithRelationInput | RecordatoriosOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Recordatorios.
+     */
+    cursor?: RecordatoriosWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Recordatorios from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Recordatorios.
+     */
+    skip?: number
+    distinct?: RecordatoriosScalarFieldEnum | RecordatoriosScalarFieldEnum[]
+  }
+
+  /**
+   * Recordatorios create
+   */
+  export type RecordatoriosCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Recordatorios.
+     */
+    data: XOR<RecordatoriosCreateInput, RecordatoriosUncheckedCreateInput>
+  }
+
+  /**
+   * Recordatorios createMany
+   */
+  export type RecordatoriosCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Recordatorios.
+     */
+    data: RecordatoriosCreateManyInput | RecordatoriosCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Recordatorios createManyAndReturn
+   */
+  export type RecordatoriosCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * The data used to create many Recordatorios.
+     */
+    data: RecordatoriosCreateManyInput | RecordatoriosCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Recordatorios update
+   */
+  export type RecordatoriosUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Recordatorios.
+     */
+    data: XOR<RecordatoriosUpdateInput, RecordatoriosUncheckedUpdateInput>
+    /**
+     * Choose, which Recordatorios to update.
+     */
+    where: RecordatoriosWhereUniqueInput
+  }
+
+  /**
+   * Recordatorios updateMany
+   */
+  export type RecordatoriosUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Recordatorios.
+     */
+    data: XOR<RecordatoriosUpdateManyMutationInput, RecordatoriosUncheckedUpdateManyInput>
+    /**
+     * Filter which Recordatorios to update
+     */
+    where?: RecordatoriosWhereInput
+    /**
+     * Limit how many Recordatorios to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Recordatorios updateManyAndReturn
+   */
+  export type RecordatoriosUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * The data used to update Recordatorios.
+     */
+    data: XOR<RecordatoriosUpdateManyMutationInput, RecordatoriosUncheckedUpdateManyInput>
+    /**
+     * Filter which Recordatorios to update
+     */
+    where?: RecordatoriosWhereInput
+    /**
+     * Limit how many Recordatorios to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Recordatorios upsert
+   */
+  export type RecordatoriosUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Recordatorios to update in case it exists.
+     */
+    where: RecordatoriosWhereUniqueInput
+    /**
+     * In case the Recordatorios found by the `where` argument doesn't exist, create a new Recordatorios with this data.
+     */
+    create: XOR<RecordatoriosCreateInput, RecordatoriosUncheckedCreateInput>
+    /**
+     * In case the Recordatorios was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RecordatoriosUpdateInput, RecordatoriosUncheckedUpdateInput>
+  }
+
+  /**
+   * Recordatorios delete
+   */
+  export type RecordatoriosDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+    /**
+     * Filter which Recordatorios to delete.
+     */
+    where: RecordatoriosWhereUniqueInput
+  }
+
+  /**
+   * Recordatorios deleteMany
+   */
+  export type RecordatoriosDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Recordatorios to delete
+     */
+    where?: RecordatoriosWhereInput
+    /**
+     * Limit how many Recordatorios to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Recordatorios.estudiantes
+   */
+  export type Recordatorios$estudiantesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    where?: RecordatorioEstudiantesWhereInput
+    orderBy?: RecordatorioEstudiantesOrderByWithRelationInput | RecordatorioEstudiantesOrderByWithRelationInput[]
+    cursor?: RecordatorioEstudiantesWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RecordatorioEstudiantesScalarFieldEnum | RecordatorioEstudiantesScalarFieldEnum[]
+  }
+
+  /**
+   * Recordatorios without action
+   */
+  export type RecordatoriosDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Recordatorios
+     */
+    select?: RecordatoriosSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Recordatorios
+     */
+    omit?: RecordatoriosOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatoriosInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model RecordatorioEstudiantes
+   */
+
+  export type AggregateRecordatorioEstudiantes = {
+    _count: RecordatorioEstudiantesCountAggregateOutputType | null
+    _avg: RecordatorioEstudiantesAvgAggregateOutputType | null
+    _sum: RecordatorioEstudiantesSumAggregateOutputType | null
+    _min: RecordatorioEstudiantesMinAggregateOutputType | null
+    _max: RecordatorioEstudiantesMaxAggregateOutputType | null
+  }
+
+  export type RecordatorioEstudiantesAvgAggregateOutputType = {
+    id: number | null
+    recordatorio_id: number | null
+    estudiante_id: number | null
+  }
+
+  export type RecordatorioEstudiantesSumAggregateOutputType = {
+    id: number | null
+    recordatorio_id: number | null
+    estudiante_id: number | null
+  }
+
+  export type RecordatorioEstudiantesMinAggregateOutputType = {
+    id: number | null
+    recordatorio_id: number | null
+    estudiante_id: number | null
+    created_at: Date | null
+  }
+
+  export type RecordatorioEstudiantesMaxAggregateOutputType = {
+    id: number | null
+    recordatorio_id: number | null
+    estudiante_id: number | null
+    created_at: Date | null
+  }
+
+  export type RecordatorioEstudiantesCountAggregateOutputType = {
+    id: number
+    recordatorio_id: number
+    estudiante_id: number
+    created_at: number
+    _all: number
+  }
+
+
+  export type RecordatorioEstudiantesAvgAggregateInputType = {
+    id?: true
+    recordatorio_id?: true
+    estudiante_id?: true
+  }
+
+  export type RecordatorioEstudiantesSumAggregateInputType = {
+    id?: true
+    recordatorio_id?: true
+    estudiante_id?: true
+  }
+
+  export type RecordatorioEstudiantesMinAggregateInputType = {
+    id?: true
+    recordatorio_id?: true
+    estudiante_id?: true
+    created_at?: true
+  }
+
+  export type RecordatorioEstudiantesMaxAggregateInputType = {
+    id?: true
+    recordatorio_id?: true
+    estudiante_id?: true
+    created_at?: true
+  }
+
+  export type RecordatorioEstudiantesCountAggregateInputType = {
+    id?: true
+    recordatorio_id?: true
+    estudiante_id?: true
+    created_at?: true
+    _all?: true
+  }
+
+  export type RecordatorioEstudiantesAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RecordatorioEstudiantes to aggregate.
+     */
+    where?: RecordatorioEstudiantesWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RecordatorioEstudiantes to fetch.
+     */
+    orderBy?: RecordatorioEstudiantesOrderByWithRelationInput | RecordatorioEstudiantesOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RecordatorioEstudiantesWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RecordatorioEstudiantes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RecordatorioEstudiantes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RecordatorioEstudiantes
+    **/
+    _count?: true | RecordatorioEstudiantesCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: RecordatorioEstudiantesAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: RecordatorioEstudiantesSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RecordatorioEstudiantesMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RecordatorioEstudiantesMaxAggregateInputType
+  }
+
+  export type GetRecordatorioEstudiantesAggregateType<T extends RecordatorioEstudiantesAggregateArgs> = {
+        [P in keyof T & keyof AggregateRecordatorioEstudiantes]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRecordatorioEstudiantes[P]>
+      : GetScalarType<T[P], AggregateRecordatorioEstudiantes[P]>
+  }
+
+
+
+
+  export type RecordatorioEstudiantesGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordatorioEstudiantesWhereInput
+    orderBy?: RecordatorioEstudiantesOrderByWithAggregationInput | RecordatorioEstudiantesOrderByWithAggregationInput[]
+    by: RecordatorioEstudiantesScalarFieldEnum[] | RecordatorioEstudiantesScalarFieldEnum
+    having?: RecordatorioEstudiantesScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RecordatorioEstudiantesCountAggregateInputType | true
+    _avg?: RecordatorioEstudiantesAvgAggregateInputType
+    _sum?: RecordatorioEstudiantesSumAggregateInputType
+    _min?: RecordatorioEstudiantesMinAggregateInputType
+    _max?: RecordatorioEstudiantesMaxAggregateInputType
+  }
+
+  export type RecordatorioEstudiantesGroupByOutputType = {
+    id: number
+    recordatorio_id: number
+    estudiante_id: number
+    created_at: Date
+    _count: RecordatorioEstudiantesCountAggregateOutputType | null
+    _avg: RecordatorioEstudiantesAvgAggregateOutputType | null
+    _sum: RecordatorioEstudiantesSumAggregateOutputType | null
+    _min: RecordatorioEstudiantesMinAggregateOutputType | null
+    _max: RecordatorioEstudiantesMaxAggregateOutputType | null
+  }
+
+  type GetRecordatorioEstudiantesGroupByPayload<T extends RecordatorioEstudiantesGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RecordatorioEstudiantesGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RecordatorioEstudiantesGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RecordatorioEstudiantesGroupByOutputType[P]>
+            : GetScalarType<T[P], RecordatorioEstudiantesGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RecordatorioEstudiantesSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    recordatorio_id?: boolean
+    estudiante_id?: boolean
+    created_at?: boolean
+    recordatorio?: boolean | RecordatoriosDefaultArgs<ExtArgs>
+    estudiante?: boolean | EstudiantesDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["recordatorioEstudiantes"]>
+
+  export type RecordatorioEstudiantesSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    recordatorio_id?: boolean
+    estudiante_id?: boolean
+    created_at?: boolean
+    recordatorio?: boolean | RecordatoriosDefaultArgs<ExtArgs>
+    estudiante?: boolean | EstudiantesDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["recordatorioEstudiantes"]>
+
+  export type RecordatorioEstudiantesSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    recordatorio_id?: boolean
+    estudiante_id?: boolean
+    created_at?: boolean
+    recordatorio?: boolean | RecordatoriosDefaultArgs<ExtArgs>
+    estudiante?: boolean | EstudiantesDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["recordatorioEstudiantes"]>
+
+  export type RecordatorioEstudiantesSelectScalar = {
+    id?: boolean
+    recordatorio_id?: boolean
+    estudiante_id?: boolean
+    created_at?: boolean
+  }
+
+  export type RecordatorioEstudiantesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "recordatorio_id" | "estudiante_id" | "created_at", ExtArgs["result"]["recordatorioEstudiantes"]>
+  export type RecordatorioEstudiantesInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    recordatorio?: boolean | RecordatoriosDefaultArgs<ExtArgs>
+    estudiante?: boolean | EstudiantesDefaultArgs<ExtArgs>
+  }
+  export type RecordatorioEstudiantesIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    recordatorio?: boolean | RecordatoriosDefaultArgs<ExtArgs>
+    estudiante?: boolean | EstudiantesDefaultArgs<ExtArgs>
+  }
+  export type RecordatorioEstudiantesIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    recordatorio?: boolean | RecordatoriosDefaultArgs<ExtArgs>
+    estudiante?: boolean | EstudiantesDefaultArgs<ExtArgs>
+  }
+
+  export type $RecordatorioEstudiantesPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RecordatorioEstudiantes"
+    objects: {
+      recordatorio: Prisma.$RecordatoriosPayload<ExtArgs>
+      estudiante: Prisma.$EstudiantesPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      recordatorio_id: number
+      estudiante_id: number
+      created_at: Date
+    }, ExtArgs["result"]["recordatorioEstudiantes"]>
+    composites: {}
+  }
+
+  type RecordatorioEstudiantesGetPayload<S extends boolean | null | undefined | RecordatorioEstudiantesDefaultArgs> = $Result.GetResult<Prisma.$RecordatorioEstudiantesPayload, S>
+
+  type RecordatorioEstudiantesCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RecordatorioEstudiantesFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RecordatorioEstudiantesCountAggregateInputType | true
+    }
+
+  export interface RecordatorioEstudiantesDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RecordatorioEstudiantes'], meta: { name: 'RecordatorioEstudiantes' } }
+    /**
+     * Find zero or one RecordatorioEstudiantes that matches the filter.
+     * @param {RecordatorioEstudiantesFindUniqueArgs} args - Arguments to find a RecordatorioEstudiantes
+     * @example
+     * // Get one RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RecordatorioEstudiantesFindUniqueArgs>(args: SelectSubset<T, RecordatorioEstudiantesFindUniqueArgs<ExtArgs>>): Prisma__RecordatorioEstudiantesClient<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one RecordatorioEstudiantes that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RecordatorioEstudiantesFindUniqueOrThrowArgs} args - Arguments to find a RecordatorioEstudiantes
+     * @example
+     * // Get one RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RecordatorioEstudiantesFindUniqueOrThrowArgs>(args: SelectSubset<T, RecordatorioEstudiantesFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RecordatorioEstudiantesClient<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RecordatorioEstudiantes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatorioEstudiantesFindFirstArgs} args - Arguments to find a RecordatorioEstudiantes
+     * @example
+     * // Get one RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RecordatorioEstudiantesFindFirstArgs>(args?: SelectSubset<T, RecordatorioEstudiantesFindFirstArgs<ExtArgs>>): Prisma__RecordatorioEstudiantesClient<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RecordatorioEstudiantes that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatorioEstudiantesFindFirstOrThrowArgs} args - Arguments to find a RecordatorioEstudiantes
+     * @example
+     * // Get one RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RecordatorioEstudiantesFindFirstOrThrowArgs>(args?: SelectSubset<T, RecordatorioEstudiantesFindFirstOrThrowArgs<ExtArgs>>): Prisma__RecordatorioEstudiantesClient<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more RecordatorioEstudiantes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatorioEstudiantesFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.findMany()
+     * 
+     * // Get first 10 RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const recordatorioEstudiantesWithIdOnly = await prisma.recordatorioEstudiantes.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RecordatorioEstudiantesFindManyArgs>(args?: SelectSubset<T, RecordatorioEstudiantesFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a RecordatorioEstudiantes.
+     * @param {RecordatorioEstudiantesCreateArgs} args - Arguments to create a RecordatorioEstudiantes.
+     * @example
+     * // Create one RecordatorioEstudiantes
+     * const RecordatorioEstudiantes = await prisma.recordatorioEstudiantes.create({
+     *   data: {
+     *     // ... data to create a RecordatorioEstudiantes
+     *   }
+     * })
+     * 
+     */
+    create<T extends RecordatorioEstudiantesCreateArgs>(args: SelectSubset<T, RecordatorioEstudiantesCreateArgs<ExtArgs>>): Prisma__RecordatorioEstudiantesClient<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many RecordatorioEstudiantes.
+     * @param {RecordatorioEstudiantesCreateManyArgs} args - Arguments to create many RecordatorioEstudiantes.
+     * @example
+     * // Create many RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RecordatorioEstudiantesCreateManyArgs>(args?: SelectSubset<T, RecordatorioEstudiantesCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many RecordatorioEstudiantes and returns the data saved in the database.
+     * @param {RecordatorioEstudiantesCreateManyAndReturnArgs} args - Arguments to create many RecordatorioEstudiantes.
+     * @example
+     * // Create many RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many RecordatorioEstudiantes and only return the `id`
+     * const recordatorioEstudiantesWithIdOnly = await prisma.recordatorioEstudiantes.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends RecordatorioEstudiantesCreateManyAndReturnArgs>(args?: SelectSubset<T, RecordatorioEstudiantesCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a RecordatorioEstudiantes.
+     * @param {RecordatorioEstudiantesDeleteArgs} args - Arguments to delete one RecordatorioEstudiantes.
+     * @example
+     * // Delete one RecordatorioEstudiantes
+     * const RecordatorioEstudiantes = await prisma.recordatorioEstudiantes.delete({
+     *   where: {
+     *     // ... filter to delete one RecordatorioEstudiantes
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RecordatorioEstudiantesDeleteArgs>(args: SelectSubset<T, RecordatorioEstudiantesDeleteArgs<ExtArgs>>): Prisma__RecordatorioEstudiantesClient<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one RecordatorioEstudiantes.
+     * @param {RecordatorioEstudiantesUpdateArgs} args - Arguments to update one RecordatorioEstudiantes.
+     * @example
+     * // Update one RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RecordatorioEstudiantesUpdateArgs>(args: SelectSubset<T, RecordatorioEstudiantesUpdateArgs<ExtArgs>>): Prisma__RecordatorioEstudiantesClient<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more RecordatorioEstudiantes.
+     * @param {RecordatorioEstudiantesDeleteManyArgs} args - Arguments to filter RecordatorioEstudiantes to delete.
+     * @example
+     * // Delete a few RecordatorioEstudiantes
+     * const { count } = await prisma.recordatorioEstudiantes.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RecordatorioEstudiantesDeleteManyArgs>(args?: SelectSubset<T, RecordatorioEstudiantesDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RecordatorioEstudiantes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatorioEstudiantesUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RecordatorioEstudiantesUpdateManyArgs>(args: SelectSubset<T, RecordatorioEstudiantesUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RecordatorioEstudiantes and returns the data updated in the database.
+     * @param {RecordatorioEstudiantesUpdateManyAndReturnArgs} args - Arguments to update many RecordatorioEstudiantes.
+     * @example
+     * // Update many RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more RecordatorioEstudiantes and only return the `id`
+     * const recordatorioEstudiantesWithIdOnly = await prisma.recordatorioEstudiantes.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends RecordatorioEstudiantesUpdateManyAndReturnArgs>(args: SelectSubset<T, RecordatorioEstudiantesUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one RecordatorioEstudiantes.
+     * @param {RecordatorioEstudiantesUpsertArgs} args - Arguments to update or create a RecordatorioEstudiantes.
+     * @example
+     * // Update or create a RecordatorioEstudiantes
+     * const recordatorioEstudiantes = await prisma.recordatorioEstudiantes.upsert({
+     *   create: {
+     *     // ... data to create a RecordatorioEstudiantes
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RecordatorioEstudiantes we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RecordatorioEstudiantesUpsertArgs>(args: SelectSubset<T, RecordatorioEstudiantesUpsertArgs<ExtArgs>>): Prisma__RecordatorioEstudiantesClient<$Result.GetResult<Prisma.$RecordatorioEstudiantesPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of RecordatorioEstudiantes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatorioEstudiantesCountArgs} args - Arguments to filter RecordatorioEstudiantes to count.
+     * @example
+     * // Count the number of RecordatorioEstudiantes
+     * const count = await prisma.recordatorioEstudiantes.count({
+     *   where: {
+     *     // ... the filter for the RecordatorioEstudiantes we want to count
+     *   }
+     * })
+    **/
+    count<T extends RecordatorioEstudiantesCountArgs>(
+      args?: Subset<T, RecordatorioEstudiantesCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RecordatorioEstudiantesCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RecordatorioEstudiantes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatorioEstudiantesAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RecordatorioEstudiantesAggregateArgs>(args: Subset<T, RecordatorioEstudiantesAggregateArgs>): Prisma.PrismaPromise<GetRecordatorioEstudiantesAggregateType<T>>
+
+    /**
+     * Group by RecordatorioEstudiantes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecordatorioEstudiantesGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RecordatorioEstudiantesGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RecordatorioEstudiantesGroupByArgs['orderBy'] }
+        : { orderBy?: RecordatorioEstudiantesGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RecordatorioEstudiantesGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRecordatorioEstudiantesGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RecordatorioEstudiantes model
+   */
+  readonly fields: RecordatorioEstudiantesFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RecordatorioEstudiantes.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RecordatorioEstudiantesClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    recordatorio<T extends RecordatoriosDefaultArgs<ExtArgs> = {}>(args?: Subset<T, RecordatoriosDefaultArgs<ExtArgs>>): Prisma__RecordatoriosClient<$Result.GetResult<Prisma.$RecordatoriosPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    estudiante<T extends EstudiantesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EstudiantesDefaultArgs<ExtArgs>>): Prisma__EstudiantesClient<$Result.GetResult<Prisma.$EstudiantesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RecordatorioEstudiantes model
+   */
+  interface RecordatorioEstudiantesFieldRefs {
+    readonly id: FieldRef<"RecordatorioEstudiantes", 'Int'>
+    readonly recordatorio_id: FieldRef<"RecordatorioEstudiantes", 'Int'>
+    readonly estudiante_id: FieldRef<"RecordatorioEstudiantes", 'Int'>
+    readonly created_at: FieldRef<"RecordatorioEstudiantes", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RecordatorioEstudiantes findUnique
+   */
+  export type RecordatorioEstudiantesFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * Filter, which RecordatorioEstudiantes to fetch.
+     */
+    where: RecordatorioEstudiantesWhereUniqueInput
+  }
+
+  /**
+   * RecordatorioEstudiantes findUniqueOrThrow
+   */
+  export type RecordatorioEstudiantesFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * Filter, which RecordatorioEstudiantes to fetch.
+     */
+    where: RecordatorioEstudiantesWhereUniqueInput
+  }
+
+  /**
+   * RecordatorioEstudiantes findFirst
+   */
+  export type RecordatorioEstudiantesFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * Filter, which RecordatorioEstudiantes to fetch.
+     */
+    where?: RecordatorioEstudiantesWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RecordatorioEstudiantes to fetch.
+     */
+    orderBy?: RecordatorioEstudiantesOrderByWithRelationInput | RecordatorioEstudiantesOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RecordatorioEstudiantes.
+     */
+    cursor?: RecordatorioEstudiantesWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RecordatorioEstudiantes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RecordatorioEstudiantes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RecordatorioEstudiantes.
+     */
+    distinct?: RecordatorioEstudiantesScalarFieldEnum | RecordatorioEstudiantesScalarFieldEnum[]
+  }
+
+  /**
+   * RecordatorioEstudiantes findFirstOrThrow
+   */
+  export type RecordatorioEstudiantesFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * Filter, which RecordatorioEstudiantes to fetch.
+     */
+    where?: RecordatorioEstudiantesWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RecordatorioEstudiantes to fetch.
+     */
+    orderBy?: RecordatorioEstudiantesOrderByWithRelationInput | RecordatorioEstudiantesOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RecordatorioEstudiantes.
+     */
+    cursor?: RecordatorioEstudiantesWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RecordatorioEstudiantes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RecordatorioEstudiantes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RecordatorioEstudiantes.
+     */
+    distinct?: RecordatorioEstudiantesScalarFieldEnum | RecordatorioEstudiantesScalarFieldEnum[]
+  }
+
+  /**
+   * RecordatorioEstudiantes findMany
+   */
+  export type RecordatorioEstudiantesFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * Filter, which RecordatorioEstudiantes to fetch.
+     */
+    where?: RecordatorioEstudiantesWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RecordatorioEstudiantes to fetch.
+     */
+    orderBy?: RecordatorioEstudiantesOrderByWithRelationInput | RecordatorioEstudiantesOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RecordatorioEstudiantes.
+     */
+    cursor?: RecordatorioEstudiantesWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RecordatorioEstudiantes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RecordatorioEstudiantes.
+     */
+    skip?: number
+    distinct?: RecordatorioEstudiantesScalarFieldEnum | RecordatorioEstudiantesScalarFieldEnum[]
+  }
+
+  /**
+   * RecordatorioEstudiantes create
+   */
+  export type RecordatorioEstudiantesCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * The data needed to create a RecordatorioEstudiantes.
+     */
+    data: XOR<RecordatorioEstudiantesCreateInput, RecordatorioEstudiantesUncheckedCreateInput>
+  }
+
+  /**
+   * RecordatorioEstudiantes createMany
+   */
+  export type RecordatorioEstudiantesCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RecordatorioEstudiantes.
+     */
+    data: RecordatorioEstudiantesCreateManyInput | RecordatorioEstudiantesCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RecordatorioEstudiantes createManyAndReturn
+   */
+  export type RecordatorioEstudiantesCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * The data used to create many RecordatorioEstudiantes.
+     */
+    data: RecordatorioEstudiantesCreateManyInput | RecordatorioEstudiantesCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * RecordatorioEstudiantes update
+   */
+  export type RecordatorioEstudiantesUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * The data needed to update a RecordatorioEstudiantes.
+     */
+    data: XOR<RecordatorioEstudiantesUpdateInput, RecordatorioEstudiantesUncheckedUpdateInput>
+    /**
+     * Choose, which RecordatorioEstudiantes to update.
+     */
+    where: RecordatorioEstudiantesWhereUniqueInput
+  }
+
+  /**
+   * RecordatorioEstudiantes updateMany
+   */
+  export type RecordatorioEstudiantesUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RecordatorioEstudiantes.
+     */
+    data: XOR<RecordatorioEstudiantesUpdateManyMutationInput, RecordatorioEstudiantesUncheckedUpdateManyInput>
+    /**
+     * Filter which RecordatorioEstudiantes to update
+     */
+    where?: RecordatorioEstudiantesWhereInput
+    /**
+     * Limit how many RecordatorioEstudiantes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RecordatorioEstudiantes updateManyAndReturn
+   */
+  export type RecordatorioEstudiantesUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * The data used to update RecordatorioEstudiantes.
+     */
+    data: XOR<RecordatorioEstudiantesUpdateManyMutationInput, RecordatorioEstudiantesUncheckedUpdateManyInput>
+    /**
+     * Filter which RecordatorioEstudiantes to update
+     */
+    where?: RecordatorioEstudiantesWhereInput
+    /**
+     * Limit how many RecordatorioEstudiantes to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * RecordatorioEstudiantes upsert
+   */
+  export type RecordatorioEstudiantesUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * The filter to search for the RecordatorioEstudiantes to update in case it exists.
+     */
+    where: RecordatorioEstudiantesWhereUniqueInput
+    /**
+     * In case the RecordatorioEstudiantes found by the `where` argument doesn't exist, create a new RecordatorioEstudiantes with this data.
+     */
+    create: XOR<RecordatorioEstudiantesCreateInput, RecordatorioEstudiantesUncheckedCreateInput>
+    /**
+     * In case the RecordatorioEstudiantes was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RecordatorioEstudiantesUpdateInput, RecordatorioEstudiantesUncheckedUpdateInput>
+  }
+
+  /**
+   * RecordatorioEstudiantes delete
+   */
+  export type RecordatorioEstudiantesDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
+    /**
+     * Filter which RecordatorioEstudiantes to delete.
+     */
+    where: RecordatorioEstudiantesWhereUniqueInput
+  }
+
+  /**
+   * RecordatorioEstudiantes deleteMany
+   */
+  export type RecordatorioEstudiantesDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RecordatorioEstudiantes to delete
+     */
+    where?: RecordatorioEstudiantesWhereInput
+    /**
+     * Limit how many RecordatorioEstudiantes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * RecordatorioEstudiantes without action
+   */
+  export type RecordatorioEstudiantesDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecordatorioEstudiantes
+     */
+    select?: RecordatorioEstudiantesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RecordatorioEstudiantes
+     */
+    omit?: RecordatorioEstudiantesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordatorioEstudiantesInclude<ExtArgs> | null
   }
 
 
@@ -16761,6 +19580,34 @@ export namespace Prisma {
   };
 
   export type EstudiantesScalarFieldEnum = (typeof EstudiantesScalarFieldEnum)[keyof typeof EstudiantesScalarFieldEnum]
+
+
+  export const RecordatoriosScalarFieldEnum: {
+    id: 'id',
+    nombre: 'nombre',
+    descripcion: 'descripcion',
+    fecha: 'fecha',
+    tipo: 'tipo',
+    docente_id: 'docente_id',
+    grado_id: 'grado_id',
+    curso_id: 'curso_id',
+    area_id: 'area_id',
+    materia_id: 'materia_id',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type RecordatoriosScalarFieldEnum = (typeof RecordatoriosScalarFieldEnum)[keyof typeof RecordatoriosScalarFieldEnum]
+
+
+  export const RecordatorioEstudiantesScalarFieldEnum: {
+    id: 'id',
+    recordatorio_id: 'recordatorio_id',
+    estudiante_id: 'estudiante_id',
+    created_at: 'created_at'
+  };
+
+  export type RecordatorioEstudiantesScalarFieldEnum = (typeof RecordatorioEstudiantesScalarFieldEnum)[keyof typeof RecordatorioEstudiantesScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -17217,6 +20064,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesListRelationFilter
     materiaGrados?: MateriaGradosListRelationFilter
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }
 
   export type GradosOrderByWithRelationInput = {
@@ -17232,6 +20080,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesOrderByRelationAggregateInput
     materiaGrados?: MateriaGradosOrderByRelationAggregateInput
     docenteAsignaciones?: DocenteAsignacionesOrderByRelationAggregateInput
+    recordatorios?: RecordatoriosOrderByRelationAggregateInput
   }
 
   export type GradosWhereUniqueInput = Prisma.AtLeast<{
@@ -17250,6 +20099,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesListRelationFilter
     materiaGrados?: MateriaGradosListRelationFilter
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }, "id">
 
   export type GradosOrderByWithAggregationInput = {
@@ -17297,6 +20147,7 @@ export namespace Prisma {
     sede?: XOR<SedesNullableScalarRelationFilter, SedesWhereInput> | null
     estudiantes?: EstudiantesListRelationFilter
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }
 
   export type CursosOrderByWithRelationInput = {
@@ -17313,6 +20164,7 @@ export namespace Prisma {
     sede?: SedesOrderByWithRelationInput
     estudiantes?: EstudiantesOrderByRelationAggregateInput
     docenteAsignaciones?: DocenteAsignacionesOrderByRelationAggregateInput
+    recordatorios?: RecordatoriosOrderByRelationAggregateInput
   }
 
   export type CursosWhereUniqueInput = Prisma.AtLeast<{
@@ -17332,6 +20184,7 @@ export namespace Prisma {
     sede?: XOR<SedesNullableScalarRelationFilter, SedesWhereInput> | null
     estudiantes?: EstudiantesListRelationFilter
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }, "id">
 
   export type CursosOrderByWithAggregationInput = {
@@ -17378,6 +20231,7 @@ export namespace Prisma {
     updated_at?: DateTimeFilter<"Areas"> | Date | string
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
     materias?: MateriasListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }
 
   export type AreasOrderByWithRelationInput = {
@@ -17391,6 +20245,7 @@ export namespace Prisma {
     updated_at?: SortOrder
     institucion?: InstitucionesOrderByWithRelationInput
     materias?: MateriasOrderByRelationAggregateInput
+    recordatorios?: RecordatoriosOrderByRelationAggregateInput
   }
 
   export type AreasWhereUniqueInput = Prisma.AtLeast<{
@@ -17407,6 +20262,7 @@ export namespace Prisma {
     updated_at?: DateTimeFilter<"Areas"> | Date | string
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
     materias?: MateriasListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }, "id">
 
   export type AreasOrderByWithAggregationInput = {
@@ -17453,6 +20309,7 @@ export namespace Prisma {
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
     materiaGrados?: MateriaGradosListRelationFilter
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }
 
   export type MateriasOrderByWithRelationInput = {
@@ -17466,6 +20323,7 @@ export namespace Prisma {
     institucion?: InstitucionesOrderByWithRelationInput
     materiaGrados?: MateriaGradosOrderByRelationAggregateInput
     docenteAsignaciones?: DocenteAsignacionesOrderByRelationAggregateInput
+    recordatorios?: RecordatoriosOrderByRelationAggregateInput
   }
 
   export type MateriasWhereUniqueInput = Prisma.AtLeast<{
@@ -17482,6 +20340,7 @@ export namespace Prisma {
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
     materiaGrados?: MateriaGradosListRelationFilter
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }, "id">
 
   export type MateriasOrderByWithAggregationInput = {
@@ -17584,6 +20443,7 @@ export namespace Prisma {
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
     sede?: XOR<SedesNullableScalarRelationFilter, SedesWhereInput> | null
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }
 
   export type DocentesOrderByWithRelationInput = {
@@ -17601,6 +20461,7 @@ export namespace Prisma {
     institucion?: InstitucionesOrderByWithRelationInput
     sede?: SedesOrderByWithRelationInput
     docenteAsignaciones?: DocenteAsignacionesOrderByRelationAggregateInput
+    recordatorios?: RecordatoriosOrderByRelationAggregateInput
   }
 
   export type DocentesWhereUniqueInput = Prisma.AtLeast<{
@@ -17621,6 +20482,7 @@ export namespace Prisma {
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
     sede?: XOR<SedesNullableScalarRelationFilter, SedesWhereInput> | null
     docenteAsignaciones?: DocenteAsignacionesListRelationFilter
+    recordatorios?: RecordatoriosListRelationFilter
   }, "id" | "email">
 
   export type DocentesOrderByWithAggregationInput = {
@@ -17751,6 +20613,7 @@ export namespace Prisma {
     grado?: XOR<GradosScalarRelationFilter, GradosWhereInput>
     curso?: XOR<CursosScalarRelationFilter, CursosWhereInput>
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
+    recordatorioEstudiantes?: RecordatorioEstudiantesListRelationFilter
   }
 
   export type EstudiantesOrderByWithRelationInput = {
@@ -17770,6 +20633,7 @@ export namespace Prisma {
     grado?: GradosOrderByWithRelationInput
     curso?: CursosOrderByWithRelationInput
     institucion?: InstitucionesOrderByWithRelationInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesOrderByRelationAggregateInput
   }
 
   export type EstudiantesWhereUniqueInput = Prisma.AtLeast<{
@@ -17793,6 +20657,7 @@ export namespace Prisma {
     grado?: XOR<GradosScalarRelationFilter, GradosWhereInput>
     curso?: XOR<CursosScalarRelationFilter, CursosWhereInput>
     institucion?: XOR<InstitucionesScalarRelationFilter, InstitucionesWhereInput>
+    recordatorioEstudiantes?: RecordatorioEstudiantesListRelationFilter
   }, "id" | "codigo_estudiantil_institucion_id">
 
   export type EstudiantesOrderByWithAggregationInput = {
@@ -17833,6 +20698,169 @@ export namespace Prisma {
     activo?: BoolWithAggregatesFilter<"Estudiantes"> | boolean
     created_at?: DateTimeWithAggregatesFilter<"Estudiantes"> | Date | string
     updated_at?: DateTimeWithAggregatesFilter<"Estudiantes"> | Date | string
+  }
+
+  export type RecordatoriosWhereInput = {
+    AND?: RecordatoriosWhereInput | RecordatoriosWhereInput[]
+    OR?: RecordatoriosWhereInput[]
+    NOT?: RecordatoriosWhereInput | RecordatoriosWhereInput[]
+    id?: IntFilter<"Recordatorios"> | number
+    nombre?: StringFilter<"Recordatorios"> | string
+    descripcion?: StringFilter<"Recordatorios"> | string
+    fecha?: DateTimeFilter<"Recordatorios"> | Date | string
+    tipo?: StringFilter<"Recordatorios"> | string
+    docente_id?: IntFilter<"Recordatorios"> | number
+    grado_id?: IntFilter<"Recordatorios"> | number
+    curso_id?: IntFilter<"Recordatorios"> | number
+    area_id?: IntFilter<"Recordatorios"> | number
+    materia_id?: IntFilter<"Recordatorios"> | number
+    created_at?: DateTimeFilter<"Recordatorios"> | Date | string
+    updated_at?: DateTimeFilter<"Recordatorios"> | Date | string
+    docente?: XOR<DocentesScalarRelationFilter, DocentesWhereInput>
+    grado?: XOR<GradosScalarRelationFilter, GradosWhereInput>
+    curso?: XOR<CursosScalarRelationFilter, CursosWhereInput>
+    area?: XOR<AreasScalarRelationFilter, AreasWhereInput>
+    materia?: XOR<MateriasScalarRelationFilter, MateriasWhereInput>
+    estudiantes?: RecordatorioEstudiantesListRelationFilter
+  }
+
+  export type RecordatoriosOrderByWithRelationInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    descripcion?: SortOrder
+    fecha?: SortOrder
+    tipo?: SortOrder
+    docente_id?: SortOrder
+    grado_id?: SortOrder
+    curso_id?: SortOrder
+    area_id?: SortOrder
+    materia_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    docente?: DocentesOrderByWithRelationInput
+    grado?: GradosOrderByWithRelationInput
+    curso?: CursosOrderByWithRelationInput
+    area?: AreasOrderByWithRelationInput
+    materia?: MateriasOrderByWithRelationInput
+    estudiantes?: RecordatorioEstudiantesOrderByRelationAggregateInput
+  }
+
+  export type RecordatoriosWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: RecordatoriosWhereInput | RecordatoriosWhereInput[]
+    OR?: RecordatoriosWhereInput[]
+    NOT?: RecordatoriosWhereInput | RecordatoriosWhereInput[]
+    nombre?: StringFilter<"Recordatorios"> | string
+    descripcion?: StringFilter<"Recordatorios"> | string
+    fecha?: DateTimeFilter<"Recordatorios"> | Date | string
+    tipo?: StringFilter<"Recordatorios"> | string
+    docente_id?: IntFilter<"Recordatorios"> | number
+    grado_id?: IntFilter<"Recordatorios"> | number
+    curso_id?: IntFilter<"Recordatorios"> | number
+    area_id?: IntFilter<"Recordatorios"> | number
+    materia_id?: IntFilter<"Recordatorios"> | number
+    created_at?: DateTimeFilter<"Recordatorios"> | Date | string
+    updated_at?: DateTimeFilter<"Recordatorios"> | Date | string
+    docente?: XOR<DocentesScalarRelationFilter, DocentesWhereInput>
+    grado?: XOR<GradosScalarRelationFilter, GradosWhereInput>
+    curso?: XOR<CursosScalarRelationFilter, CursosWhereInput>
+    area?: XOR<AreasScalarRelationFilter, AreasWhereInput>
+    materia?: XOR<MateriasScalarRelationFilter, MateriasWhereInput>
+    estudiantes?: RecordatorioEstudiantesListRelationFilter
+  }, "id">
+
+  export type RecordatoriosOrderByWithAggregationInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    descripcion?: SortOrder
+    fecha?: SortOrder
+    tipo?: SortOrder
+    docente_id?: SortOrder
+    grado_id?: SortOrder
+    curso_id?: SortOrder
+    area_id?: SortOrder
+    materia_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    _count?: RecordatoriosCountOrderByAggregateInput
+    _avg?: RecordatoriosAvgOrderByAggregateInput
+    _max?: RecordatoriosMaxOrderByAggregateInput
+    _min?: RecordatoriosMinOrderByAggregateInput
+    _sum?: RecordatoriosSumOrderByAggregateInput
+  }
+
+  export type RecordatoriosScalarWhereWithAggregatesInput = {
+    AND?: RecordatoriosScalarWhereWithAggregatesInput | RecordatoriosScalarWhereWithAggregatesInput[]
+    OR?: RecordatoriosScalarWhereWithAggregatesInput[]
+    NOT?: RecordatoriosScalarWhereWithAggregatesInput | RecordatoriosScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"Recordatorios"> | number
+    nombre?: StringWithAggregatesFilter<"Recordatorios"> | string
+    descripcion?: StringWithAggregatesFilter<"Recordatorios"> | string
+    fecha?: DateTimeWithAggregatesFilter<"Recordatorios"> | Date | string
+    tipo?: StringWithAggregatesFilter<"Recordatorios"> | string
+    docente_id?: IntWithAggregatesFilter<"Recordatorios"> | number
+    grado_id?: IntWithAggregatesFilter<"Recordatorios"> | number
+    curso_id?: IntWithAggregatesFilter<"Recordatorios"> | number
+    area_id?: IntWithAggregatesFilter<"Recordatorios"> | number
+    materia_id?: IntWithAggregatesFilter<"Recordatorios"> | number
+    created_at?: DateTimeWithAggregatesFilter<"Recordatorios"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"Recordatorios"> | Date | string
+  }
+
+  export type RecordatorioEstudiantesWhereInput = {
+    AND?: RecordatorioEstudiantesWhereInput | RecordatorioEstudiantesWhereInput[]
+    OR?: RecordatorioEstudiantesWhereInput[]
+    NOT?: RecordatorioEstudiantesWhereInput | RecordatorioEstudiantesWhereInput[]
+    id?: IntFilter<"RecordatorioEstudiantes"> | number
+    recordatorio_id?: IntFilter<"RecordatorioEstudiantes"> | number
+    estudiante_id?: IntFilter<"RecordatorioEstudiantes"> | number
+    created_at?: DateTimeFilter<"RecordatorioEstudiantes"> | Date | string
+    recordatorio?: XOR<RecordatoriosScalarRelationFilter, RecordatoriosWhereInput>
+    estudiante?: XOR<EstudiantesScalarRelationFilter, EstudiantesWhereInput>
+  }
+
+  export type RecordatorioEstudiantesOrderByWithRelationInput = {
+    id?: SortOrder
+    recordatorio_id?: SortOrder
+    estudiante_id?: SortOrder
+    created_at?: SortOrder
+    recordatorio?: RecordatoriosOrderByWithRelationInput
+    estudiante?: EstudiantesOrderByWithRelationInput
+  }
+
+  export type RecordatorioEstudiantesWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    recordatorio_id_estudiante_id?: RecordatorioEstudiantesRecordatorio_idEstudiante_idCompoundUniqueInput
+    AND?: RecordatorioEstudiantesWhereInput | RecordatorioEstudiantesWhereInput[]
+    OR?: RecordatorioEstudiantesWhereInput[]
+    NOT?: RecordatorioEstudiantesWhereInput | RecordatorioEstudiantesWhereInput[]
+    recordatorio_id?: IntFilter<"RecordatorioEstudiantes"> | number
+    estudiante_id?: IntFilter<"RecordatorioEstudiantes"> | number
+    created_at?: DateTimeFilter<"RecordatorioEstudiantes"> | Date | string
+    recordatorio?: XOR<RecordatoriosScalarRelationFilter, RecordatoriosWhereInput>
+    estudiante?: XOR<EstudiantesScalarRelationFilter, EstudiantesWhereInput>
+  }, "id" | "recordatorio_id_estudiante_id">
+
+  export type RecordatorioEstudiantesOrderByWithAggregationInput = {
+    id?: SortOrder
+    recordatorio_id?: SortOrder
+    estudiante_id?: SortOrder
+    created_at?: SortOrder
+    _count?: RecordatorioEstudiantesCountOrderByAggregateInput
+    _avg?: RecordatorioEstudiantesAvgOrderByAggregateInput
+    _max?: RecordatorioEstudiantesMaxOrderByAggregateInput
+    _min?: RecordatorioEstudiantesMinOrderByAggregateInput
+    _sum?: RecordatorioEstudiantesSumOrderByAggregateInput
+  }
+
+  export type RecordatorioEstudiantesScalarWhereWithAggregatesInput = {
+    AND?: RecordatorioEstudiantesScalarWhereWithAggregatesInput | RecordatorioEstudiantesScalarWhereWithAggregatesInput[]
+    OR?: RecordatorioEstudiantesScalarWhereWithAggregatesInput[]
+    NOT?: RecordatorioEstudiantesScalarWhereWithAggregatesInput | RecordatorioEstudiantesScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"RecordatorioEstudiantes"> | number
+    recordatorio_id?: IntWithAggregatesFilter<"RecordatorioEstudiantes"> | number
+    estudiante_id?: IntWithAggregatesFilter<"RecordatorioEstudiantes"> | number
+    created_at?: DateTimeWithAggregatesFilter<"RecordatorioEstudiantes"> | Date | string
   }
 
   export type InstitucionesCreateInput = {
@@ -18218,6 +21246,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutGradoInput
   }
 
   export type GradosUncheckedCreateInput = {
@@ -18232,6 +21261,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutGradoInput
   }
 
   export type GradosUpdateInput = {
@@ -18245,6 +21275,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutGradoNestedInput
   }
 
   export type GradosUncheckedUpdateInput = {
@@ -18259,6 +21290,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutGradoNestedInput
   }
 
   export type GradosCreateManyInput = {
@@ -18299,6 +21331,7 @@ export namespace Prisma {
     sede?: SedesCreateNestedOneWithoutCursosInput
     estudiantes?: EstudiantesCreateNestedManyWithoutCursoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutCursoInput
   }
 
   export type CursosUncheckedCreateInput = {
@@ -18312,6 +21345,7 @@ export namespace Prisma {
     updated_at?: Date | string
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutCursoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutCursoInput
   }
 
   export type CursosUpdateInput = {
@@ -18324,6 +21358,7 @@ export namespace Prisma {
     sede?: SedesUpdateOneWithoutCursosNestedInput
     estudiantes?: EstudiantesUpdateManyWithoutCursoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateInput = {
@@ -18337,6 +21372,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutCursoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosCreateManyInput = {
@@ -18377,6 +21413,7 @@ export namespace Prisma {
     updated_at?: Date | string
     institucion: InstitucionesCreateNestedOneWithoutAreasInput
     materias?: MateriasCreateNestedManyWithoutAreaInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutAreaInput
   }
 
   export type AreasUncheckedCreateInput = {
@@ -18389,6 +21426,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     materias?: MateriasUncheckedCreateNestedManyWithoutAreaInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutAreaInput
   }
 
   export type AreasUpdateInput = {
@@ -18400,6 +21438,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     institucion?: InstitucionesUpdateOneRequiredWithoutAreasNestedInput
     materias?: MateriasUpdateManyWithoutAreaNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutAreaNestedInput
   }
 
   export type AreasUncheckedUpdateInput = {
@@ -18412,6 +21451,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     materias?: MateriasUncheckedUpdateManyWithoutAreaNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutAreaNestedInput
   }
 
   export type AreasCreateManyInput = {
@@ -18453,6 +21493,7 @@ export namespace Prisma {
     institucion: InstitucionesCreateNestedOneWithoutMateriasInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutMateriaInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasUncheckedCreateInput = {
@@ -18464,6 +21505,7 @@ export namespace Prisma {
     updated_at?: Date | string
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutMateriaInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasUpdateInput = {
@@ -18474,6 +21516,7 @@ export namespace Prisma {
     institucion?: InstitucionesUpdateOneRequiredWithoutMateriasNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutMateriaNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutMateriaNestedInput
   }
 
   export type MateriasUncheckedUpdateInput = {
@@ -18485,6 +21528,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutMateriaNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutMateriaNestedInput
   }
 
   export type MateriasCreateManyInput = {
@@ -18567,6 +21611,7 @@ export namespace Prisma {
     institucion: InstitucionesCreateNestedOneWithoutDocentesInput
     sede?: SedesCreateNestedOneWithoutDocentesInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutDocenteInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutDocenteInput
   }
 
   export type DocentesUncheckedCreateInput = {
@@ -18582,6 +21627,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutDocenteInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutDocenteInput
   }
 
   export type DocentesUpdateInput = {
@@ -18596,6 +21642,7 @@ export namespace Prisma {
     institucion?: InstitucionesUpdateOneRequiredWithoutDocentesNestedInput
     sede?: SedesUpdateOneWithoutDocentesNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutDocenteNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutDocenteNestedInput
   }
 
   export type DocentesUncheckedUpdateInput = {
@@ -18611,6 +21658,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutDocenteNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutDocenteNestedInput
   }
 
   export type DocentesCreateManyInput = {
@@ -18721,6 +21769,7 @@ export namespace Prisma {
     grado: GradosCreateNestedOneWithoutEstudiantesInput
     curso: CursosCreateNestedOneWithoutEstudiantesInput
     institucion: InstitucionesCreateNestedOneWithoutEstudiantesInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutEstudianteInput
   }
 
   export type EstudiantesUncheckedCreateInput = {
@@ -18737,6 +21786,7 @@ export namespace Prisma {
     activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    recordatorioEstudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutEstudianteInput
   }
 
   export type EstudiantesUpdateInput = {
@@ -18752,6 +21802,7 @@ export namespace Prisma {
     grado?: GradosUpdateOneRequiredWithoutEstudiantesNestedInput
     curso?: CursosUpdateOneRequiredWithoutEstudiantesNestedInput
     institucion?: InstitucionesUpdateOneRequiredWithoutEstudiantesNestedInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesUpdateManyWithoutEstudianteNestedInput
   }
 
   export type EstudiantesUncheckedUpdateInput = {
@@ -18768,6 +21819,7 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    recordatorioEstudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutEstudianteNestedInput
   }
 
   export type EstudiantesCreateManyInput = {
@@ -18812,6 +21864,151 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatoriosCreateInput = {
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    docente: DocentesCreateNestedOneWithoutRecordatoriosInput
+    grado: GradosCreateNestedOneWithoutRecordatoriosInput
+    curso: CursosCreateNestedOneWithoutRecordatoriosInput
+    area: AreasCreateNestedOneWithoutRecordatoriosInput
+    materia: MateriasCreateNestedOneWithoutRecordatoriosInput
+    estudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosUncheckedCreateInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosUpdateInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    docente?: DocentesUpdateOneRequiredWithoutRecordatoriosNestedInput
+    grado?: GradosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    curso?: CursosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    area?: AreasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    materia?: MateriasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    estudiantes?: RecordatorioEstudiantesUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosCreateManyInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type RecordatoriosUpdateManyMutationInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatoriosUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatorioEstudiantesCreateInput = {
+    created_at?: Date | string
+    recordatorio: RecordatoriosCreateNestedOneWithoutEstudiantesInput
+    estudiante: EstudiantesCreateNestedOneWithoutRecordatorioEstudiantesInput
+  }
+
+  export type RecordatorioEstudiantesUncheckedCreateInput = {
+    id?: number
+    recordatorio_id: number
+    estudiante_id: number
+    created_at?: Date | string
+  }
+
+  export type RecordatorioEstudiantesUpdateInput = {
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    recordatorio?: RecordatoriosUpdateOneRequiredWithoutEstudiantesNestedInput
+    estudiante?: EstudiantesUpdateOneRequiredWithoutRecordatorioEstudiantesNestedInput
+  }
+
+  export type RecordatorioEstudiantesUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    recordatorio_id?: IntFieldUpdateOperationsInput | number
+    estudiante_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatorioEstudiantesCreateManyInput = {
+    id?: number
+    recordatorio_id: number
+    estudiante_id: number
+    created_at?: Date | string
+  }
+
+  export type RecordatorioEstudiantesUpdateManyMutationInput = {
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatorioEstudiantesUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    recordatorio_id?: IntFieldUpdateOperationsInput | number
+    estudiante_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -19268,11 +22465,21 @@ export namespace Prisma {
     none?: DocenteAsignacionesWhereInput
   }
 
+  export type RecordatoriosListRelationFilter = {
+    every?: RecordatoriosWhereInput
+    some?: RecordatoriosWhereInput
+    none?: RecordatoriosWhereInput
+  }
+
   export type MateriaGradosOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
   export type DocenteAsignacionesOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type RecordatoriosOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -19616,6 +22823,16 @@ export namespace Prisma {
     materia_id?: SortOrder
   }
 
+  export type RecordatorioEstudiantesListRelationFilter = {
+    every?: RecordatorioEstudiantesWhereInput
+    some?: RecordatorioEstudiantesWhereInput
+    none?: RecordatorioEstudiantesWhereInput
+  }
+
+  export type RecordatorioEstudiantesOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type EstudiantesCodigo_estudiantilInstitucion_idCompoundUniqueInput = {
     codigo_estudiantil: string
     institucion_id: number
@@ -19681,6 +22898,117 @@ export namespace Prisma {
     grado_id?: SortOrder
     curso_id?: SortOrder
     institucion_id?: SortOrder
+  }
+
+  export type RecordatoriosCountOrderByAggregateInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    descripcion?: SortOrder
+    fecha?: SortOrder
+    tipo?: SortOrder
+    docente_id?: SortOrder
+    grado_id?: SortOrder
+    curso_id?: SortOrder
+    area_id?: SortOrder
+    materia_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type RecordatoriosAvgOrderByAggregateInput = {
+    id?: SortOrder
+    docente_id?: SortOrder
+    grado_id?: SortOrder
+    curso_id?: SortOrder
+    area_id?: SortOrder
+    materia_id?: SortOrder
+  }
+
+  export type RecordatoriosMaxOrderByAggregateInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    descripcion?: SortOrder
+    fecha?: SortOrder
+    tipo?: SortOrder
+    docente_id?: SortOrder
+    grado_id?: SortOrder
+    curso_id?: SortOrder
+    area_id?: SortOrder
+    materia_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type RecordatoriosMinOrderByAggregateInput = {
+    id?: SortOrder
+    nombre?: SortOrder
+    descripcion?: SortOrder
+    fecha?: SortOrder
+    tipo?: SortOrder
+    docente_id?: SortOrder
+    grado_id?: SortOrder
+    curso_id?: SortOrder
+    area_id?: SortOrder
+    materia_id?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type RecordatoriosSumOrderByAggregateInput = {
+    id?: SortOrder
+    docente_id?: SortOrder
+    grado_id?: SortOrder
+    curso_id?: SortOrder
+    area_id?: SortOrder
+    materia_id?: SortOrder
+  }
+
+  export type RecordatoriosScalarRelationFilter = {
+    is?: RecordatoriosWhereInput
+    isNot?: RecordatoriosWhereInput
+  }
+
+  export type EstudiantesScalarRelationFilter = {
+    is?: EstudiantesWhereInput
+    isNot?: EstudiantesWhereInput
+  }
+
+  export type RecordatorioEstudiantesRecordatorio_idEstudiante_idCompoundUniqueInput = {
+    recordatorio_id: number
+    estudiante_id: number
+  }
+
+  export type RecordatorioEstudiantesCountOrderByAggregateInput = {
+    id?: SortOrder
+    recordatorio_id?: SortOrder
+    estudiante_id?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type RecordatorioEstudiantesAvgOrderByAggregateInput = {
+    id?: SortOrder
+    recordatorio_id?: SortOrder
+    estudiante_id?: SortOrder
+  }
+
+  export type RecordatorioEstudiantesMaxOrderByAggregateInput = {
+    id?: SortOrder
+    recordatorio_id?: SortOrder
+    estudiante_id?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type RecordatorioEstudiantesMinOrderByAggregateInput = {
+    id?: SortOrder
+    recordatorio_id?: SortOrder
+    estudiante_id?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type RecordatorioEstudiantesSumOrderByAggregateInput = {
+    id?: SortOrder
+    recordatorio_id?: SortOrder
+    estudiante_id?: SortOrder
   }
 
   export type InstitucionesCreatejornadasInput = {
@@ -20273,6 +23601,13 @@ export namespace Prisma {
     connect?: DocenteAsignacionesWhereUniqueInput | DocenteAsignacionesWhereUniqueInput[]
   }
 
+  export type RecordatoriosCreateNestedManyWithoutGradoInput = {
+    create?: XOR<RecordatoriosCreateWithoutGradoInput, RecordatoriosUncheckedCreateWithoutGradoInput> | RecordatoriosCreateWithoutGradoInput[] | RecordatoriosUncheckedCreateWithoutGradoInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutGradoInput | RecordatoriosCreateOrConnectWithoutGradoInput[]
+    createMany?: RecordatoriosCreateManyGradoInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+  }
+
   export type CursosUncheckedCreateNestedManyWithoutGradoInput = {
     create?: XOR<CursosCreateWithoutGradoInput, CursosUncheckedCreateWithoutGradoInput> | CursosCreateWithoutGradoInput[] | CursosUncheckedCreateWithoutGradoInput[]
     connectOrCreate?: CursosCreateOrConnectWithoutGradoInput | CursosCreateOrConnectWithoutGradoInput[]
@@ -20299,6 +23634,13 @@ export namespace Prisma {
     connectOrCreate?: DocenteAsignacionesCreateOrConnectWithoutGradoInput | DocenteAsignacionesCreateOrConnectWithoutGradoInput[]
     createMany?: DocenteAsignacionesCreateManyGradoInputEnvelope
     connect?: DocenteAsignacionesWhereUniqueInput | DocenteAsignacionesWhereUniqueInput[]
+  }
+
+  export type RecordatoriosUncheckedCreateNestedManyWithoutGradoInput = {
+    create?: XOR<RecordatoriosCreateWithoutGradoInput, RecordatoriosUncheckedCreateWithoutGradoInput> | RecordatoriosCreateWithoutGradoInput[] | RecordatoriosUncheckedCreateWithoutGradoInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutGradoInput | RecordatoriosCreateOrConnectWithoutGradoInput[]
+    createMany?: RecordatoriosCreateManyGradoInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
   }
 
   export type InstitucionesUpdateOneRequiredWithoutGradosNestedInput = {
@@ -20365,6 +23707,20 @@ export namespace Prisma {
     deleteMany?: DocenteAsignacionesScalarWhereInput | DocenteAsignacionesScalarWhereInput[]
   }
 
+  export type RecordatoriosUpdateManyWithoutGradoNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutGradoInput, RecordatoriosUncheckedCreateWithoutGradoInput> | RecordatoriosCreateWithoutGradoInput[] | RecordatoriosUncheckedCreateWithoutGradoInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutGradoInput | RecordatoriosCreateOrConnectWithoutGradoInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutGradoInput | RecordatoriosUpsertWithWhereUniqueWithoutGradoInput[]
+    createMany?: RecordatoriosCreateManyGradoInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutGradoInput | RecordatoriosUpdateWithWhereUniqueWithoutGradoInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutGradoInput | RecordatoriosUpdateManyWithWhereWithoutGradoInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+  }
+
   export type CursosUncheckedUpdateManyWithoutGradoNestedInput = {
     create?: XOR<CursosCreateWithoutGradoInput, CursosUncheckedCreateWithoutGradoInput> | CursosCreateWithoutGradoInput[] | CursosUncheckedCreateWithoutGradoInput[]
     connectOrCreate?: CursosCreateOrConnectWithoutGradoInput | CursosCreateOrConnectWithoutGradoInput[]
@@ -20421,6 +23777,20 @@ export namespace Prisma {
     deleteMany?: DocenteAsignacionesScalarWhereInput | DocenteAsignacionesScalarWhereInput[]
   }
 
+  export type RecordatoriosUncheckedUpdateManyWithoutGradoNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutGradoInput, RecordatoriosUncheckedCreateWithoutGradoInput> | RecordatoriosCreateWithoutGradoInput[] | RecordatoriosUncheckedCreateWithoutGradoInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutGradoInput | RecordatoriosCreateOrConnectWithoutGradoInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutGradoInput | RecordatoriosUpsertWithWhereUniqueWithoutGradoInput[]
+    createMany?: RecordatoriosCreateManyGradoInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutGradoInput | RecordatoriosUpdateWithWhereUniqueWithoutGradoInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutGradoInput | RecordatoriosUpdateManyWithWhereWithoutGradoInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+  }
+
   export type GradosCreateNestedOneWithoutCursosInput = {
     create?: XOR<GradosCreateWithoutCursosInput, GradosUncheckedCreateWithoutCursosInput>
     connectOrCreate?: GradosCreateOrConnectWithoutCursosInput
@@ -20453,6 +23823,13 @@ export namespace Prisma {
     connect?: DocenteAsignacionesWhereUniqueInput | DocenteAsignacionesWhereUniqueInput[]
   }
 
+  export type RecordatoriosCreateNestedManyWithoutCursoInput = {
+    create?: XOR<RecordatoriosCreateWithoutCursoInput, RecordatoriosUncheckedCreateWithoutCursoInput> | RecordatoriosCreateWithoutCursoInput[] | RecordatoriosUncheckedCreateWithoutCursoInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutCursoInput | RecordatoriosCreateOrConnectWithoutCursoInput[]
+    createMany?: RecordatoriosCreateManyCursoInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+  }
+
   export type EstudiantesUncheckedCreateNestedManyWithoutCursoInput = {
     create?: XOR<EstudiantesCreateWithoutCursoInput, EstudiantesUncheckedCreateWithoutCursoInput> | EstudiantesCreateWithoutCursoInput[] | EstudiantesUncheckedCreateWithoutCursoInput[]
     connectOrCreate?: EstudiantesCreateOrConnectWithoutCursoInput | EstudiantesCreateOrConnectWithoutCursoInput[]
@@ -20465,6 +23842,13 @@ export namespace Prisma {
     connectOrCreate?: DocenteAsignacionesCreateOrConnectWithoutCursoInput | DocenteAsignacionesCreateOrConnectWithoutCursoInput[]
     createMany?: DocenteAsignacionesCreateManyCursoInputEnvelope
     connect?: DocenteAsignacionesWhereUniqueInput | DocenteAsignacionesWhereUniqueInput[]
+  }
+
+  export type RecordatoriosUncheckedCreateNestedManyWithoutCursoInput = {
+    create?: XOR<RecordatoriosCreateWithoutCursoInput, RecordatoriosUncheckedCreateWithoutCursoInput> | RecordatoriosCreateWithoutCursoInput[] | RecordatoriosUncheckedCreateWithoutCursoInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutCursoInput | RecordatoriosCreateOrConnectWithoutCursoInput[]
+    createMany?: RecordatoriosCreateManyCursoInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
   }
 
   export type GradosUpdateOneRequiredWithoutCursosNestedInput = {
@@ -20521,6 +23905,20 @@ export namespace Prisma {
     deleteMany?: DocenteAsignacionesScalarWhereInput | DocenteAsignacionesScalarWhereInput[]
   }
 
+  export type RecordatoriosUpdateManyWithoutCursoNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutCursoInput, RecordatoriosUncheckedCreateWithoutCursoInput> | RecordatoriosCreateWithoutCursoInput[] | RecordatoriosUncheckedCreateWithoutCursoInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutCursoInput | RecordatoriosCreateOrConnectWithoutCursoInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutCursoInput | RecordatoriosUpsertWithWhereUniqueWithoutCursoInput[]
+    createMany?: RecordatoriosCreateManyCursoInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutCursoInput | RecordatoriosUpdateWithWhereUniqueWithoutCursoInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutCursoInput | RecordatoriosUpdateManyWithWhereWithoutCursoInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+  }
+
   export type EstudiantesUncheckedUpdateManyWithoutCursoNestedInput = {
     create?: XOR<EstudiantesCreateWithoutCursoInput, EstudiantesUncheckedCreateWithoutCursoInput> | EstudiantesCreateWithoutCursoInput[] | EstudiantesUncheckedCreateWithoutCursoInput[]
     connectOrCreate?: EstudiantesCreateOrConnectWithoutCursoInput | EstudiantesCreateOrConnectWithoutCursoInput[]
@@ -20549,6 +23947,20 @@ export namespace Prisma {
     deleteMany?: DocenteAsignacionesScalarWhereInput | DocenteAsignacionesScalarWhereInput[]
   }
 
+  export type RecordatoriosUncheckedUpdateManyWithoutCursoNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutCursoInput, RecordatoriosUncheckedCreateWithoutCursoInput> | RecordatoriosCreateWithoutCursoInput[] | RecordatoriosUncheckedCreateWithoutCursoInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutCursoInput | RecordatoriosCreateOrConnectWithoutCursoInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutCursoInput | RecordatoriosUpsertWithWhereUniqueWithoutCursoInput[]
+    createMany?: RecordatoriosCreateManyCursoInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutCursoInput | RecordatoriosUpdateWithWhereUniqueWithoutCursoInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutCursoInput | RecordatoriosUpdateManyWithWhereWithoutCursoInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+  }
+
   export type InstitucionesCreateNestedOneWithoutAreasInput = {
     create?: XOR<InstitucionesCreateWithoutAreasInput, InstitucionesUncheckedCreateWithoutAreasInput>
     connectOrCreate?: InstitucionesCreateOrConnectWithoutAreasInput
@@ -20562,11 +23974,25 @@ export namespace Prisma {
     connect?: MateriasWhereUniqueInput | MateriasWhereUniqueInput[]
   }
 
+  export type RecordatoriosCreateNestedManyWithoutAreaInput = {
+    create?: XOR<RecordatoriosCreateWithoutAreaInput, RecordatoriosUncheckedCreateWithoutAreaInput> | RecordatoriosCreateWithoutAreaInput[] | RecordatoriosUncheckedCreateWithoutAreaInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutAreaInput | RecordatoriosCreateOrConnectWithoutAreaInput[]
+    createMany?: RecordatoriosCreateManyAreaInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+  }
+
   export type MateriasUncheckedCreateNestedManyWithoutAreaInput = {
     create?: XOR<MateriasCreateWithoutAreaInput, MateriasUncheckedCreateWithoutAreaInput> | MateriasCreateWithoutAreaInput[] | MateriasUncheckedCreateWithoutAreaInput[]
     connectOrCreate?: MateriasCreateOrConnectWithoutAreaInput | MateriasCreateOrConnectWithoutAreaInput[]
     createMany?: MateriasCreateManyAreaInputEnvelope
     connect?: MateriasWhereUniqueInput | MateriasWhereUniqueInput[]
+  }
+
+  export type RecordatoriosUncheckedCreateNestedManyWithoutAreaInput = {
+    create?: XOR<RecordatoriosCreateWithoutAreaInput, RecordatoriosUncheckedCreateWithoutAreaInput> | RecordatoriosCreateWithoutAreaInput[] | RecordatoriosUncheckedCreateWithoutAreaInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutAreaInput | RecordatoriosCreateOrConnectWithoutAreaInput[]
+    createMany?: RecordatoriosCreateManyAreaInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
   }
 
   export type InstitucionesUpdateOneRequiredWithoutAreasNestedInput = {
@@ -20591,6 +24017,20 @@ export namespace Prisma {
     deleteMany?: MateriasScalarWhereInput | MateriasScalarWhereInput[]
   }
 
+  export type RecordatoriosUpdateManyWithoutAreaNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutAreaInput, RecordatoriosUncheckedCreateWithoutAreaInput> | RecordatoriosCreateWithoutAreaInput[] | RecordatoriosUncheckedCreateWithoutAreaInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutAreaInput | RecordatoriosCreateOrConnectWithoutAreaInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutAreaInput | RecordatoriosUpsertWithWhereUniqueWithoutAreaInput[]
+    createMany?: RecordatoriosCreateManyAreaInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutAreaInput | RecordatoriosUpdateWithWhereUniqueWithoutAreaInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutAreaInput | RecordatoriosUpdateManyWithWhereWithoutAreaInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+  }
+
   export type MateriasUncheckedUpdateManyWithoutAreaNestedInput = {
     create?: XOR<MateriasCreateWithoutAreaInput, MateriasUncheckedCreateWithoutAreaInput> | MateriasCreateWithoutAreaInput[] | MateriasUncheckedCreateWithoutAreaInput[]
     connectOrCreate?: MateriasCreateOrConnectWithoutAreaInput | MateriasCreateOrConnectWithoutAreaInput[]
@@ -20603,6 +24043,20 @@ export namespace Prisma {
     update?: MateriasUpdateWithWhereUniqueWithoutAreaInput | MateriasUpdateWithWhereUniqueWithoutAreaInput[]
     updateMany?: MateriasUpdateManyWithWhereWithoutAreaInput | MateriasUpdateManyWithWhereWithoutAreaInput[]
     deleteMany?: MateriasScalarWhereInput | MateriasScalarWhereInput[]
+  }
+
+  export type RecordatoriosUncheckedUpdateManyWithoutAreaNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutAreaInput, RecordatoriosUncheckedCreateWithoutAreaInput> | RecordatoriosCreateWithoutAreaInput[] | RecordatoriosUncheckedCreateWithoutAreaInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutAreaInput | RecordatoriosCreateOrConnectWithoutAreaInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutAreaInput | RecordatoriosUpsertWithWhereUniqueWithoutAreaInput[]
+    createMany?: RecordatoriosCreateManyAreaInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutAreaInput | RecordatoriosUpdateWithWhereUniqueWithoutAreaInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutAreaInput | RecordatoriosUpdateManyWithWhereWithoutAreaInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
   }
 
   export type AreasCreateNestedOneWithoutMateriasInput = {
@@ -20631,6 +24085,13 @@ export namespace Prisma {
     connect?: DocenteAsignacionesWhereUniqueInput | DocenteAsignacionesWhereUniqueInput[]
   }
 
+  export type RecordatoriosCreateNestedManyWithoutMateriaInput = {
+    create?: XOR<RecordatoriosCreateWithoutMateriaInput, RecordatoriosUncheckedCreateWithoutMateriaInput> | RecordatoriosCreateWithoutMateriaInput[] | RecordatoriosUncheckedCreateWithoutMateriaInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutMateriaInput | RecordatoriosCreateOrConnectWithoutMateriaInput[]
+    createMany?: RecordatoriosCreateManyMateriaInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+  }
+
   export type MateriaGradosUncheckedCreateNestedManyWithoutMateriaInput = {
     create?: XOR<MateriaGradosCreateWithoutMateriaInput, MateriaGradosUncheckedCreateWithoutMateriaInput> | MateriaGradosCreateWithoutMateriaInput[] | MateriaGradosUncheckedCreateWithoutMateriaInput[]
     connectOrCreate?: MateriaGradosCreateOrConnectWithoutMateriaInput | MateriaGradosCreateOrConnectWithoutMateriaInput[]
@@ -20643,6 +24104,13 @@ export namespace Prisma {
     connectOrCreate?: DocenteAsignacionesCreateOrConnectWithoutMateriaInput | DocenteAsignacionesCreateOrConnectWithoutMateriaInput[]
     createMany?: DocenteAsignacionesCreateManyMateriaInputEnvelope
     connect?: DocenteAsignacionesWhereUniqueInput | DocenteAsignacionesWhereUniqueInput[]
+  }
+
+  export type RecordatoriosUncheckedCreateNestedManyWithoutMateriaInput = {
+    create?: XOR<RecordatoriosCreateWithoutMateriaInput, RecordatoriosUncheckedCreateWithoutMateriaInput> | RecordatoriosCreateWithoutMateriaInput[] | RecordatoriosUncheckedCreateWithoutMateriaInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutMateriaInput | RecordatoriosCreateOrConnectWithoutMateriaInput[]
+    createMany?: RecordatoriosCreateManyMateriaInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
   }
 
   export type AreasUpdateOneRequiredWithoutMateriasNestedInput = {
@@ -20689,6 +24157,20 @@ export namespace Prisma {
     deleteMany?: DocenteAsignacionesScalarWhereInput | DocenteAsignacionesScalarWhereInput[]
   }
 
+  export type RecordatoriosUpdateManyWithoutMateriaNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutMateriaInput, RecordatoriosUncheckedCreateWithoutMateriaInput> | RecordatoriosCreateWithoutMateriaInput[] | RecordatoriosUncheckedCreateWithoutMateriaInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutMateriaInput | RecordatoriosCreateOrConnectWithoutMateriaInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutMateriaInput | RecordatoriosUpsertWithWhereUniqueWithoutMateriaInput[]
+    createMany?: RecordatoriosCreateManyMateriaInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutMateriaInput | RecordatoriosUpdateWithWhereUniqueWithoutMateriaInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutMateriaInput | RecordatoriosUpdateManyWithWhereWithoutMateriaInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+  }
+
   export type MateriaGradosUncheckedUpdateManyWithoutMateriaNestedInput = {
     create?: XOR<MateriaGradosCreateWithoutMateriaInput, MateriaGradosUncheckedCreateWithoutMateriaInput> | MateriaGradosCreateWithoutMateriaInput[] | MateriaGradosUncheckedCreateWithoutMateriaInput[]
     connectOrCreate?: MateriaGradosCreateOrConnectWithoutMateriaInput | MateriaGradosCreateOrConnectWithoutMateriaInput[]
@@ -20715,6 +24197,20 @@ export namespace Prisma {
     update?: DocenteAsignacionesUpdateWithWhereUniqueWithoutMateriaInput | DocenteAsignacionesUpdateWithWhereUniqueWithoutMateriaInput[]
     updateMany?: DocenteAsignacionesUpdateManyWithWhereWithoutMateriaInput | DocenteAsignacionesUpdateManyWithWhereWithoutMateriaInput[]
     deleteMany?: DocenteAsignacionesScalarWhereInput | DocenteAsignacionesScalarWhereInput[]
+  }
+
+  export type RecordatoriosUncheckedUpdateManyWithoutMateriaNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutMateriaInput, RecordatoriosUncheckedCreateWithoutMateriaInput> | RecordatoriosCreateWithoutMateriaInput[] | RecordatoriosUncheckedCreateWithoutMateriaInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutMateriaInput | RecordatoriosCreateOrConnectWithoutMateriaInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutMateriaInput | RecordatoriosUpsertWithWhereUniqueWithoutMateriaInput[]
+    createMany?: RecordatoriosCreateManyMateriaInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutMateriaInput | RecordatoriosUpdateWithWhereUniqueWithoutMateriaInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutMateriaInput | RecordatoriosUpdateManyWithWhereWithoutMateriaInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
   }
 
   export type MateriasCreateNestedOneWithoutMateriaGradosInput = {
@@ -20764,11 +24260,25 @@ export namespace Prisma {
     connect?: DocenteAsignacionesWhereUniqueInput | DocenteAsignacionesWhereUniqueInput[]
   }
 
+  export type RecordatoriosCreateNestedManyWithoutDocenteInput = {
+    create?: XOR<RecordatoriosCreateWithoutDocenteInput, RecordatoriosUncheckedCreateWithoutDocenteInput> | RecordatoriosCreateWithoutDocenteInput[] | RecordatoriosUncheckedCreateWithoutDocenteInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutDocenteInput | RecordatoriosCreateOrConnectWithoutDocenteInput[]
+    createMany?: RecordatoriosCreateManyDocenteInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+  }
+
   export type DocenteAsignacionesUncheckedCreateNestedManyWithoutDocenteInput = {
     create?: XOR<DocenteAsignacionesCreateWithoutDocenteInput, DocenteAsignacionesUncheckedCreateWithoutDocenteInput> | DocenteAsignacionesCreateWithoutDocenteInput[] | DocenteAsignacionesUncheckedCreateWithoutDocenteInput[]
     connectOrCreate?: DocenteAsignacionesCreateOrConnectWithoutDocenteInput | DocenteAsignacionesCreateOrConnectWithoutDocenteInput[]
     createMany?: DocenteAsignacionesCreateManyDocenteInputEnvelope
     connect?: DocenteAsignacionesWhereUniqueInput | DocenteAsignacionesWhereUniqueInput[]
+  }
+
+  export type RecordatoriosUncheckedCreateNestedManyWithoutDocenteInput = {
+    create?: XOR<RecordatoriosCreateWithoutDocenteInput, RecordatoriosUncheckedCreateWithoutDocenteInput> | RecordatoriosCreateWithoutDocenteInput[] | RecordatoriosUncheckedCreateWithoutDocenteInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutDocenteInput | RecordatoriosCreateOrConnectWithoutDocenteInput[]
+    createMany?: RecordatoriosCreateManyDocenteInputEnvelope
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
   }
 
   export type InstitucionesUpdateOneRequiredWithoutDocentesNestedInput = {
@@ -20803,6 +24313,20 @@ export namespace Prisma {
     deleteMany?: DocenteAsignacionesScalarWhereInput | DocenteAsignacionesScalarWhereInput[]
   }
 
+  export type RecordatoriosUpdateManyWithoutDocenteNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutDocenteInput, RecordatoriosUncheckedCreateWithoutDocenteInput> | RecordatoriosCreateWithoutDocenteInput[] | RecordatoriosUncheckedCreateWithoutDocenteInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutDocenteInput | RecordatoriosCreateOrConnectWithoutDocenteInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutDocenteInput | RecordatoriosUpsertWithWhereUniqueWithoutDocenteInput[]
+    createMany?: RecordatoriosCreateManyDocenteInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutDocenteInput | RecordatoriosUpdateWithWhereUniqueWithoutDocenteInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutDocenteInput | RecordatoriosUpdateManyWithWhereWithoutDocenteInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+  }
+
   export type DocenteAsignacionesUncheckedUpdateManyWithoutDocenteNestedInput = {
     create?: XOR<DocenteAsignacionesCreateWithoutDocenteInput, DocenteAsignacionesUncheckedCreateWithoutDocenteInput> | DocenteAsignacionesCreateWithoutDocenteInput[] | DocenteAsignacionesUncheckedCreateWithoutDocenteInput[]
     connectOrCreate?: DocenteAsignacionesCreateOrConnectWithoutDocenteInput | DocenteAsignacionesCreateOrConnectWithoutDocenteInput[]
@@ -20815,6 +24339,20 @@ export namespace Prisma {
     update?: DocenteAsignacionesUpdateWithWhereUniqueWithoutDocenteInput | DocenteAsignacionesUpdateWithWhereUniqueWithoutDocenteInput[]
     updateMany?: DocenteAsignacionesUpdateManyWithWhereWithoutDocenteInput | DocenteAsignacionesUpdateManyWithWhereWithoutDocenteInput[]
     deleteMany?: DocenteAsignacionesScalarWhereInput | DocenteAsignacionesScalarWhereInput[]
+  }
+
+  export type RecordatoriosUncheckedUpdateManyWithoutDocenteNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutDocenteInput, RecordatoriosUncheckedCreateWithoutDocenteInput> | RecordatoriosCreateWithoutDocenteInput[] | RecordatoriosUncheckedCreateWithoutDocenteInput[]
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutDocenteInput | RecordatoriosCreateOrConnectWithoutDocenteInput[]
+    upsert?: RecordatoriosUpsertWithWhereUniqueWithoutDocenteInput | RecordatoriosUpsertWithWhereUniqueWithoutDocenteInput[]
+    createMany?: RecordatoriosCreateManyDocenteInputEnvelope
+    set?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    disconnect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    delete?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    connect?: RecordatoriosWhereUniqueInput | RecordatoriosWhereUniqueInput[]
+    update?: RecordatoriosUpdateWithWhereUniqueWithoutDocenteInput | RecordatoriosUpdateWithWhereUniqueWithoutDocenteInput[]
+    updateMany?: RecordatoriosUpdateManyWithWhereWithoutDocenteInput | RecordatoriosUpdateManyWithWhereWithoutDocenteInput[]
+    deleteMany?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
   }
 
   export type DocentesCreateNestedOneWithoutDocenteAsignacionesInput = {
@@ -20891,6 +24429,20 @@ export namespace Prisma {
     connect?: InstitucionesWhereUniqueInput
   }
 
+  export type RecordatorioEstudiantesCreateNestedManyWithoutEstudianteInput = {
+    create?: XOR<RecordatorioEstudiantesCreateWithoutEstudianteInput, RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput> | RecordatorioEstudiantesCreateWithoutEstudianteInput[] | RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput[]
+    connectOrCreate?: RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput | RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput[]
+    createMany?: RecordatorioEstudiantesCreateManyEstudianteInputEnvelope
+    connect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+  }
+
+  export type RecordatorioEstudiantesUncheckedCreateNestedManyWithoutEstudianteInput = {
+    create?: XOR<RecordatorioEstudiantesCreateWithoutEstudianteInput, RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput> | RecordatorioEstudiantesCreateWithoutEstudianteInput[] | RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput[]
+    connectOrCreate?: RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput | RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput[]
+    createMany?: RecordatorioEstudiantesCreateManyEstudianteInputEnvelope
+    connect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+  }
+
   export type GradosUpdateOneRequiredWithoutEstudiantesNestedInput = {
     create?: XOR<GradosCreateWithoutEstudiantesInput, GradosUncheckedCreateWithoutEstudiantesInput>
     connectOrCreate?: GradosCreateOrConnectWithoutEstudiantesInput
@@ -20913,6 +24465,174 @@ export namespace Prisma {
     upsert?: InstitucionesUpsertWithoutEstudiantesInput
     connect?: InstitucionesWhereUniqueInput
     update?: XOR<XOR<InstitucionesUpdateToOneWithWhereWithoutEstudiantesInput, InstitucionesUpdateWithoutEstudiantesInput>, InstitucionesUncheckedUpdateWithoutEstudiantesInput>
+  }
+
+  export type RecordatorioEstudiantesUpdateManyWithoutEstudianteNestedInput = {
+    create?: XOR<RecordatorioEstudiantesCreateWithoutEstudianteInput, RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput> | RecordatorioEstudiantesCreateWithoutEstudianteInput[] | RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput[]
+    connectOrCreate?: RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput | RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput[]
+    upsert?: RecordatorioEstudiantesUpsertWithWhereUniqueWithoutEstudianteInput | RecordatorioEstudiantesUpsertWithWhereUniqueWithoutEstudianteInput[]
+    createMany?: RecordatorioEstudiantesCreateManyEstudianteInputEnvelope
+    set?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    disconnect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    delete?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    connect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    update?: RecordatorioEstudiantesUpdateWithWhereUniqueWithoutEstudianteInput | RecordatorioEstudiantesUpdateWithWhereUniqueWithoutEstudianteInput[]
+    updateMany?: RecordatorioEstudiantesUpdateManyWithWhereWithoutEstudianteInput | RecordatorioEstudiantesUpdateManyWithWhereWithoutEstudianteInput[]
+    deleteMany?: RecordatorioEstudiantesScalarWhereInput | RecordatorioEstudiantesScalarWhereInput[]
+  }
+
+  export type RecordatorioEstudiantesUncheckedUpdateManyWithoutEstudianteNestedInput = {
+    create?: XOR<RecordatorioEstudiantesCreateWithoutEstudianteInput, RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput> | RecordatorioEstudiantesCreateWithoutEstudianteInput[] | RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput[]
+    connectOrCreate?: RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput | RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput[]
+    upsert?: RecordatorioEstudiantesUpsertWithWhereUniqueWithoutEstudianteInput | RecordatorioEstudiantesUpsertWithWhereUniqueWithoutEstudianteInput[]
+    createMany?: RecordatorioEstudiantesCreateManyEstudianteInputEnvelope
+    set?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    disconnect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    delete?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    connect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    update?: RecordatorioEstudiantesUpdateWithWhereUniqueWithoutEstudianteInput | RecordatorioEstudiantesUpdateWithWhereUniqueWithoutEstudianteInput[]
+    updateMany?: RecordatorioEstudiantesUpdateManyWithWhereWithoutEstudianteInput | RecordatorioEstudiantesUpdateManyWithWhereWithoutEstudianteInput[]
+    deleteMany?: RecordatorioEstudiantesScalarWhereInput | RecordatorioEstudiantesScalarWhereInput[]
+  }
+
+  export type DocentesCreateNestedOneWithoutRecordatoriosInput = {
+    create?: XOR<DocentesCreateWithoutRecordatoriosInput, DocentesUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: DocentesCreateOrConnectWithoutRecordatoriosInput
+    connect?: DocentesWhereUniqueInput
+  }
+
+  export type GradosCreateNestedOneWithoutRecordatoriosInput = {
+    create?: XOR<GradosCreateWithoutRecordatoriosInput, GradosUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: GradosCreateOrConnectWithoutRecordatoriosInput
+    connect?: GradosWhereUniqueInput
+  }
+
+  export type CursosCreateNestedOneWithoutRecordatoriosInput = {
+    create?: XOR<CursosCreateWithoutRecordatoriosInput, CursosUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: CursosCreateOrConnectWithoutRecordatoriosInput
+    connect?: CursosWhereUniqueInput
+  }
+
+  export type AreasCreateNestedOneWithoutRecordatoriosInput = {
+    create?: XOR<AreasCreateWithoutRecordatoriosInput, AreasUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: AreasCreateOrConnectWithoutRecordatoriosInput
+    connect?: AreasWhereUniqueInput
+  }
+
+  export type MateriasCreateNestedOneWithoutRecordatoriosInput = {
+    create?: XOR<MateriasCreateWithoutRecordatoriosInput, MateriasUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: MateriasCreateOrConnectWithoutRecordatoriosInput
+    connect?: MateriasWhereUniqueInput
+  }
+
+  export type RecordatorioEstudiantesCreateNestedManyWithoutRecordatorioInput = {
+    create?: XOR<RecordatorioEstudiantesCreateWithoutRecordatorioInput, RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput> | RecordatorioEstudiantesCreateWithoutRecordatorioInput[] | RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput[]
+    connectOrCreate?: RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput | RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput[]
+    createMany?: RecordatorioEstudiantesCreateManyRecordatorioInputEnvelope
+    connect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+  }
+
+  export type RecordatorioEstudiantesUncheckedCreateNestedManyWithoutRecordatorioInput = {
+    create?: XOR<RecordatorioEstudiantesCreateWithoutRecordatorioInput, RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput> | RecordatorioEstudiantesCreateWithoutRecordatorioInput[] | RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput[]
+    connectOrCreate?: RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput | RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput[]
+    createMany?: RecordatorioEstudiantesCreateManyRecordatorioInputEnvelope
+    connect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+  }
+
+  export type DocentesUpdateOneRequiredWithoutRecordatoriosNestedInput = {
+    create?: XOR<DocentesCreateWithoutRecordatoriosInput, DocentesUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: DocentesCreateOrConnectWithoutRecordatoriosInput
+    upsert?: DocentesUpsertWithoutRecordatoriosInput
+    connect?: DocentesWhereUniqueInput
+    update?: XOR<XOR<DocentesUpdateToOneWithWhereWithoutRecordatoriosInput, DocentesUpdateWithoutRecordatoriosInput>, DocentesUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type GradosUpdateOneRequiredWithoutRecordatoriosNestedInput = {
+    create?: XOR<GradosCreateWithoutRecordatoriosInput, GradosUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: GradosCreateOrConnectWithoutRecordatoriosInput
+    upsert?: GradosUpsertWithoutRecordatoriosInput
+    connect?: GradosWhereUniqueInput
+    update?: XOR<XOR<GradosUpdateToOneWithWhereWithoutRecordatoriosInput, GradosUpdateWithoutRecordatoriosInput>, GradosUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type CursosUpdateOneRequiredWithoutRecordatoriosNestedInput = {
+    create?: XOR<CursosCreateWithoutRecordatoriosInput, CursosUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: CursosCreateOrConnectWithoutRecordatoriosInput
+    upsert?: CursosUpsertWithoutRecordatoriosInput
+    connect?: CursosWhereUniqueInput
+    update?: XOR<XOR<CursosUpdateToOneWithWhereWithoutRecordatoriosInput, CursosUpdateWithoutRecordatoriosInput>, CursosUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type AreasUpdateOneRequiredWithoutRecordatoriosNestedInput = {
+    create?: XOR<AreasCreateWithoutRecordatoriosInput, AreasUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: AreasCreateOrConnectWithoutRecordatoriosInput
+    upsert?: AreasUpsertWithoutRecordatoriosInput
+    connect?: AreasWhereUniqueInput
+    update?: XOR<XOR<AreasUpdateToOneWithWhereWithoutRecordatoriosInput, AreasUpdateWithoutRecordatoriosInput>, AreasUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type MateriasUpdateOneRequiredWithoutRecordatoriosNestedInput = {
+    create?: XOR<MateriasCreateWithoutRecordatoriosInput, MateriasUncheckedCreateWithoutRecordatoriosInput>
+    connectOrCreate?: MateriasCreateOrConnectWithoutRecordatoriosInput
+    upsert?: MateriasUpsertWithoutRecordatoriosInput
+    connect?: MateriasWhereUniqueInput
+    update?: XOR<XOR<MateriasUpdateToOneWithWhereWithoutRecordatoriosInput, MateriasUpdateWithoutRecordatoriosInput>, MateriasUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type RecordatorioEstudiantesUpdateManyWithoutRecordatorioNestedInput = {
+    create?: XOR<RecordatorioEstudiantesCreateWithoutRecordatorioInput, RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput> | RecordatorioEstudiantesCreateWithoutRecordatorioInput[] | RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput[]
+    connectOrCreate?: RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput | RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput[]
+    upsert?: RecordatorioEstudiantesUpsertWithWhereUniqueWithoutRecordatorioInput | RecordatorioEstudiantesUpsertWithWhereUniqueWithoutRecordatorioInput[]
+    createMany?: RecordatorioEstudiantesCreateManyRecordatorioInputEnvelope
+    set?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    disconnect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    delete?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    connect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    update?: RecordatorioEstudiantesUpdateWithWhereUniqueWithoutRecordatorioInput | RecordatorioEstudiantesUpdateWithWhereUniqueWithoutRecordatorioInput[]
+    updateMany?: RecordatorioEstudiantesUpdateManyWithWhereWithoutRecordatorioInput | RecordatorioEstudiantesUpdateManyWithWhereWithoutRecordatorioInput[]
+    deleteMany?: RecordatorioEstudiantesScalarWhereInput | RecordatorioEstudiantesScalarWhereInput[]
+  }
+
+  export type RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioNestedInput = {
+    create?: XOR<RecordatorioEstudiantesCreateWithoutRecordatorioInput, RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput> | RecordatorioEstudiantesCreateWithoutRecordatorioInput[] | RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput[]
+    connectOrCreate?: RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput | RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput[]
+    upsert?: RecordatorioEstudiantesUpsertWithWhereUniqueWithoutRecordatorioInput | RecordatorioEstudiantesUpsertWithWhereUniqueWithoutRecordatorioInput[]
+    createMany?: RecordatorioEstudiantesCreateManyRecordatorioInputEnvelope
+    set?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    disconnect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    delete?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    connect?: RecordatorioEstudiantesWhereUniqueInput | RecordatorioEstudiantesWhereUniqueInput[]
+    update?: RecordatorioEstudiantesUpdateWithWhereUniqueWithoutRecordatorioInput | RecordatorioEstudiantesUpdateWithWhereUniqueWithoutRecordatorioInput[]
+    updateMany?: RecordatorioEstudiantesUpdateManyWithWhereWithoutRecordatorioInput | RecordatorioEstudiantesUpdateManyWithWhereWithoutRecordatorioInput[]
+    deleteMany?: RecordatorioEstudiantesScalarWhereInput | RecordatorioEstudiantesScalarWhereInput[]
+  }
+
+  export type RecordatoriosCreateNestedOneWithoutEstudiantesInput = {
+    create?: XOR<RecordatoriosCreateWithoutEstudiantesInput, RecordatoriosUncheckedCreateWithoutEstudiantesInput>
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutEstudiantesInput
+    connect?: RecordatoriosWhereUniqueInput
+  }
+
+  export type EstudiantesCreateNestedOneWithoutRecordatorioEstudiantesInput = {
+    create?: XOR<EstudiantesCreateWithoutRecordatorioEstudiantesInput, EstudiantesUncheckedCreateWithoutRecordatorioEstudiantesInput>
+    connectOrCreate?: EstudiantesCreateOrConnectWithoutRecordatorioEstudiantesInput
+    connect?: EstudiantesWhereUniqueInput
+  }
+
+  export type RecordatoriosUpdateOneRequiredWithoutEstudiantesNestedInput = {
+    create?: XOR<RecordatoriosCreateWithoutEstudiantesInput, RecordatoriosUncheckedCreateWithoutEstudiantesInput>
+    connectOrCreate?: RecordatoriosCreateOrConnectWithoutEstudiantesInput
+    upsert?: RecordatoriosUpsertWithoutEstudiantesInput
+    connect?: RecordatoriosWhereUniqueInput
+    update?: XOR<XOR<RecordatoriosUpdateToOneWithWhereWithoutEstudiantesInput, RecordatoriosUpdateWithoutEstudiantesInput>, RecordatoriosUncheckedUpdateWithoutEstudiantesInput>
+  }
+
+  export type EstudiantesUpdateOneRequiredWithoutRecordatorioEstudiantesNestedInput = {
+    create?: XOR<EstudiantesCreateWithoutRecordatorioEstudiantesInput, EstudiantesUncheckedCreateWithoutRecordatorioEstudiantesInput>
+    connectOrCreate?: EstudiantesCreateOrConnectWithoutRecordatorioEstudiantesInput
+    upsert?: EstudiantesUpsertWithoutRecordatorioEstudiantesInput
+    connect?: EstudiantesWhereUniqueInput
+    update?: XOR<XOR<EstudiantesUpdateToOneWithWhereWithoutRecordatorioEstudiantesInput, EstudiantesUpdateWithoutRecordatorioEstudiantesInput>, EstudiantesUncheckedUpdateWithoutRecordatorioEstudiantesInput>
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -21169,6 +24889,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutGradoInput
   }
 
   export type GradosUncheckedCreateWithoutInstitucionInput = {
@@ -21182,6 +24903,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutGradoInput
   }
 
   export type GradosCreateOrConnectWithoutInstitucionInput = {
@@ -21203,6 +24925,7 @@ export namespace Prisma {
     sede?: SedesCreateNestedOneWithoutCursosInput
     estudiantes?: EstudiantesCreateNestedManyWithoutCursoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutCursoInput
   }
 
   export type CursosUncheckedCreateWithoutInstitucionInput = {
@@ -21215,6 +24938,7 @@ export namespace Prisma {
     updated_at?: Date | string
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutCursoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutCursoInput
   }
 
   export type CursosCreateOrConnectWithoutInstitucionInput = {
@@ -21235,6 +24959,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     materias?: MateriasCreateNestedManyWithoutAreaInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutAreaInput
   }
 
   export type AreasUncheckedCreateWithoutInstitucionInput = {
@@ -21246,6 +24971,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     materias?: MateriasUncheckedCreateNestedManyWithoutAreaInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutAreaInput
   }
 
   export type AreasCreateOrConnectWithoutInstitucionInput = {
@@ -21265,6 +24991,7 @@ export namespace Prisma {
     area: AreasCreateNestedOneWithoutMateriasInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutMateriaInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasUncheckedCreateWithoutInstitucionInput = {
@@ -21275,6 +25002,7 @@ export namespace Prisma {
     updated_at?: Date | string
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutMateriaInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasCreateOrConnectWithoutInstitucionInput = {
@@ -21298,6 +25026,7 @@ export namespace Prisma {
     updated_at?: Date | string
     sede?: SedesCreateNestedOneWithoutDocentesInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutDocenteInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutDocenteInput
   }
 
   export type DocentesUncheckedCreateWithoutInstitucionInput = {
@@ -21312,6 +25041,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutDocenteInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutDocenteInput
   }
 
   export type DocentesCreateOrConnectWithoutInstitucionInput = {
@@ -21336,6 +25066,7 @@ export namespace Prisma {
     updated_at?: Date | string
     grado: GradosCreateNestedOneWithoutEstudiantesInput
     curso: CursosCreateNestedOneWithoutEstudiantesInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutEstudianteInput
   }
 
   export type EstudiantesUncheckedCreateWithoutInstitucionInput = {
@@ -21351,6 +25082,7 @@ export namespace Prisma {
     activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    recordatorioEstudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutEstudianteInput
   }
 
   export type EstudiantesCreateOrConnectWithoutInstitucionInput = {
@@ -21656,6 +25388,7 @@ export namespace Prisma {
     institucion: InstitucionesCreateNestedOneWithoutCursosInput
     estudiantes?: EstudiantesCreateNestedManyWithoutCursoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutCursoInput
   }
 
   export type CursosUncheckedCreateWithoutSedeInput = {
@@ -21668,6 +25401,7 @@ export namespace Prisma {
     updated_at?: Date | string
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutCursoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutCursoInput
   }
 
   export type CursosCreateOrConnectWithoutSedeInput = {
@@ -21691,6 +25425,7 @@ export namespace Prisma {
     updated_at?: Date | string
     institucion: InstitucionesCreateNestedOneWithoutDocentesInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutDocenteInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutDocenteInput
   }
 
   export type DocentesUncheckedCreateWithoutSedeInput = {
@@ -21705,6 +25440,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutDocenteInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutDocenteInput
   }
 
   export type DocentesCreateOrConnectWithoutSedeInput = {
@@ -22084,6 +25820,7 @@ export namespace Prisma {
     sede?: SedesCreateNestedOneWithoutCursosInput
     estudiantes?: EstudiantesCreateNestedManyWithoutCursoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutCursoInput
   }
 
   export type CursosUncheckedCreateWithoutGradoInput = {
@@ -22096,6 +25833,7 @@ export namespace Prisma {
     updated_at?: Date | string
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutCursoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutCursoInput
   }
 
   export type CursosCreateOrConnectWithoutGradoInput = {
@@ -22120,6 +25858,7 @@ export namespace Prisma {
     updated_at?: Date | string
     curso: CursosCreateNestedOneWithoutEstudiantesInput
     institucion: InstitucionesCreateNestedOneWithoutEstudiantesInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutEstudianteInput
   }
 
   export type EstudiantesUncheckedCreateWithoutGradoInput = {
@@ -22135,6 +25874,7 @@ export namespace Prisma {
     activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    recordatorioEstudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutEstudianteInput
   }
 
   export type EstudiantesCreateOrConnectWithoutGradoInput = {
@@ -22190,6 +25930,45 @@ export namespace Prisma {
 
   export type DocenteAsignacionesCreateManyGradoInputEnvelope = {
     data: DocenteAsignacionesCreateManyGradoInput | DocenteAsignacionesCreateManyGradoInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type RecordatoriosCreateWithoutGradoInput = {
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    docente: DocentesCreateNestedOneWithoutRecordatoriosInput
+    curso: CursosCreateNestedOneWithoutRecordatoriosInput
+    area: AreasCreateNestedOneWithoutRecordatoriosInput
+    materia: MateriasCreateNestedOneWithoutRecordatoriosInput
+    estudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosUncheckedCreateWithoutGradoInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosCreateOrConnectWithoutGradoInput = {
+    where: RecordatoriosWhereUniqueInput
+    create: XOR<RecordatoriosCreateWithoutGradoInput, RecordatoriosUncheckedCreateWithoutGradoInput>
+  }
+
+  export type RecordatoriosCreateManyGradoInputEnvelope = {
+    data: RecordatoriosCreateManyGradoInput | RecordatoriosCreateManyGradoInput[]
     skipDuplicates?: boolean
   }
 
@@ -22333,6 +26112,40 @@ export namespace Prisma {
     created_at?: DateTimeFilter<"DocenteAsignaciones"> | Date | string
   }
 
+  export type RecordatoriosUpsertWithWhereUniqueWithoutGradoInput = {
+    where: RecordatoriosWhereUniqueInput
+    update: XOR<RecordatoriosUpdateWithoutGradoInput, RecordatoriosUncheckedUpdateWithoutGradoInput>
+    create: XOR<RecordatoriosCreateWithoutGradoInput, RecordatoriosUncheckedCreateWithoutGradoInput>
+  }
+
+  export type RecordatoriosUpdateWithWhereUniqueWithoutGradoInput = {
+    where: RecordatoriosWhereUniqueInput
+    data: XOR<RecordatoriosUpdateWithoutGradoInput, RecordatoriosUncheckedUpdateWithoutGradoInput>
+  }
+
+  export type RecordatoriosUpdateManyWithWhereWithoutGradoInput = {
+    where: RecordatoriosScalarWhereInput
+    data: XOR<RecordatoriosUpdateManyMutationInput, RecordatoriosUncheckedUpdateManyWithoutGradoInput>
+  }
+
+  export type RecordatoriosScalarWhereInput = {
+    AND?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+    OR?: RecordatoriosScalarWhereInput[]
+    NOT?: RecordatoriosScalarWhereInput | RecordatoriosScalarWhereInput[]
+    id?: IntFilter<"Recordatorios"> | number
+    nombre?: StringFilter<"Recordatorios"> | string
+    descripcion?: StringFilter<"Recordatorios"> | string
+    fecha?: DateTimeFilter<"Recordatorios"> | Date | string
+    tipo?: StringFilter<"Recordatorios"> | string
+    docente_id?: IntFilter<"Recordatorios"> | number
+    grado_id?: IntFilter<"Recordatorios"> | number
+    curso_id?: IntFilter<"Recordatorios"> | number
+    area_id?: IntFilter<"Recordatorios"> | number
+    materia_id?: IntFilter<"Recordatorios"> | number
+    created_at?: DateTimeFilter<"Recordatorios"> | Date | string
+    updated_at?: DateTimeFilter<"Recordatorios"> | Date | string
+  }
+
   export type GradosCreateWithoutCursosInput = {
     nombre: string
     nivel: string
@@ -22343,6 +26156,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutGradoInput
   }
 
   export type GradosUncheckedCreateWithoutCursosInput = {
@@ -22356,6 +26170,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutGradoInput
   }
 
   export type GradosCreateOrConnectWithoutCursosInput = {
@@ -22449,6 +26264,7 @@ export namespace Prisma {
     updated_at?: Date | string
     grado: GradosCreateNestedOneWithoutEstudiantesInput
     institucion: InstitucionesCreateNestedOneWithoutEstudiantesInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutEstudianteInput
   }
 
   export type EstudiantesUncheckedCreateWithoutCursoInput = {
@@ -22464,6 +26280,7 @@ export namespace Prisma {
     activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    recordatorioEstudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutEstudianteInput
   }
 
   export type EstudiantesCreateOrConnectWithoutCursoInput = {
@@ -22501,6 +26318,45 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type RecordatoriosCreateWithoutCursoInput = {
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    docente: DocentesCreateNestedOneWithoutRecordatoriosInput
+    grado: GradosCreateNestedOneWithoutRecordatoriosInput
+    area: AreasCreateNestedOneWithoutRecordatoriosInput
+    materia: MateriasCreateNestedOneWithoutRecordatoriosInput
+    estudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosUncheckedCreateWithoutCursoInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosCreateOrConnectWithoutCursoInput = {
+    where: RecordatoriosWhereUniqueInput
+    create: XOR<RecordatoriosCreateWithoutCursoInput, RecordatoriosUncheckedCreateWithoutCursoInput>
+  }
+
+  export type RecordatoriosCreateManyCursoInputEnvelope = {
+    data: RecordatoriosCreateManyCursoInput | RecordatoriosCreateManyCursoInput[]
+    skipDuplicates?: boolean
+  }
+
   export type GradosUpsertWithoutCursosInput = {
     update: XOR<GradosUpdateWithoutCursosInput, GradosUncheckedUpdateWithoutCursosInput>
     create: XOR<GradosCreateWithoutCursosInput, GradosUncheckedCreateWithoutCursosInput>
@@ -22522,6 +26378,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutGradoNestedInput
   }
 
   export type GradosUncheckedUpdateWithoutCursosInput = {
@@ -22535,6 +26392,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutGradoNestedInput
   }
 
   export type InstitucionesUpsertWithoutCursosInput = {
@@ -22655,6 +26513,22 @@ export namespace Prisma {
     data: XOR<DocenteAsignacionesUpdateManyMutationInput, DocenteAsignacionesUncheckedUpdateManyWithoutCursoInput>
   }
 
+  export type RecordatoriosUpsertWithWhereUniqueWithoutCursoInput = {
+    where: RecordatoriosWhereUniqueInput
+    update: XOR<RecordatoriosUpdateWithoutCursoInput, RecordatoriosUncheckedUpdateWithoutCursoInput>
+    create: XOR<RecordatoriosCreateWithoutCursoInput, RecordatoriosUncheckedCreateWithoutCursoInput>
+  }
+
+  export type RecordatoriosUpdateWithWhereUniqueWithoutCursoInput = {
+    where: RecordatoriosWhereUniqueInput
+    data: XOR<RecordatoriosUpdateWithoutCursoInput, RecordatoriosUncheckedUpdateWithoutCursoInput>
+  }
+
+  export type RecordatoriosUpdateManyWithWhereWithoutCursoInput = {
+    where: RecordatoriosScalarWhereInput
+    data: XOR<RecordatoriosUpdateManyMutationInput, RecordatoriosUncheckedUpdateManyWithoutCursoInput>
+  }
+
   export type InstitucionesCreateWithoutAreasInput = {
     nombre: string
     direccion_principal: string
@@ -22710,6 +26584,7 @@ export namespace Prisma {
     institucion: InstitucionesCreateNestedOneWithoutMateriasInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutMateriaInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasUncheckedCreateWithoutAreaInput = {
@@ -22720,6 +26595,7 @@ export namespace Prisma {
     updated_at?: Date | string
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutMateriaInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasCreateOrConnectWithoutAreaInput = {
@@ -22729,6 +26605,45 @@ export namespace Prisma {
 
   export type MateriasCreateManyAreaInputEnvelope = {
     data: MateriasCreateManyAreaInput | MateriasCreateManyAreaInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type RecordatoriosCreateWithoutAreaInput = {
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    docente: DocentesCreateNestedOneWithoutRecordatoriosInput
+    grado: GradosCreateNestedOneWithoutRecordatoriosInput
+    curso: CursosCreateNestedOneWithoutRecordatoriosInput
+    materia: MateriasCreateNestedOneWithoutRecordatoriosInput
+    estudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosUncheckedCreateWithoutAreaInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosCreateOrConnectWithoutAreaInput = {
+    where: RecordatoriosWhereUniqueInput
+    create: XOR<RecordatoriosCreateWithoutAreaInput, RecordatoriosUncheckedCreateWithoutAreaInput>
+  }
+
+  export type RecordatoriosCreateManyAreaInputEnvelope = {
+    data: RecordatoriosCreateManyAreaInput | RecordatoriosCreateManyAreaInput[]
     skipDuplicates?: boolean
   }
 
@@ -22802,6 +26717,22 @@ export namespace Prisma {
     data: XOR<MateriasUpdateManyMutationInput, MateriasUncheckedUpdateManyWithoutAreaInput>
   }
 
+  export type RecordatoriosUpsertWithWhereUniqueWithoutAreaInput = {
+    where: RecordatoriosWhereUniqueInput
+    update: XOR<RecordatoriosUpdateWithoutAreaInput, RecordatoriosUncheckedUpdateWithoutAreaInput>
+    create: XOR<RecordatoriosCreateWithoutAreaInput, RecordatoriosUncheckedCreateWithoutAreaInput>
+  }
+
+  export type RecordatoriosUpdateWithWhereUniqueWithoutAreaInput = {
+    where: RecordatoriosWhereUniqueInput
+    data: XOR<RecordatoriosUpdateWithoutAreaInput, RecordatoriosUncheckedUpdateWithoutAreaInput>
+  }
+
+  export type RecordatoriosUpdateManyWithWhereWithoutAreaInput = {
+    where: RecordatoriosScalarWhereInput
+    data: XOR<RecordatoriosUpdateManyMutationInput, RecordatoriosUncheckedUpdateManyWithoutAreaInput>
+  }
+
   export type AreasCreateWithoutMateriasInput = {
     nombre: string
     es_opcional?: boolean
@@ -22810,6 +26741,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     institucion: InstitucionesCreateNestedOneWithoutAreasInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutAreaInput
   }
 
   export type AreasUncheckedCreateWithoutMateriasInput = {
@@ -22821,6 +26753,7 @@ export namespace Prisma {
     activa?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutAreaInput
   }
 
   export type AreasCreateOrConnectWithoutMateriasInput = {
@@ -22922,6 +26855,45 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type RecordatoriosCreateWithoutMateriaInput = {
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    docente: DocentesCreateNestedOneWithoutRecordatoriosInput
+    grado: GradosCreateNestedOneWithoutRecordatoriosInput
+    curso: CursosCreateNestedOneWithoutRecordatoriosInput
+    area: AreasCreateNestedOneWithoutRecordatoriosInput
+    estudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosUncheckedCreateWithoutMateriaInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    area_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosCreateOrConnectWithoutMateriaInput = {
+    where: RecordatoriosWhereUniqueInput
+    create: XOR<RecordatoriosCreateWithoutMateriaInput, RecordatoriosUncheckedCreateWithoutMateriaInput>
+  }
+
+  export type RecordatoriosCreateManyMateriaInputEnvelope = {
+    data: RecordatoriosCreateManyMateriaInput | RecordatoriosCreateManyMateriaInput[]
+    skipDuplicates?: boolean
+  }
+
   export type AreasUpsertWithoutMateriasInput = {
     update: XOR<AreasUpdateWithoutMateriasInput, AreasUncheckedUpdateWithoutMateriasInput>
     create: XOR<AreasCreateWithoutMateriasInput, AreasUncheckedCreateWithoutMateriasInput>
@@ -22941,6 +26913,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     institucion?: InstitucionesUpdateOneRequiredWithoutAreasNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutAreaNestedInput
   }
 
   export type AreasUncheckedUpdateWithoutMateriasInput = {
@@ -22952,6 +26925,7 @@ export namespace Prisma {
     activa?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutAreaNestedInput
   }
 
   export type InstitucionesUpsertWithoutMateriasInput = {
@@ -23040,6 +27014,22 @@ export namespace Prisma {
     data: XOR<DocenteAsignacionesUpdateManyMutationInput, DocenteAsignacionesUncheckedUpdateManyWithoutMateriaInput>
   }
 
+  export type RecordatoriosUpsertWithWhereUniqueWithoutMateriaInput = {
+    where: RecordatoriosWhereUniqueInput
+    update: XOR<RecordatoriosUpdateWithoutMateriaInput, RecordatoriosUncheckedUpdateWithoutMateriaInput>
+    create: XOR<RecordatoriosCreateWithoutMateriaInput, RecordatoriosUncheckedCreateWithoutMateriaInput>
+  }
+
+  export type RecordatoriosUpdateWithWhereUniqueWithoutMateriaInput = {
+    where: RecordatoriosWhereUniqueInput
+    data: XOR<RecordatoriosUpdateWithoutMateriaInput, RecordatoriosUncheckedUpdateWithoutMateriaInput>
+  }
+
+  export type RecordatoriosUpdateManyWithWhereWithoutMateriaInput = {
+    where: RecordatoriosScalarWhereInput
+    data: XOR<RecordatoriosUpdateManyMutationInput, RecordatoriosUncheckedUpdateManyWithoutMateriaInput>
+  }
+
   export type MateriasCreateWithoutMateriaGradosInput = {
     nombre: string
     created_at?: Date | string
@@ -23047,6 +27037,7 @@ export namespace Prisma {
     area: AreasCreateNestedOneWithoutMateriasInput
     institucion: InstitucionesCreateNestedOneWithoutMateriasInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasUncheckedCreateWithoutMateriaGradosInput = {
@@ -23057,6 +27048,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasCreateOrConnectWithoutMateriaGradosInput = {
@@ -23074,6 +27066,7 @@ export namespace Prisma {
     cursos?: CursosCreateNestedManyWithoutGradoInput
     estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutGradoInput
   }
 
   export type GradosUncheckedCreateWithoutMateriaGradosInput = {
@@ -23087,6 +27080,7 @@ export namespace Prisma {
     cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutGradoInput
   }
 
   export type GradosCreateOrConnectWithoutMateriaGradosInput = {
@@ -23112,6 +27106,7 @@ export namespace Prisma {
     area?: AreasUpdateOneRequiredWithoutMateriasNestedInput
     institucion?: InstitucionesUpdateOneRequiredWithoutMateriasNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutMateriaNestedInput
   }
 
   export type MateriasUncheckedUpdateWithoutMateriaGradosInput = {
@@ -23122,6 +27117,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutMateriaNestedInput
   }
 
   export type GradosUpsertWithoutMateriaGradosInput = {
@@ -23145,6 +27141,7 @@ export namespace Prisma {
     cursos?: CursosUpdateManyWithoutGradoNestedInput
     estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutGradoNestedInput
   }
 
   export type GradosUncheckedUpdateWithoutMateriaGradosInput = {
@@ -23158,6 +27155,7 @@ export namespace Prisma {
     cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutGradoNestedInput
   }
 
   export type InstitucionesCreateWithoutDocentesInput = {
@@ -23256,6 +27254,45 @@ export namespace Prisma {
 
   export type DocenteAsignacionesCreateManyDocenteInputEnvelope = {
     data: DocenteAsignacionesCreateManyDocenteInput | DocenteAsignacionesCreateManyDocenteInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type RecordatoriosCreateWithoutDocenteInput = {
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    grado: GradosCreateNestedOneWithoutRecordatoriosInput
+    curso: CursosCreateNestedOneWithoutRecordatoriosInput
+    area: AreasCreateNestedOneWithoutRecordatoriosInput
+    materia: MateriasCreateNestedOneWithoutRecordatoriosInput
+    estudiantes?: RecordatorioEstudiantesCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosUncheckedCreateWithoutDocenteInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    grado_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedCreateNestedManyWithoutRecordatorioInput
+  }
+
+  export type RecordatoriosCreateOrConnectWithoutDocenteInput = {
+    where: RecordatoriosWhereUniqueInput
+    create: XOR<RecordatoriosCreateWithoutDocenteInput, RecordatoriosUncheckedCreateWithoutDocenteInput>
+  }
+
+  export type RecordatoriosCreateManyDocenteInputEnvelope = {
+    data: RecordatoriosCreateManyDocenteInput | RecordatoriosCreateManyDocenteInput[]
     skipDuplicates?: boolean
   }
 
@@ -23361,6 +27398,22 @@ export namespace Prisma {
     data: XOR<DocenteAsignacionesUpdateManyMutationInput, DocenteAsignacionesUncheckedUpdateManyWithoutDocenteInput>
   }
 
+  export type RecordatoriosUpsertWithWhereUniqueWithoutDocenteInput = {
+    where: RecordatoriosWhereUniqueInput
+    update: XOR<RecordatoriosUpdateWithoutDocenteInput, RecordatoriosUncheckedUpdateWithoutDocenteInput>
+    create: XOR<RecordatoriosCreateWithoutDocenteInput, RecordatoriosUncheckedCreateWithoutDocenteInput>
+  }
+
+  export type RecordatoriosUpdateWithWhereUniqueWithoutDocenteInput = {
+    where: RecordatoriosWhereUniqueInput
+    data: XOR<RecordatoriosUpdateWithoutDocenteInput, RecordatoriosUncheckedUpdateWithoutDocenteInput>
+  }
+
+  export type RecordatoriosUpdateManyWithWhereWithoutDocenteInput = {
+    where: RecordatoriosScalarWhereInput
+    data: XOR<RecordatoriosUpdateManyMutationInput, RecordatoriosUncheckedUpdateManyWithoutDocenteInput>
+  }
+
   export type DocentesCreateWithoutDocenteAsignacionesInput = {
     apellidos: string
     nombres: string
@@ -23372,6 +27425,7 @@ export namespace Prisma {
     updated_at?: Date | string
     institucion: InstitucionesCreateNestedOneWithoutDocentesInput
     sede?: SedesCreateNestedOneWithoutDocentesInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutDocenteInput
   }
 
   export type DocentesUncheckedCreateWithoutDocenteAsignacionesInput = {
@@ -23386,6 +27440,7 @@ export namespace Prisma {
     activo?: boolean
     created_at?: Date | string
     updated_at?: Date | string
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutDocenteInput
   }
 
   export type DocentesCreateOrConnectWithoutDocenteAsignacionesInput = {
@@ -23403,6 +27458,7 @@ export namespace Prisma {
     cursos?: CursosCreateNestedManyWithoutGradoInput
     estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutGradoInput
   }
 
   export type GradosUncheckedCreateWithoutDocenteAsignacionesInput = {
@@ -23416,6 +27472,7 @@ export namespace Prisma {
     cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutGradoInput
   }
 
   export type GradosCreateOrConnectWithoutDocenteAsignacionesInput = {
@@ -23432,6 +27489,7 @@ export namespace Prisma {
     institucion: InstitucionesCreateNestedOneWithoutCursosInput
     sede?: SedesCreateNestedOneWithoutCursosInput
     estudiantes?: EstudiantesCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutCursoInput
   }
 
   export type CursosUncheckedCreateWithoutDocenteAsignacionesInput = {
@@ -23444,6 +27502,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutCursoInput
   }
 
   export type CursosCreateOrConnectWithoutDocenteAsignacionesInput = {
@@ -23458,6 +27517,7 @@ export namespace Prisma {
     area: AreasCreateNestedOneWithoutMateriasInput
     institucion: InstitucionesCreateNestedOneWithoutMateriasInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasUncheckedCreateWithoutDocenteAsignacionesInput = {
@@ -23468,6 +27528,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutMateriaInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutMateriaInput
   }
 
   export type MateriasCreateOrConnectWithoutDocenteAsignacionesInput = {
@@ -23497,6 +27558,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     institucion?: InstitucionesUpdateOneRequiredWithoutDocentesNestedInput
     sede?: SedesUpdateOneWithoutDocentesNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutDocenteNestedInput
   }
 
   export type DocentesUncheckedUpdateWithoutDocenteAsignacionesInput = {
@@ -23511,6 +27573,7 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutDocenteNestedInput
   }
 
   export type GradosUpsertWithoutDocenteAsignacionesInput = {
@@ -23534,6 +27597,7 @@ export namespace Prisma {
     cursos?: CursosUpdateManyWithoutGradoNestedInput
     estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutGradoNestedInput
   }
 
   export type GradosUncheckedUpdateWithoutDocenteAsignacionesInput = {
@@ -23547,6 +27611,7 @@ export namespace Prisma {
     cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutGradoNestedInput
   }
 
   export type CursosUpsertWithoutDocenteAsignacionesInput = {
@@ -23569,6 +27634,7 @@ export namespace Prisma {
     institucion?: InstitucionesUpdateOneRequiredWithoutCursosNestedInput
     sede?: SedesUpdateOneWithoutCursosNestedInput
     estudiantes?: EstudiantesUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateWithoutDocenteAsignacionesInput = {
@@ -23581,6 +27647,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutCursoNestedInput
   }
 
   export type MateriasUpsertWithoutDocenteAsignacionesInput = {
@@ -23601,6 +27668,7 @@ export namespace Prisma {
     area?: AreasUpdateOneRequiredWithoutMateriasNestedInput
     institucion?: InstitucionesUpdateOneRequiredWithoutMateriasNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutMateriaNestedInput
   }
 
   export type MateriasUncheckedUpdateWithoutDocenteAsignacionesInput = {
@@ -23611,6 +27679,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutMateriaNestedInput
   }
 
   export type GradosCreateWithoutEstudiantesInput = {
@@ -23623,6 +27692,7 @@ export namespace Prisma {
     cursos?: CursosCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutGradoInput
   }
 
   export type GradosUncheckedCreateWithoutEstudiantesInput = {
@@ -23636,6 +27706,7 @@ export namespace Prisma {
     cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
     materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutGradoInput
   }
 
   export type GradosCreateOrConnectWithoutEstudiantesInput = {
@@ -23652,6 +27723,7 @@ export namespace Prisma {
     institucion: InstitucionesCreateNestedOneWithoutCursosInput
     sede?: SedesCreateNestedOneWithoutCursosInput
     docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosCreateNestedManyWithoutCursoInput
   }
 
   export type CursosUncheckedCreateWithoutEstudiantesInput = {
@@ -23664,6 +27736,7 @@ export namespace Prisma {
     created_at?: Date | string
     updated_at?: Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutCursoInput
+    recordatorios?: RecordatoriosUncheckedCreateNestedManyWithoutCursoInput
   }
 
   export type CursosCreateOrConnectWithoutEstudiantesInput = {
@@ -23719,6 +27792,27 @@ export namespace Prisma {
     create: XOR<InstitucionesCreateWithoutEstudiantesInput, InstitucionesUncheckedCreateWithoutEstudiantesInput>
   }
 
+  export type RecordatorioEstudiantesCreateWithoutEstudianteInput = {
+    created_at?: Date | string
+    recordatorio: RecordatoriosCreateNestedOneWithoutEstudiantesInput
+  }
+
+  export type RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput = {
+    id?: number
+    recordatorio_id: number
+    created_at?: Date | string
+  }
+
+  export type RecordatorioEstudiantesCreateOrConnectWithoutEstudianteInput = {
+    where: RecordatorioEstudiantesWhereUniqueInput
+    create: XOR<RecordatorioEstudiantesCreateWithoutEstudianteInput, RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput>
+  }
+
+  export type RecordatorioEstudiantesCreateManyEstudianteInputEnvelope = {
+    data: RecordatorioEstudiantesCreateManyEstudianteInput | RecordatorioEstudiantesCreateManyEstudianteInput[]
+    skipDuplicates?: boolean
+  }
+
   export type GradosUpsertWithoutEstudiantesInput = {
     update: XOR<GradosUpdateWithoutEstudiantesInput, GradosUncheckedUpdateWithoutEstudiantesInput>
     create: XOR<GradosCreateWithoutEstudiantesInput, GradosUncheckedCreateWithoutEstudiantesInput>
@@ -23740,6 +27834,7 @@ export namespace Prisma {
     cursos?: CursosUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutGradoNestedInput
   }
 
   export type GradosUncheckedUpdateWithoutEstudiantesInput = {
@@ -23753,6 +27848,7 @@ export namespace Prisma {
     cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutGradoNestedInput
   }
 
   export type CursosUpsertWithoutEstudiantesInput = {
@@ -23775,6 +27871,7 @@ export namespace Prisma {
     institucion?: InstitucionesUpdateOneRequiredWithoutCursosNestedInput
     sede?: SedesUpdateOneWithoutCursosNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateWithoutEstudiantesInput = {
@@ -23787,6 +27884,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutCursoNestedInput
   }
 
   export type InstitucionesUpsertWithoutEstudiantesInput = {
@@ -23841,6 +27939,551 @@ export namespace Prisma {
     areas?: AreasUncheckedUpdateManyWithoutInstitucionNestedInput
     materias?: MateriasUncheckedUpdateManyWithoutInstitucionNestedInput
     docentes?: DocentesUncheckedUpdateManyWithoutInstitucionNestedInput
+  }
+
+  export type RecordatorioEstudiantesUpsertWithWhereUniqueWithoutEstudianteInput = {
+    where: RecordatorioEstudiantesWhereUniqueInput
+    update: XOR<RecordatorioEstudiantesUpdateWithoutEstudianteInput, RecordatorioEstudiantesUncheckedUpdateWithoutEstudianteInput>
+    create: XOR<RecordatorioEstudiantesCreateWithoutEstudianteInput, RecordatorioEstudiantesUncheckedCreateWithoutEstudianteInput>
+  }
+
+  export type RecordatorioEstudiantesUpdateWithWhereUniqueWithoutEstudianteInput = {
+    where: RecordatorioEstudiantesWhereUniqueInput
+    data: XOR<RecordatorioEstudiantesUpdateWithoutEstudianteInput, RecordatorioEstudiantesUncheckedUpdateWithoutEstudianteInput>
+  }
+
+  export type RecordatorioEstudiantesUpdateManyWithWhereWithoutEstudianteInput = {
+    where: RecordatorioEstudiantesScalarWhereInput
+    data: XOR<RecordatorioEstudiantesUpdateManyMutationInput, RecordatorioEstudiantesUncheckedUpdateManyWithoutEstudianteInput>
+  }
+
+  export type RecordatorioEstudiantesScalarWhereInput = {
+    AND?: RecordatorioEstudiantesScalarWhereInput | RecordatorioEstudiantesScalarWhereInput[]
+    OR?: RecordatorioEstudiantesScalarWhereInput[]
+    NOT?: RecordatorioEstudiantesScalarWhereInput | RecordatorioEstudiantesScalarWhereInput[]
+    id?: IntFilter<"RecordatorioEstudiantes"> | number
+    recordatorio_id?: IntFilter<"RecordatorioEstudiantes"> | number
+    estudiante_id?: IntFilter<"RecordatorioEstudiantes"> | number
+    created_at?: DateTimeFilter<"RecordatorioEstudiantes"> | Date | string
+  }
+
+  export type DocentesCreateWithoutRecordatoriosInput = {
+    apellidos: string
+    nombres: string
+    telefono: string
+    email: string
+    auth_user_id?: string | null
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    institucion: InstitucionesCreateNestedOneWithoutDocentesInput
+    sede?: SedesCreateNestedOneWithoutDocentesInput
+    docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutDocenteInput
+  }
+
+  export type DocentesUncheckedCreateWithoutRecordatoriosInput = {
+    id?: number
+    apellidos: string
+    nombres: string
+    telefono: string
+    email: string
+    institucion_id: number
+    sede_id?: number | null
+    auth_user_id?: string | null
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutDocenteInput
+  }
+
+  export type DocentesCreateOrConnectWithoutRecordatoriosInput = {
+    where: DocentesWhereUniqueInput
+    create: XOR<DocentesCreateWithoutRecordatoriosInput, DocentesUncheckedCreateWithoutRecordatoriosInput>
+  }
+
+  export type GradosCreateWithoutRecordatoriosInput = {
+    nombre: string
+    nivel: string
+    orden: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    institucion: InstitucionesCreateNestedOneWithoutGradosInput
+    cursos?: CursosCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesCreateNestedManyWithoutGradoInput
+    materiaGrados?: MateriaGradosCreateNestedManyWithoutGradoInput
+    docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutGradoInput
+  }
+
+  export type GradosUncheckedCreateWithoutRecordatoriosInput = {
+    id?: number
+    nombre: string
+    nivel: string
+    orden: number
+    institucion_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    cursos?: CursosUncheckedCreateNestedManyWithoutGradoInput
+    estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutGradoInput
+    materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutGradoInput
+    docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutGradoInput
+  }
+
+  export type GradosCreateOrConnectWithoutRecordatoriosInput = {
+    where: GradosWhereUniqueInput
+    create: XOR<GradosCreateWithoutRecordatoriosInput, GradosUncheckedCreateWithoutRecordatoriosInput>
+  }
+
+  export type CursosCreateWithoutRecordatoriosInput = {
+    nombre: string
+    jornada?: string | null
+    created_at?: Date | string
+    updated_at?: Date | string
+    grado: GradosCreateNestedOneWithoutCursosInput
+    institucion: InstitucionesCreateNestedOneWithoutCursosInput
+    sede?: SedesCreateNestedOneWithoutCursosInput
+    estudiantes?: EstudiantesCreateNestedManyWithoutCursoInput
+    docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutCursoInput
+  }
+
+  export type CursosUncheckedCreateWithoutRecordatoriosInput = {
+    id?: number
+    nombre: string
+    grado_id: number
+    jornada?: string | null
+    sede_id?: number | null
+    institucion_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    estudiantes?: EstudiantesUncheckedCreateNestedManyWithoutCursoInput
+    docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutCursoInput
+  }
+
+  export type CursosCreateOrConnectWithoutRecordatoriosInput = {
+    where: CursosWhereUniqueInput
+    create: XOR<CursosCreateWithoutRecordatoriosInput, CursosUncheckedCreateWithoutRecordatoriosInput>
+  }
+
+  export type AreasCreateWithoutRecordatoriosInput = {
+    nombre: string
+    es_opcional?: boolean
+    orden: number
+    activa?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    institucion: InstitucionesCreateNestedOneWithoutAreasInput
+    materias?: MateriasCreateNestedManyWithoutAreaInput
+  }
+
+  export type AreasUncheckedCreateWithoutRecordatoriosInput = {
+    id?: number
+    nombre: string
+    es_opcional?: boolean
+    orden: number
+    institucion_id: number
+    activa?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    materias?: MateriasUncheckedCreateNestedManyWithoutAreaInput
+  }
+
+  export type AreasCreateOrConnectWithoutRecordatoriosInput = {
+    where: AreasWhereUniqueInput
+    create: XOR<AreasCreateWithoutRecordatoriosInput, AreasUncheckedCreateWithoutRecordatoriosInput>
+  }
+
+  export type MateriasCreateWithoutRecordatoriosInput = {
+    nombre: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    area: AreasCreateNestedOneWithoutMateriasInput
+    institucion: InstitucionesCreateNestedOneWithoutMateriasInput
+    materiaGrados?: MateriaGradosCreateNestedManyWithoutMateriaInput
+    docenteAsignaciones?: DocenteAsignacionesCreateNestedManyWithoutMateriaInput
+  }
+
+  export type MateriasUncheckedCreateWithoutRecordatoriosInput = {
+    id?: number
+    nombre: string
+    area_id: number
+    institucion_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    materiaGrados?: MateriaGradosUncheckedCreateNestedManyWithoutMateriaInput
+    docenteAsignaciones?: DocenteAsignacionesUncheckedCreateNestedManyWithoutMateriaInput
+  }
+
+  export type MateriasCreateOrConnectWithoutRecordatoriosInput = {
+    where: MateriasWhereUniqueInput
+    create: XOR<MateriasCreateWithoutRecordatoriosInput, MateriasUncheckedCreateWithoutRecordatoriosInput>
+  }
+
+  export type RecordatorioEstudiantesCreateWithoutRecordatorioInput = {
+    created_at?: Date | string
+    estudiante: EstudiantesCreateNestedOneWithoutRecordatorioEstudiantesInput
+  }
+
+  export type RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput = {
+    id?: number
+    estudiante_id: number
+    created_at?: Date | string
+  }
+
+  export type RecordatorioEstudiantesCreateOrConnectWithoutRecordatorioInput = {
+    where: RecordatorioEstudiantesWhereUniqueInput
+    create: XOR<RecordatorioEstudiantesCreateWithoutRecordatorioInput, RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput>
+  }
+
+  export type RecordatorioEstudiantesCreateManyRecordatorioInputEnvelope = {
+    data: RecordatorioEstudiantesCreateManyRecordatorioInput | RecordatorioEstudiantesCreateManyRecordatorioInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DocentesUpsertWithoutRecordatoriosInput = {
+    update: XOR<DocentesUpdateWithoutRecordatoriosInput, DocentesUncheckedUpdateWithoutRecordatoriosInput>
+    create: XOR<DocentesCreateWithoutRecordatoriosInput, DocentesUncheckedCreateWithoutRecordatoriosInput>
+    where?: DocentesWhereInput
+  }
+
+  export type DocentesUpdateToOneWithWhereWithoutRecordatoriosInput = {
+    where?: DocentesWhereInput
+    data: XOR<DocentesUpdateWithoutRecordatoriosInput, DocentesUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type DocentesUpdateWithoutRecordatoriosInput = {
+    apellidos?: StringFieldUpdateOperationsInput | string
+    nombres?: StringFieldUpdateOperationsInput | string
+    telefono?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    auth_user_id?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    institucion?: InstitucionesUpdateOneRequiredWithoutDocentesNestedInput
+    sede?: SedesUpdateOneWithoutDocentesNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutDocenteNestedInput
+  }
+
+  export type DocentesUncheckedUpdateWithoutRecordatoriosInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    apellidos?: StringFieldUpdateOperationsInput | string
+    nombres?: StringFieldUpdateOperationsInput | string
+    telefono?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    sede_id?: NullableIntFieldUpdateOperationsInput | number | null
+    auth_user_id?: NullableStringFieldUpdateOperationsInput | string | null
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutDocenteNestedInput
+  }
+
+  export type GradosUpsertWithoutRecordatoriosInput = {
+    update: XOR<GradosUpdateWithoutRecordatoriosInput, GradosUncheckedUpdateWithoutRecordatoriosInput>
+    create: XOR<GradosCreateWithoutRecordatoriosInput, GradosUncheckedCreateWithoutRecordatoriosInput>
+    where?: GradosWhereInput
+  }
+
+  export type GradosUpdateToOneWithWhereWithoutRecordatoriosInput = {
+    where?: GradosWhereInput
+    data: XOR<GradosUpdateWithoutRecordatoriosInput, GradosUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type GradosUpdateWithoutRecordatoriosInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    nivel?: StringFieldUpdateOperationsInput | string
+    orden?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    institucion?: InstitucionesUpdateOneRequiredWithoutGradosNestedInput
+    cursos?: CursosUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
+    materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
+  }
+
+  export type GradosUncheckedUpdateWithoutRecordatoriosInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    nivel?: StringFieldUpdateOperationsInput | string
+    orden?: IntFieldUpdateOperationsInput | number
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    cursos?: CursosUncheckedUpdateManyWithoutGradoNestedInput
+    estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
+    materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
+  }
+
+  export type CursosUpsertWithoutRecordatoriosInput = {
+    update: XOR<CursosUpdateWithoutRecordatoriosInput, CursosUncheckedUpdateWithoutRecordatoriosInput>
+    create: XOR<CursosCreateWithoutRecordatoriosInput, CursosUncheckedCreateWithoutRecordatoriosInput>
+    where?: CursosWhereInput
+  }
+
+  export type CursosUpdateToOneWithWhereWithoutRecordatoriosInput = {
+    where?: CursosWhereInput
+    data: XOR<CursosUpdateWithoutRecordatoriosInput, CursosUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type CursosUpdateWithoutRecordatoriosInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    jornada?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    grado?: GradosUpdateOneRequiredWithoutCursosNestedInput
+    institucion?: InstitucionesUpdateOneRequiredWithoutCursosNestedInput
+    sede?: SedesUpdateOneWithoutCursosNestedInput
+    estudiantes?: EstudiantesUpdateManyWithoutCursoNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutCursoNestedInput
+  }
+
+  export type CursosUncheckedUpdateWithoutRecordatoriosInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
+    jornada?: NullableStringFieldUpdateOperationsInput | string | null
+    sede_id?: NullableIntFieldUpdateOperationsInput | number | null
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiantes?: EstudiantesUncheckedUpdateManyWithoutCursoNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutCursoNestedInput
+  }
+
+  export type AreasUpsertWithoutRecordatoriosInput = {
+    update: XOR<AreasUpdateWithoutRecordatoriosInput, AreasUncheckedUpdateWithoutRecordatoriosInput>
+    create: XOR<AreasCreateWithoutRecordatoriosInput, AreasUncheckedCreateWithoutRecordatoriosInput>
+    where?: AreasWhereInput
+  }
+
+  export type AreasUpdateToOneWithWhereWithoutRecordatoriosInput = {
+    where?: AreasWhereInput
+    data: XOR<AreasUpdateWithoutRecordatoriosInput, AreasUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type AreasUpdateWithoutRecordatoriosInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    es_opcional?: BoolFieldUpdateOperationsInput | boolean
+    orden?: IntFieldUpdateOperationsInput | number
+    activa?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    institucion?: InstitucionesUpdateOneRequiredWithoutAreasNestedInput
+    materias?: MateriasUpdateManyWithoutAreaNestedInput
+  }
+
+  export type AreasUncheckedUpdateWithoutRecordatoriosInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    es_opcional?: BoolFieldUpdateOperationsInput | boolean
+    orden?: IntFieldUpdateOperationsInput | number
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    activa?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    materias?: MateriasUncheckedUpdateManyWithoutAreaNestedInput
+  }
+
+  export type MateriasUpsertWithoutRecordatoriosInput = {
+    update: XOR<MateriasUpdateWithoutRecordatoriosInput, MateriasUncheckedUpdateWithoutRecordatoriosInput>
+    create: XOR<MateriasCreateWithoutRecordatoriosInput, MateriasUncheckedCreateWithoutRecordatoriosInput>
+    where?: MateriasWhereInput
+  }
+
+  export type MateriasUpdateToOneWithWhereWithoutRecordatoriosInput = {
+    where?: MateriasWhereInput
+    data: XOR<MateriasUpdateWithoutRecordatoriosInput, MateriasUncheckedUpdateWithoutRecordatoriosInput>
+  }
+
+  export type MateriasUpdateWithoutRecordatoriosInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    area?: AreasUpdateOneRequiredWithoutMateriasNestedInput
+    institucion?: InstitucionesUpdateOneRequiredWithoutMateriasNestedInput
+    materiaGrados?: MateriaGradosUpdateManyWithoutMateriaNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutMateriaNestedInput
+  }
+
+  export type MateriasUncheckedUpdateWithoutRecordatoriosInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    area_id?: IntFieldUpdateOperationsInput | number
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutMateriaNestedInput
+    docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutMateriaNestedInput
+  }
+
+  export type RecordatorioEstudiantesUpsertWithWhereUniqueWithoutRecordatorioInput = {
+    where: RecordatorioEstudiantesWhereUniqueInput
+    update: XOR<RecordatorioEstudiantesUpdateWithoutRecordatorioInput, RecordatorioEstudiantesUncheckedUpdateWithoutRecordatorioInput>
+    create: XOR<RecordatorioEstudiantesCreateWithoutRecordatorioInput, RecordatorioEstudiantesUncheckedCreateWithoutRecordatorioInput>
+  }
+
+  export type RecordatorioEstudiantesUpdateWithWhereUniqueWithoutRecordatorioInput = {
+    where: RecordatorioEstudiantesWhereUniqueInput
+    data: XOR<RecordatorioEstudiantesUpdateWithoutRecordatorioInput, RecordatorioEstudiantesUncheckedUpdateWithoutRecordatorioInput>
+  }
+
+  export type RecordatorioEstudiantesUpdateManyWithWhereWithoutRecordatorioInput = {
+    where: RecordatorioEstudiantesScalarWhereInput
+    data: XOR<RecordatorioEstudiantesUpdateManyMutationInput, RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioInput>
+  }
+
+  export type RecordatoriosCreateWithoutEstudiantesInput = {
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    docente: DocentesCreateNestedOneWithoutRecordatoriosInput
+    grado: GradosCreateNestedOneWithoutRecordatoriosInput
+    curso: CursosCreateNestedOneWithoutRecordatoriosInput
+    area: AreasCreateNestedOneWithoutRecordatoriosInput
+    materia: MateriasCreateNestedOneWithoutRecordatoriosInput
+  }
+
+  export type RecordatoriosUncheckedCreateWithoutEstudiantesInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type RecordatoriosCreateOrConnectWithoutEstudiantesInput = {
+    where: RecordatoriosWhereUniqueInput
+    create: XOR<RecordatoriosCreateWithoutEstudiantesInput, RecordatoriosUncheckedCreateWithoutEstudiantesInput>
+  }
+
+  export type EstudiantesCreateWithoutRecordatorioEstudiantesInput = {
+    apellidos: string
+    nombres: string
+    codigo_estudiantil: string
+    nombre_acudiente: string
+    correo_acudiente?: string | null
+    telefono_acudiente: string
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+    grado: GradosCreateNestedOneWithoutEstudiantesInput
+    curso: CursosCreateNestedOneWithoutEstudiantesInput
+    institucion: InstitucionesCreateNestedOneWithoutEstudiantesInput
+  }
+
+  export type EstudiantesUncheckedCreateWithoutRecordatorioEstudiantesInput = {
+    id?: number
+    apellidos: string
+    nombres: string
+    codigo_estudiantil: string
+    nombre_acudiente: string
+    correo_acudiente?: string | null
+    telefono_acudiente: string
+    grado_id: number
+    curso_id: number
+    institucion_id: number
+    activo?: boolean
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type EstudiantesCreateOrConnectWithoutRecordatorioEstudiantesInput = {
+    where: EstudiantesWhereUniqueInput
+    create: XOR<EstudiantesCreateWithoutRecordatorioEstudiantesInput, EstudiantesUncheckedCreateWithoutRecordatorioEstudiantesInput>
+  }
+
+  export type RecordatoriosUpsertWithoutEstudiantesInput = {
+    update: XOR<RecordatoriosUpdateWithoutEstudiantesInput, RecordatoriosUncheckedUpdateWithoutEstudiantesInput>
+    create: XOR<RecordatoriosCreateWithoutEstudiantesInput, RecordatoriosUncheckedCreateWithoutEstudiantesInput>
+    where?: RecordatoriosWhereInput
+  }
+
+  export type RecordatoriosUpdateToOneWithWhereWithoutEstudiantesInput = {
+    where?: RecordatoriosWhereInput
+    data: XOR<RecordatoriosUpdateWithoutEstudiantesInput, RecordatoriosUncheckedUpdateWithoutEstudiantesInput>
+  }
+
+  export type RecordatoriosUpdateWithoutEstudiantesInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    docente?: DocentesUpdateOneRequiredWithoutRecordatoriosNestedInput
+    grado?: GradosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    curso?: CursosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    area?: AreasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    materia?: MateriasUpdateOneRequiredWithoutRecordatoriosNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateWithoutEstudiantesInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EstudiantesUpsertWithoutRecordatorioEstudiantesInput = {
+    update: XOR<EstudiantesUpdateWithoutRecordatorioEstudiantesInput, EstudiantesUncheckedUpdateWithoutRecordatorioEstudiantesInput>
+    create: XOR<EstudiantesCreateWithoutRecordatorioEstudiantesInput, EstudiantesUncheckedCreateWithoutRecordatorioEstudiantesInput>
+    where?: EstudiantesWhereInput
+  }
+
+  export type EstudiantesUpdateToOneWithWhereWithoutRecordatorioEstudiantesInput = {
+    where?: EstudiantesWhereInput
+    data: XOR<EstudiantesUpdateWithoutRecordatorioEstudiantesInput, EstudiantesUncheckedUpdateWithoutRecordatorioEstudiantesInput>
+  }
+
+  export type EstudiantesUpdateWithoutRecordatorioEstudiantesInput = {
+    apellidos?: StringFieldUpdateOperationsInput | string
+    nombres?: StringFieldUpdateOperationsInput | string
+    codigo_estudiantil?: StringFieldUpdateOperationsInput | string
+    nombre_acudiente?: StringFieldUpdateOperationsInput | string
+    correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    grado?: GradosUpdateOneRequiredWithoutEstudiantesNestedInput
+    curso?: CursosUpdateOneRequiredWithoutEstudiantesNestedInput
+    institucion?: InstitucionesUpdateOneRequiredWithoutEstudiantesNestedInput
+  }
+
+  export type EstudiantesUncheckedUpdateWithoutRecordatorioEstudiantesInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    apellidos?: StringFieldUpdateOperationsInput | string
+    nombres?: StringFieldUpdateOperationsInput | string
+    codigo_estudiantil?: StringFieldUpdateOperationsInput | string
+    nombre_acudiente?: StringFieldUpdateOperationsInput | string
+    correo_acudiente?: NullableStringFieldUpdateOperationsInput | string | null
+    telefono_acudiente?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    institucion_id?: IntFieldUpdateOperationsInput | number
+    activo?: BoolFieldUpdateOperationsInput | boolean
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AdministradoresCreateManyInstitucionInput = {
@@ -24010,6 +28653,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutGradoNestedInput
   }
 
   export type GradosUncheckedUpdateWithoutInstitucionInput = {
@@ -24023,6 +28667,7 @@ export namespace Prisma {
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutGradoNestedInput
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutGradoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutGradoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutGradoNestedInput
   }
 
   export type GradosUncheckedUpdateManyWithoutInstitucionInput = {
@@ -24043,6 +28688,7 @@ export namespace Prisma {
     sede?: SedesUpdateOneWithoutCursosNestedInput
     estudiantes?: EstudiantesUpdateManyWithoutCursoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateWithoutInstitucionInput = {
@@ -24055,6 +28701,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutCursoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateManyWithoutInstitucionInput = {
@@ -24075,6 +28722,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     materias?: MateriasUpdateManyWithoutAreaNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutAreaNestedInput
   }
 
   export type AreasUncheckedUpdateWithoutInstitucionInput = {
@@ -24086,6 +28734,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     materias?: MateriasUncheckedUpdateManyWithoutAreaNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutAreaNestedInput
   }
 
   export type AreasUncheckedUpdateManyWithoutInstitucionInput = {
@@ -24105,6 +28754,7 @@ export namespace Prisma {
     area?: AreasUpdateOneRequiredWithoutMateriasNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutMateriaNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutMateriaNestedInput
   }
 
   export type MateriasUncheckedUpdateWithoutInstitucionInput = {
@@ -24115,6 +28765,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutMateriaNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutMateriaNestedInput
   }
 
   export type MateriasUncheckedUpdateManyWithoutInstitucionInput = {
@@ -24136,6 +28787,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     sede?: SedesUpdateOneWithoutDocentesNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutDocenteNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutDocenteNestedInput
   }
 
   export type DocentesUncheckedUpdateWithoutInstitucionInput = {
@@ -24150,6 +28802,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutDocenteNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutDocenteNestedInput
   }
 
   export type DocentesUncheckedUpdateManyWithoutInstitucionInput = {
@@ -24177,6 +28830,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     grado?: GradosUpdateOneRequiredWithoutEstudiantesNestedInput
     curso?: CursosUpdateOneRequiredWithoutEstudiantesNestedInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesUpdateManyWithoutEstudianteNestedInput
   }
 
   export type EstudiantesUncheckedUpdateWithoutInstitucionInput = {
@@ -24192,6 +28846,7 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    recordatorioEstudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutEstudianteNestedInput
   }
 
   export type EstudiantesUncheckedUpdateManyWithoutInstitucionInput = {
@@ -24296,6 +28951,7 @@ export namespace Prisma {
     institucion?: InstitucionesUpdateOneRequiredWithoutCursosNestedInput
     estudiantes?: EstudiantesUpdateManyWithoutCursoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateWithoutSedeInput = {
@@ -24308,6 +28964,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutCursoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateManyWithoutSedeInput = {
@@ -24331,6 +28988,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     institucion?: InstitucionesUpdateOneRequiredWithoutDocentesNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutDocenteNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutDocenteNestedInput
   }
 
   export type DocentesUncheckedUpdateWithoutSedeInput = {
@@ -24345,6 +29003,7 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutDocenteNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutDocenteNestedInput
   }
 
   export type DocentesUncheckedUpdateManyWithoutSedeInput = {
@@ -24399,6 +29058,20 @@ export namespace Prisma {
     created_at?: Date | string
   }
 
+  export type RecordatoriosCreateManyGradoInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
   export type CursosUpdateWithoutGradoInput = {
     nombre?: StringFieldUpdateOperationsInput | string
     jornada?: NullableStringFieldUpdateOperationsInput | string | null
@@ -24408,6 +29081,7 @@ export namespace Prisma {
     sede?: SedesUpdateOneWithoutCursosNestedInput
     estudiantes?: EstudiantesUpdateManyWithoutCursoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateWithoutGradoInput = {
@@ -24420,6 +29094,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     estudiantes?: EstudiantesUncheckedUpdateManyWithoutCursoNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutCursoNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutCursoNestedInput
   }
 
   export type CursosUncheckedUpdateManyWithoutGradoInput = {
@@ -24444,6 +29119,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     curso?: CursosUpdateOneRequiredWithoutEstudiantesNestedInput
     institucion?: InstitucionesUpdateOneRequiredWithoutEstudiantesNestedInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesUpdateManyWithoutEstudianteNestedInput
   }
 
   export type EstudiantesUncheckedUpdateWithoutGradoInput = {
@@ -24459,6 +29135,7 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    recordatorioEstudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutEstudianteNestedInput
   }
 
   export type EstudiantesUncheckedUpdateManyWithoutGradoInput = {
@@ -24516,6 +29193,49 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type RecordatoriosUpdateWithoutGradoInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    docente?: DocentesUpdateOneRequiredWithoutRecordatoriosNestedInput
+    curso?: CursosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    area?: AreasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    materia?: MateriasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    estudiantes?: RecordatorioEstudiantesUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateWithoutGradoInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateManyWithoutGradoInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type EstudiantesCreateManyCursoInput = {
     id?: number
     apellidos: string
@@ -24539,6 +29259,20 @@ export namespace Prisma {
     created_at?: Date | string
   }
 
+  export type RecordatoriosCreateManyCursoInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
   export type EstudiantesUpdateWithoutCursoInput = {
     apellidos?: StringFieldUpdateOperationsInput | string
     nombres?: StringFieldUpdateOperationsInput | string
@@ -24551,6 +29285,7 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     grado?: GradosUpdateOneRequiredWithoutEstudiantesNestedInput
     institucion?: InstitucionesUpdateOneRequiredWithoutEstudiantesNestedInput
+    recordatorioEstudiantes?: RecordatorioEstudiantesUpdateManyWithoutEstudianteNestedInput
   }
 
   export type EstudiantesUncheckedUpdateWithoutCursoInput = {
@@ -24566,6 +29301,7 @@ export namespace Prisma {
     activo?: BoolFieldUpdateOperationsInput | boolean
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    recordatorioEstudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutEstudianteNestedInput
   }
 
   export type EstudiantesUncheckedUpdateManyWithoutCursoInput = {
@@ -24606,10 +29342,67 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type RecordatoriosUpdateWithoutCursoInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    docente?: DocentesUpdateOneRequiredWithoutRecordatoriosNestedInput
+    grado?: GradosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    area?: AreasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    materia?: MateriasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    estudiantes?: RecordatorioEstudiantesUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateWithoutCursoInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateManyWithoutCursoInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type MateriasCreateManyAreaInput = {
     id?: number
     nombre: string
     institucion_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type RecordatoriosCreateManyAreaInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    materia_id: number
     created_at?: Date | string
     updated_at?: Date | string
   }
@@ -24621,6 +29414,7 @@ export namespace Prisma {
     institucion?: InstitucionesUpdateOneRequiredWithoutMateriasNestedInput
     materiaGrados?: MateriaGradosUpdateManyWithoutMateriaNestedInput
     docenteAsignaciones?: DocenteAsignacionesUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUpdateManyWithoutMateriaNestedInput
   }
 
   export type MateriasUncheckedUpdateWithoutAreaInput = {
@@ -24631,12 +29425,56 @@ export namespace Prisma {
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
     materiaGrados?: MateriaGradosUncheckedUpdateManyWithoutMateriaNestedInput
     docenteAsignaciones?: DocenteAsignacionesUncheckedUpdateManyWithoutMateriaNestedInput
+    recordatorios?: RecordatoriosUncheckedUpdateManyWithoutMateriaNestedInput
   }
 
   export type MateriasUncheckedUpdateManyWithoutAreaInput = {
     id?: IntFieldUpdateOperationsInput | number
     nombre?: StringFieldUpdateOperationsInput | string
     institucion_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatoriosUpdateWithoutAreaInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    docente?: DocentesUpdateOneRequiredWithoutRecordatoriosNestedInput
+    grado?: GradosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    curso?: CursosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    materia?: MateriasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    estudiantes?: RecordatorioEstudiantesUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateWithoutAreaInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateManyWithoutAreaInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -24653,6 +29491,20 @@ export namespace Prisma {
     grado_id: number
     curso_id: number
     created_at?: Date | string
+  }
+
+  export type RecordatoriosCreateManyMateriaInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    docente_id: number
+    grado_id: number
+    curso_id: number
+    area_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type MateriaGradosUpdateWithoutMateriaInput = {
@@ -24695,12 +29547,69 @@ export namespace Prisma {
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type RecordatoriosUpdateWithoutMateriaInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    docente?: DocentesUpdateOneRequiredWithoutRecordatoriosNestedInput
+    grado?: GradosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    curso?: CursosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    area?: AreasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    estudiantes?: RecordatorioEstudiantesUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateWithoutMateriaInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateManyWithoutMateriaInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    docente_id?: IntFieldUpdateOperationsInput | number
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type DocenteAsignacionesCreateManyDocenteInput = {
     id?: number
     grado_id: number
     curso_id: number
     materia_id: number
     created_at?: Date | string
+  }
+
+  export type RecordatoriosCreateManyDocenteInput = {
+    id?: number
+    nombre: string
+    descripcion: string
+    fecha: Date | string
+    tipo: string
+    grado_id: number
+    curso_id: number
+    area_id: number
+    materia_id: number
+    created_at?: Date | string
+    updated_at?: Date | string
   }
 
   export type DocenteAsignacionesUpdateWithoutDocenteInput = {
@@ -24723,6 +29632,95 @@ export namespace Prisma {
     grado_id?: IntFieldUpdateOperationsInput | number
     curso_id?: IntFieldUpdateOperationsInput | number
     materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatoriosUpdateWithoutDocenteInput = {
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    grado?: GradosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    curso?: CursosUpdateOneRequiredWithoutRecordatoriosNestedInput
+    area?: AreasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    materia?: MateriasUpdateOneRequiredWithoutRecordatoriosNestedInput
+    estudiantes?: RecordatorioEstudiantesUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateWithoutDocenteInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiantes?: RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioNestedInput
+  }
+
+  export type RecordatoriosUncheckedUpdateManyWithoutDocenteInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    nombre?: StringFieldUpdateOperationsInput | string
+    descripcion?: StringFieldUpdateOperationsInput | string
+    fecha?: DateTimeFieldUpdateOperationsInput | Date | string
+    tipo?: StringFieldUpdateOperationsInput | string
+    grado_id?: IntFieldUpdateOperationsInput | number
+    curso_id?: IntFieldUpdateOperationsInput | number
+    area_id?: IntFieldUpdateOperationsInput | number
+    materia_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatorioEstudiantesCreateManyEstudianteInput = {
+    id?: number
+    recordatorio_id: number
+    created_at?: Date | string
+  }
+
+  export type RecordatorioEstudiantesUpdateWithoutEstudianteInput = {
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    recordatorio?: RecordatoriosUpdateOneRequiredWithoutEstudiantesNestedInput
+  }
+
+  export type RecordatorioEstudiantesUncheckedUpdateWithoutEstudianteInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    recordatorio_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatorioEstudiantesUncheckedUpdateManyWithoutEstudianteInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    recordatorio_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatorioEstudiantesCreateManyRecordatorioInput = {
+    id?: number
+    estudiante_id: number
+    created_at?: Date | string
+  }
+
+  export type RecordatorioEstudiantesUpdateWithoutRecordatorioInput = {
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    estudiante?: EstudiantesUpdateOneRequiredWithoutRecordatorioEstudiantesNestedInput
+  }
+
+  export type RecordatorioEstudiantesUncheckedUpdateWithoutRecordatorioInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    estudiante_id?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecordatorioEstudiantesUncheckedUpdateManyWithoutRecordatorioInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    estudiante_id?: IntFieldUpdateOperationsInput | number
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

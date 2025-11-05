@@ -256,6 +256,28 @@ exports.Prisma.EstudiantesScalarFieldEnum = {
   updated_at: 'updated_at'
 };
 
+exports.Prisma.RecordatoriosScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  descripcion: 'descripcion',
+  fecha: 'fecha',
+  tipo: 'tipo',
+  docente_id: 'docente_id',
+  grado_id: 'grado_id',
+  curso_id: 'curso_id',
+  area_id: 'area_id',
+  materia_id: 'materia_id',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.RecordatorioEstudiantesScalarFieldEnum = {
+  id: 'id',
+  recordatorio_id: 'recordatorio_id',
+  estudiante_id: 'estudiante_id',
+  created_at: 'created_at'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -284,7 +306,9 @@ exports.Prisma.ModelName = {
   MateriaGrados: 'MateriaGrados',
   Docentes: 'Docentes',
   DocenteAsignaciones: 'DocenteAsignaciones',
-  Estudiantes: 'Estudiantes'
+  Estudiantes: 'Estudiantes',
+  Recordatorios: 'Recordatorios',
+  RecordatorioEstudiantes: 'RecordatorioEstudiantes'
 };
 
 /**

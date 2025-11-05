@@ -1703,15 +1703,23 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       console.log('Grados con cursos:', gradosConCursos.length);
       console.log('Cursos totales:', cursos.length);
       
+      // Transformar los datos para que coincidan con la estructura esperada por la API
+      const gradosCursos = gradosConCursos.map(grado => ({
+        grado_id: grado.id,
+        cursos: cursos
+          .filter(curso => curso.gradoId === grado.id)
+          .map(curso => ({
+            nombre: curso.nombre
+          }))
+      }));
+
       const datosAEnviar = {
         institucionId,
-        grados: gradosConCursos,
-        cursos
+        gradosCursos
       };
       
       console.log('institucionId:', institucionId);
-      console.log('grados (solo con cursos):', gradosConCursos);
-      console.log('cursos:', cursos);
+      console.log('gradosCursos transformados:', gradosCursos);
       console.log('JSON completo:', JSON.stringify(datosAEnviar, null, 2));
 
       const response = await fetch('/api/setup/grados-cursos', {

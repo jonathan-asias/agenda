@@ -6,15 +6,16 @@ export async function GET(
   { params }: { params: Promise<{ email: string }> }
 ) {
   try {
-    const { email } = await params;
+    const { email: emailParam } = await params;
+    const email = decodeURIComponent(emailParam);
 
-    if (!email) {
+    if (!email || email.trim().length === 0) {
       return NextResponse.json({ error: 'Email es requerido' }, { status: 400 });
     }
 
     const administrador = await prisma.administradores.findUnique({
       where: {
-        correo: email
+        correo: email.trim()
       },
       include: {
         institucion: {

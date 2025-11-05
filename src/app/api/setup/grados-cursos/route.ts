@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
     ];
 
     const cursosCreados = [];
+    const gradosCreados = [];
 
     for (const gradoCurso of gradosCursos) {
       const gradoId = gradoCurso.grado_id;
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
           }
         });
         console.log(`Grado creado con ID: ${grado.id}`);
+        gradosCreados.push(grado);
       } else {
         console.log(`Usando grado existente: ${grado.nombre} (ID: ${grado.id})`);
       }
@@ -101,7 +103,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `${cursosCreados.length} curso(s) creado(s) exitosamente`,
-      cursos: cursosCreados
+      data: {
+        gradosCreados: gradosCreados || [],
+        cursosCreados: cursosCreados
+      }
     });
 
   } catch (error) {

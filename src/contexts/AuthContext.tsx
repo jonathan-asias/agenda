@@ -32,26 +32,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [institutionId, setInstitutionId] = useState<number | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Función para obtener el ID de la institución
+  // Función para obtener el ID de la institución (sin 404s en consola)
   const getInstitutionId = async (userEmail: string): Promise<number | null> => {
     try {
-      // Primero intentar buscar como administrador
-      const adminResponse = await fetch(`/api/administradores/by-email/${encodeURIComponent(userEmail)}`);
-      if (adminResponse.ok) {
-        const adminData = await adminResponse.json();
-        return adminData?.administrador?.institucion?.id || null;
-      }
-      
-      // Si no es administrador, intentar buscar como institución
-      const instResponse = await fetch(`/api/instituciones/by-email/${encodeURIComponent(userEmail)}`);
-      if (instResponse.ok) {
-        const instData = await instResponse.json();
-        return instData?.id || null;
-      }
+      const resp = await fetch('/api/auth/get-user-institution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail })
+      });
+
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      return typeof data?.institutionId === 'number' ? data.institutionId : null;
     } catch (error) {
-      console.error('Error al obtener institución:', error);
+      // Evitar ruido en consola; solo devolver null
+      return null;
     }
-    return null;
   };
 
   useEffect(() => {

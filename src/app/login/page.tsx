@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import Swal from 'sweetalert2';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
-  const [userType, setUserType] = useState<'institucion' | 'administrador'>('institucion');
+  const [userType, setUserType] = useState<'institucion' | 'administrador' | 'docente'>('institucion');
   const router = useRouter();
 
   // Función para sanitizar entrada de texto
@@ -112,11 +113,8 @@ export default function LoginPage() {
       return 'La contraseña es demasiado larga';
     }
 
-    // Verificar caracteres peligrosos
-    const dangerousChars = /[<>'"&]/;
-    if (dangerousChars.test(password)) {
-      return 'La contraseña contiene caracteres no permitidos';
-    }
+    // No bloquear caracteres especiales en contraseñas - son válidos
+    // Las contraseñas pueden contener cualquier carácter excepto caracteres de control
 
     return '';
   };
@@ -168,31 +166,46 @@ export default function LoginPage() {
         return;
       }
 
-      // 4. Sanitizar entrada
+      // 4. Sanitizar solo el email (NO sanitizar la contraseña)
       const sanitizedEmail = sanitizeInput(email);
-      const sanitizedPassword = sanitizeInput(password);
+      // NO sanitizar la contraseña - debe enviarse tal como es
 
-      // 5. Validar entrada segura
+      // 5. Validar entrada segura solo para el email
       const emailValidationError = validateSecureInput(sanitizedEmail, 'email');
-      const passwordValidationError = validateSecureInput(sanitizedPassword, 'password');
 
-      if (emailValidationError || passwordValidationError) {
-        const newErrors: {[key: string]: string} = {};
-        if (emailValidationError) newErrors.email = emailValidationError;
-        if (passwordValidationError) newErrors.password = passwordValidationError;
-        setValidationErrors(newErrors);
-        setError('Entrada no válida detectada');
+      if (emailValidationError) {
+        setValidationErrors({ email: emailValidationError });
+        setError(emailValidationError);
         return;
       }
 
       // 6. Intentar login con Supabase
       const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
         email: sanitizedEmail,
-        password: sanitizedPassword,
+        password: password, // Usar la contraseña original, no sanitizada
       });
 
       if (supabaseError) {
-        setError('Credenciales inválidas');
+        // Mostrar el mensaje de error específico de Supabase
+        console.error('Error de Supabase:', supabaseError);
+        
+        let errorMessage = 'Error al iniciar sesión';
+        
+        // Mensajes de error más específicos basados en el código de error de Supabase
+        if (supabaseError.message.includes('Invalid login credentials') || 
+            supabaseError.message.includes('Invalid credentials')) {
+          errorMessage = 'Correo o contraseña incorrectos';
+        } else if (supabaseError.message.includes('Email not confirmed')) {
+          errorMessage = 'Por favor, confirma tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.';
+        } else if (supabaseError.message.includes('User not found')) {
+          errorMessage = 'No se encontró una cuenta con este correo electrónico';
+        } else if (supabaseError.message.includes('Too many requests')) {
+          errorMessage = 'Demasiados intentos. Por favor, espera un momento antes de intentar nuevamente.';
+        } else {
+          errorMessage = supabaseError.message || 'Error al iniciar sesión';
+        }
+        
+        setError(errorMessage);
         return;
       }
 
@@ -206,6 +219,16 @@ export default function LoginPage() {
             router.push(`/institucion/${adminData.administrador.institucion.id}/admin`);
           } else {
             setError('No se encontró un administrador con este correo');
+            await supabase.auth.signOut();
+          }
+        } else if (userType === 'docente') {
+          // Buscar docente
+          const docenteResponse = await fetch(`/api/docentes/by-email/${encodeURIComponent(sanitizedEmail)}`);
+          if (docenteResponse.ok) {
+            const docenteData = await docenteResponse.json();
+            router.push(`/institucion/${docenteData.docente.institucion.id}/docente`);
+          } else {
+            setError('No se encontró un docente con este correo');
             await supabase.auth.signOut();
           }
         } else {
@@ -297,6 +320,29 @@ export default function LoginPage() {
                   Administrador
                 </span>
               </label>
+              <label className="flex items-center cursor-pointer group">
+                <div className="relative">
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="docente"
+                    checked={userType === 'docente'}
+                    onChange={(e) => {
+                      setUserType('docente');
+                      setError('');
+                      setValidationErrors({});
+                    }}
+                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                  />
+                </div>
+                <span className={`ml-3 text-sm font-medium transition-colors ${
+                  userType === 'docente' 
+                    ? 'text-blue-600' 
+                    : 'text-slate-600 group-hover:text-slate-900'
+                }`}>
+                  Docente
+                </span>
+              </label>
             </div>
           </div>
 
@@ -352,7 +398,18 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
-                  onChange={(e) => handleSecureInputChange(e.target.value, 'password', setPassword)}
+                  onChange={(e) => {
+                    // NO sanitizar la contraseña mientras se escribe - solo actualizar el estado
+                    setPassword(e.target.value);
+                    // Limpiar errores de validación al escribir
+                    if (validationErrors.password) {
+                      setValidationErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.password;
+                        return newErrors;
+                      });
+                    }
+                  }}
                   className={`w-full px-4 py-3 pr-12 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
                     validationErrors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
                   }`}

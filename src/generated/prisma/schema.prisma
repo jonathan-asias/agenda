@@ -97,6 +97,7 @@ model Grados {
   estudiantes         Estudiantes[]
   materiaGrados       MateriaGrados[]
   docenteAsignaciones DocenteAsignaciones[]
+  recordatorios       Recordatorios[]
 
   @@map("Grados")
 }
@@ -115,21 +116,23 @@ model Cursos {
   sede                Sedes?                @relation(fields: [sede_id], references: [id])
   estudiantes         Estudiantes[]
   docenteAsignaciones DocenteAsignaciones[]
+  recordatorios       Recordatorios[]
 
   @@map("Cursos")
 }
 
 model Areas {
-  id             Int           @id @default(autoincrement())
-  nombre         String        @db.VarChar(255)
-  es_opcional    Boolean       @default(false) // true para las 4 opcionales
+  id             Int             @id @default(autoincrement())
+  nombre         String          @db.VarChar(255)
+  es_opcional    Boolean         @default(false) // true para las 4 opcionales
   orden          Int
   institucion_id Int
-  activa         Boolean       @default(true) // Para activar/desactivar opcionales
-  created_at     DateTime      @default(now()) @map("created_at")
-  updated_at     DateTime      @updatedAt @map("updated_at")
-  institucion    Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  activa         Boolean         @default(true) // Para activar/desactivar opcionales
+  created_at     DateTime        @default(now()) @map("created_at")
+  updated_at     DateTime        @updatedAt @map("updated_at")
+  institucion    Instituciones   @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
   materias       Materias[]
+  recordatorios  Recordatorios[]
 
   @@map("Areas")
 }
@@ -145,6 +148,7 @@ model Materias {
   institucion         Instituciones         @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
   materiaGrados       MateriaGrados[]
   docenteAsignaciones DocenteAsignaciones[]
+  recordatorios       Recordatorios[]
 
   @@map("Materias")
 }
@@ -176,6 +180,7 @@ model Docentes {
   institucion         Instituciones         @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
   sede                Sedes?                @relation(fields: [sede_id], references: [id])
   docenteAsignaciones DocenteAsignaciones[]
+  recordatorios       Recordatorios[]
 
   @@map("Docentes")
 }
@@ -197,23 +202,59 @@ model DocenteAsignaciones {
 }
 
 model Estudiantes {
-  id                 Int           @id @default(autoincrement())
-  apellidos          String        @db.VarChar(255)
-  nombres            String        @db.VarChar(255)
-  codigo_estudiantil String        @db.VarChar(50)
-  nombre_acudiente   String        @db.VarChar(255)
-  correo_acudiente   String?       @db.VarChar(255)
-  telefono_acudiente String        @db.VarChar(20)
-  grado_id           Int
-  curso_id           Int
-  institucion_id     Int
-  activo             Boolean       @default(true)
-  created_at         DateTime      @default(now()) @map("created_at")
-  updated_at         DateTime      @updatedAt @map("updated_at")
-  grado              Grados        @relation(fields: [grado_id], references: [id], onDelete: Cascade)
-  curso              Cursos        @relation(fields: [curso_id], references: [id], onDelete: Cascade)
-  institucion        Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  id                      Int                       @id @default(autoincrement())
+  apellidos               String                    @db.VarChar(255)
+  nombres                 String                    @db.VarChar(255)
+  codigo_estudiantil      String                    @db.VarChar(50)
+  nombre_acudiente        String                    @db.VarChar(255)
+  correo_acudiente        String?                   @db.VarChar(255)
+  telefono_acudiente      String                    @db.VarChar(20)
+  grado_id                Int
+  curso_id                Int
+  institucion_id          Int
+  activo                  Boolean                   @default(true)
+  created_at              DateTime                  @default(now()) @map("created_at")
+  updated_at              DateTime                  @updatedAt @map("updated_at")
+  grado                   Grados                    @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+  curso                   Cursos                    @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+  institucion             Instituciones             @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  recordatorioEstudiantes RecordatorioEstudiantes[]
 
   @@unique([codigo_estudiantil, institucion_id])
   @@map("Estudiantes")
+}
+
+model Recordatorios {
+  id          Int                       @id @default(autoincrement())
+  nombre      String                    @db.VarChar(255)
+  descripcion String                    @db.Text
+  fecha       DateTime
+  tipo        String                    @db.VarChar(50) // 'tarea', 'examen', 'evento', 'otro'
+  docente_id  Int
+  grado_id    Int
+  curso_id    Int
+  area_id     Int
+  materia_id  Int
+  created_at  DateTime                  @default(now()) @map("created_at")
+  updated_at  DateTime                  @updatedAt @map("updated_at")
+  docente     Docentes                  @relation(fields: [docente_id], references: [id], onDelete: Cascade)
+  grado       Grados                    @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+  curso       Cursos                    @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+  area        Areas                     @relation(fields: [area_id], references: [id], onDelete: Cascade)
+  materia     Materias                  @relation(fields: [materia_id], references: [id], onDelete: Cascade)
+  estudiantes RecordatorioEstudiantes[]
+
+  @@map("Recordatorios")
+}
+
+model RecordatorioEstudiantes {
+  id              Int           @id @default(autoincrement())
+  recordatorio_id Int
+  estudiante_id   Int
+  created_at      DateTime      @default(now()) @map("created_at")
+  recordatorio    Recordatorios @relation(fields: [recordatorio_id], references: [id], onDelete: Cascade)
+  estudiante      Estudiantes   @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+
+  @@unique([recordatorio_id, estudiante_id])
+  @@map("RecordatorioEstudiantes")
 }
