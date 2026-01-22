@@ -65,13 +65,67 @@ export async function GET(
       console.error('Error counting estudiantes:', error);
     }
 
+    type AreasWithMaterias = Awaited<ReturnType<typeof prisma.areas.findMany>>;
+    const materiasQuery = prisma.materias.findMany({
+      where: { institucion_id: institucionId },
+      include: {
+        area: {
+          select: {
+            nombre: true
+          }
+        },
+        _count: {
+          select: {
+            materiaGrados: true
+          }
+        }
+      },
+      orderBy: { nombre: 'asc' }
+    });
+    type MateriasWithRelations = Awaited<typeof materiasQuery>;
+    type GradosWithRelations = Awaited<ReturnType<typeof prisma.grados.findMany>>;
+    type CursosWithRelations = Awaited<ReturnType<typeof prisma.cursos.findMany>>;
+    const docentesQuery = prisma.docentes.findMany({
+      where: { institucion_id: institucionId, activo: true },
+      include: {
+        sede: {
+          select: {
+            nombre: true
+          }
+        },
+        docenteAsignaciones: {
+          include: {
+            grado: {
+              select: {
+                nombre: true,
+                nivel: true
+              }
+            },
+            curso: {
+              select: {
+                nombre: true
+              }
+            },
+            materia: {
+              select: {
+                nombre: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { nombres: 'asc' }
+    });
+    type DocentesWithRelations = Awaited<typeof docentesQuery>;
+    type EstudiantesWithRelations = Awaited<ReturnType<typeof prisma.estudiantes.findMany>>;
+
     // Obtener datos detallados de forma individual
-    let areas = [];
-    let materias = [];
-    let grados = [];
-    let cursos = [];
-    let docentes = [];
-    let estudiantes = [];
+    let areas: AreasWithMaterias = [];
+    let materias: MateriasWithRelations = [];
+    let grados: GradosWithRelations = [];
+    let cursos: CursosWithRelations = [];
+    let docentes: DocentesWithRelations = [];
+    let estudiantes: EstudiantesWithRelations = [];
 
     try {
       areas = await prisma.areas.findMany({
@@ -92,22 +146,7 @@ export async function GET(
     }
 
     try {
-      materias = await prisma.materias.findMany({
-        where: { institucion_id: institucionId },
-        include: {
-          area: {
-            select: {
-              nombre: true
-            }
-          },
-          _count: {
-            select: {
-              materiaGrados: true
-            }
-          }
-        },
-        orderBy: { nombre: 'asc' }
-      });
+      materias = await materiasQuery;
       console.log('Materias encontradas:', materias.length);
       console.log('Detalles de materias:', materias.map(m => ({
         id: m.id,
@@ -166,37 +205,7 @@ export async function GET(
     }
 
     try {
-      docentes = await prisma.docentes.findMany({
-        where: { institucion_id: institucionId, activo: true },
-        include: {
-          sede: {
-            select: {
-              nombre: true
-            }
-          },
-          docenteAsignaciones: {
-            include: {
-              grado: {
-                select: {
-                  nombre: true,
-                  nivel: true
-                }
-              },
-              curso: {
-                select: {
-                  nombre: true
-                }
-              },
-              materia: {
-                select: {
-                  nombre: true
-                }
-              }
-            }
-          }
-        },
-        orderBy: { nombres: 'asc' }
-      });
+      docentes = await docentesQuery;
       console.log('Docentes encontrados:', docentes.length);
       console.log('Detalles de docentes con asignaciones:', docentes.map(d => ({
         id: d.id,

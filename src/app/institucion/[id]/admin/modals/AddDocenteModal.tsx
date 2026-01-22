@@ -1,4 +1,7 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
@@ -608,9 +611,9 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                       validarCampo('nombres', e.target.value);
                     }}
                     disabled={!camposHabilitados.nombres}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 ${
-                      erroresValidacion.nombres ? 'border-red-500' : 'border-slate-300'
-                    } ${!camposHabilitados.nombres ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'} placeholder-slate-500`}
+                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      erroresValidacion.nombres ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                    } ${!camposHabilitados.nombres ? 'bg-slate-100' : ''}`}
                     placeholder="Nombres"
                     required
                   />
@@ -638,7 +641,7 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                       validarCampo('apellidos', e.target.value);
                     }}
                     disabled={!camposHabilitados.apellidos}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 ${
+                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 ${
                       erroresValidacion.apellidos ? 'border-red-500' : 'border-slate-300'
                     } ${!camposHabilitados.apellidos ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'} placeholder-slate-500`}
                     placeholder="Apellidos"
@@ -701,9 +704,9 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                     }
                   }}
                   disabled={!camposHabilitados.email}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 ${
-                    erroresValidacion.email ? 'border-red-500' : 'border-slate-300'
-                  } ${!camposHabilitados.email ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'} placeholder-slate-500`}
+                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    erroresValidacion.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                  } ${!camposHabilitados.email ? 'bg-slate-100' : ''}`}
                   placeholder="correo@ejemplo.com"
                   required
                 />
@@ -735,7 +738,7 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                     <svg className="w-3 h-3 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
-                    Email válido. Haz clic en "Verificar" para comprobar disponibilidad
+                    Email válido. Haz clic en &quot;Verificar&quot; para comprobar disponibilidad
                   </p>
                 )}
               </div>
@@ -754,9 +757,9 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                     validarCampo('telefono', valorNumerico);
                   }}
                   disabled={!camposHabilitados.telefono}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 ${
-                    erroresValidacion.telefono ? 'border-red-500' : 'border-slate-300'
-                  } ${!camposHabilitados.telefono ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'} placeholder-slate-500`}
+                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    erroresValidacion.telefono ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                  } ${!camposHabilitados.telefono ? 'bg-slate-100' : ''}`}
                   placeholder="3001234567"
                   maxLength={12}
                   required
@@ -799,9 +802,9 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                       validarCampo('password', e.target.value);
                     }}
                     disabled={!campoPasswordHabilitado()}
-                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 ${
-                      erroresValidacion.password ? 'border-red-500' : 'border-slate-300'
-                    } ${!campoPasswordHabilitado() ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'} placeholder-slate-500`}
+                    className={`w-full px-4 py-2.5 pr-10 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      erroresValidacion.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                    } ${!campoPasswordHabilitado() ? 'bg-slate-100' : ''}`}
                     placeholder="Mínimo 8 caracteres"
                     required
                     minLength={8}

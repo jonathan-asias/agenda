@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
-import { supabase } from '../../../../../lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured } from '../../../../../lib/supabase';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -23,19 +23,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let user = null;
-    let userData = null;
+    const emailNormalized = email.toLowerCase().trim();
+    let userData:
+      | Awaited<ReturnType<typeof prisma.instituciones.findUnique>>
+      | Awaited<ReturnType<typeof prisma.administradores.findUnique>>
+      | null = null;
 
     // Buscar el usuario según el tipo
     switch (userType) {
       case 'institucion':
         userData = await prisma.instituciones.findUnique({
-          where: { email: email.toLowerCase().trim() }
+          where: { email: emailNormalized }
         });
         break;
       case 'administrador':
         userData = await prisma.administradores.findUnique({
-          where: { correo: email.toLowerCase().trim() },
+          where: { correo: emailNormalized },
           include: {
             institucion: {
               select: { nombre: true }
@@ -66,7 +69,7 @@ export async function POST(request: NextRequest) {
     // Guardar el token en la base de datos
     await prisma.passwordResetTokens.create({
       data: {
-        email: email.toLowerCase().trim(),
+        email: emailNormalized,
         token: resetToken,
         expiresAt,
         userType
@@ -78,7 +81,17 @@ export async function POST(request: NextRequest) {
 
     // Enviar email usando Supabase Auth
     try {
-      const { error: emailError } = await supabase.auth.resetPasswordForEmail(email, {
+      if (!isSupabaseConfigured()) {
+        console.error('Supabase no está configurado. No se puede enviar el correo de recuperación.');
+        return NextResponse.json(
+          { error: 'El servicio de autenticación no está configurado. Contacta al administrador.' },
+          { status: 500 }
+        );
+      }
+
+      const supabaseClient = getSupabaseClient();
+
+      const { error: emailError } = await supabaseClient.auth.resetPasswordForEmail(emailNormalized, {
         redirectTo: resetLink,
       });
 

@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseAdminClient, isSupabaseAdminConfigured } from '@/lib/supabase-admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +14,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (!isSupabaseAdminConfigured()) {
+      console.error('Supabase admin no está configurado. No se puede verificar el email.');
+      return NextResponse.json(
+        { success: false, error: 'El servicio de autenticación no está configurado.' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = getSupabaseAdminClient();
 
     // Buscar usuario por email en Supabase Auth usando listUsers
     const { data, error } = await supabase.auth.admin.listUsers({

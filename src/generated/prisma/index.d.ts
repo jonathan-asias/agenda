@@ -2521,6 +2521,10 @@ export namespace Prisma {
     telefono_contacto: string | null
     email: string | null
     password: string | null
+    logo_url: string | null
+    banner_url: string | null
+    color_primario: string | null
+    color_secundario: string | null
     tiene_sedes: boolean | null
     created_at: Date | null
     updated_at: Date | null
@@ -2535,6 +2539,10 @@ export namespace Prisma {
     telefono_contacto: string | null
     email: string | null
     password: string | null
+    logo_url: string | null
+    banner_url: string | null
+    color_primario: string | null
+    color_secundario: string | null
     tiene_sedes: boolean | null
     created_at: Date | null
     updated_at: Date | null
@@ -2549,6 +2557,10 @@ export namespace Prisma {
     telefono_contacto: number
     email: number
     password: number
+    logo_url: number
+    banner_url: number
+    color_primario: number
+    color_secundario: number
     tiene_sedes: number
     jornadas: number
     created_at: number
@@ -2574,6 +2586,10 @@ export namespace Prisma {
     telefono_contacto?: true
     email?: true
     password?: true
+    logo_url?: true
+    banner_url?: true
+    color_primario?: true
+    color_secundario?: true
     tiene_sedes?: true
     created_at?: true
     updated_at?: true
@@ -2588,6 +2604,10 @@ export namespace Prisma {
     telefono_contacto?: true
     email?: true
     password?: true
+    logo_url?: true
+    banner_url?: true
+    color_primario?: true
+    color_secundario?: true
     tiene_sedes?: true
     created_at?: true
     updated_at?: true
@@ -2602,6 +2622,10 @@ export namespace Prisma {
     telefono_contacto?: true
     email?: true
     password?: true
+    logo_url?: true
+    banner_url?: true
+    color_primario?: true
+    color_secundario?: true
     tiene_sedes?: true
     jornadas?: true
     created_at?: true
@@ -2704,6 +2728,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url: string | null
+    banner_url: string | null
+    color_primario: string
+    color_secundario: string
     tiene_sedes: boolean
     jornadas: string[]
     created_at: Date
@@ -2738,6 +2766,10 @@ export namespace Prisma {
     telefono_contacto?: boolean
     email?: boolean
     password?: boolean
+    logo_url?: boolean
+    banner_url?: boolean
+    color_primario?: boolean
+    color_secundario?: boolean
     tiene_sedes?: boolean
     jornadas?: boolean
     created_at?: boolean
@@ -2762,6 +2794,10 @@ export namespace Prisma {
     telefono_contacto?: boolean
     email?: boolean
     password?: boolean
+    logo_url?: boolean
+    banner_url?: boolean
+    color_primario?: boolean
+    color_secundario?: boolean
     tiene_sedes?: boolean
     jornadas?: boolean
     created_at?: boolean
@@ -2777,6 +2813,10 @@ export namespace Prisma {
     telefono_contacto?: boolean
     email?: boolean
     password?: boolean
+    logo_url?: boolean
+    banner_url?: boolean
+    color_primario?: boolean
+    color_secundario?: boolean
     tiene_sedes?: boolean
     jornadas?: boolean
     created_at?: boolean
@@ -2792,13 +2832,17 @@ export namespace Prisma {
     telefono_contacto?: boolean
     email?: boolean
     password?: boolean
+    logo_url?: boolean
+    banner_url?: boolean
+    color_primario?: boolean
+    color_secundario?: boolean
     tiene_sedes?: boolean
     jornadas?: boolean
     created_at?: boolean
     updated_at?: boolean
   }
 
-  export type InstitucionesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "direccion_principal" | "nit" | "nombre_contacto" | "telefono_contacto" | "email" | "password" | "tiene_sedes" | "jornadas" | "created_at" | "updated_at", ExtArgs["result"]["instituciones"]>
+  export type InstitucionesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nombre" | "direccion_principal" | "nit" | "nombre_contacto" | "telefono_contacto" | "email" | "password" | "logo_url" | "banner_url" | "color_primario" | "color_secundario" | "tiene_sedes" | "jornadas" | "created_at" | "updated_at", ExtArgs["result"]["instituciones"]>
   export type InstitucionesInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     administradores?: boolean | Instituciones$administradoresArgs<ExtArgs>
     sedes?: boolean | Instituciones$sedesArgs<ExtArgs>
@@ -2834,6 +2878,10 @@ export namespace Prisma {
       telefono_contacto: string
       email: string
       password: string
+      logo_url: string | null
+      banner_url: string | null
+      color_primario: string
+      color_secundario: string
       tiene_sedes: boolean
       jornadas: string[]
       created_at: Date
@@ -3277,6 +3325,10 @@ export namespace Prisma {
     readonly telefono_contacto: FieldRef<"Instituciones", 'String'>
     readonly email: FieldRef<"Instituciones", 'String'>
     readonly password: FieldRef<"Instituciones", 'String'>
+    readonly logo_url: FieldRef<"Instituciones", 'String'>
+    readonly banner_url: FieldRef<"Instituciones", 'String'>
+    readonly color_primario: FieldRef<"Instituciones", 'String'>
+    readonly color_secundario: FieldRef<"Instituciones", 'String'>
     readonly tiene_sedes: FieldRef<"Instituciones", 'Boolean'>
     readonly jornadas: FieldRef<"Instituciones", 'String[]'>
     readonly created_at: FieldRef<"Instituciones", 'DateTime'>
@@ -19419,6 +19471,10 @@ export namespace Prisma {
     telefono_contacto: 'telefono_contacto',
     email: 'email',
     password: 'password',
+    logo_url: 'logo_url',
+    banner_url: 'banner_url',
+    color_primario: 'color_primario',
+    color_secundario: 'color_secundario',
     tiene_sedes: 'tiene_sedes',
     jornadas: 'jornadas',
     created_at: 'created_at',
@@ -19717,6 +19773,10 @@ export namespace Prisma {
     telefono_contacto?: StringFilter<"Instituciones"> | string
     email?: StringFilter<"Instituciones"> | string
     password?: StringFilter<"Instituciones"> | string
+    logo_url?: StringNullableFilter<"Instituciones"> | string | null
+    banner_url?: StringNullableFilter<"Instituciones"> | string | null
+    color_primario?: StringFilter<"Instituciones"> | string
+    color_secundario?: StringFilter<"Instituciones"> | string
     tiene_sedes?: BoolFilter<"Instituciones"> | boolean
     jornadas?: StringNullableListFilter<"Instituciones">
     created_at?: DateTimeFilter<"Instituciones"> | Date | string
@@ -19740,6 +19800,10 @@ export namespace Prisma {
     telefono_contacto?: SortOrder
     email?: SortOrder
     password?: SortOrder
+    logo_url?: SortOrderInput | SortOrder
+    banner_url?: SortOrderInput | SortOrder
+    color_primario?: SortOrder
+    color_secundario?: SortOrder
     tiene_sedes?: SortOrder
     jornadas?: SortOrder
     created_at?: SortOrder
@@ -19766,6 +19830,10 @@ export namespace Prisma {
     nombre_contacto?: StringFilter<"Instituciones"> | string
     telefono_contacto?: StringFilter<"Instituciones"> | string
     password?: StringFilter<"Instituciones"> | string
+    logo_url?: StringNullableFilter<"Instituciones"> | string | null
+    banner_url?: StringNullableFilter<"Instituciones"> | string | null
+    color_primario?: StringFilter<"Instituciones"> | string
+    color_secundario?: StringFilter<"Instituciones"> | string
     tiene_sedes?: BoolFilter<"Instituciones"> | boolean
     jornadas?: StringNullableListFilter<"Instituciones">
     created_at?: DateTimeFilter<"Instituciones"> | Date | string
@@ -19789,6 +19857,10 @@ export namespace Prisma {
     telefono_contacto?: SortOrder
     email?: SortOrder
     password?: SortOrder
+    logo_url?: SortOrderInput | SortOrder
+    banner_url?: SortOrderInput | SortOrder
+    color_primario?: SortOrder
+    color_secundario?: SortOrder
     tiene_sedes?: SortOrder
     jornadas?: SortOrder
     created_at?: SortOrder
@@ -19812,6 +19884,10 @@ export namespace Prisma {
     telefono_contacto?: StringWithAggregatesFilter<"Instituciones"> | string
     email?: StringWithAggregatesFilter<"Instituciones"> | string
     password?: StringWithAggregatesFilter<"Instituciones"> | string
+    logo_url?: StringNullableWithAggregatesFilter<"Instituciones"> | string | null
+    banner_url?: StringNullableWithAggregatesFilter<"Instituciones"> | string | null
+    color_primario?: StringWithAggregatesFilter<"Instituciones"> | string
+    color_secundario?: StringWithAggregatesFilter<"Instituciones"> | string
     tiene_sedes?: BoolWithAggregatesFilter<"Instituciones"> | boolean
     jornadas?: StringNullableListFilter<"Instituciones">
     created_at?: DateTimeWithAggregatesFilter<"Instituciones"> | Date | string
@@ -20871,6 +20947,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -20894,6 +20974,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -20916,6 +21000,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20939,6 +21027,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20962,6 +21054,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -20976,6 +21072,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20991,6 +21091,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -22037,6 +22141,21 @@ export namespace Prisma {
     not?: NestedStringFilter<$PrismaModel> | string
   }
 
+  export type StringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
@@ -22109,6 +22228,11 @@ export namespace Prisma {
     none?: EstudiantesWhereInput
   }
 
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
+  }
+
   export type AdministradoresOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -22150,6 +22274,10 @@ export namespace Prisma {
     telefono_contacto?: SortOrder
     email?: SortOrder
     password?: SortOrder
+    logo_url?: SortOrder
+    banner_url?: SortOrder
+    color_primario?: SortOrder
+    color_secundario?: SortOrder
     tiene_sedes?: SortOrder
     jornadas?: SortOrder
     created_at?: SortOrder
@@ -22169,6 +22297,10 @@ export namespace Prisma {
     telefono_contacto?: SortOrder
     email?: SortOrder
     password?: SortOrder
+    logo_url?: SortOrder
+    banner_url?: SortOrder
+    color_primario?: SortOrder
+    color_secundario?: SortOrder
     tiene_sedes?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
@@ -22183,6 +22315,10 @@ export namespace Prisma {
     telefono_contacto?: SortOrder
     email?: SortOrder
     password?: SortOrder
+    logo_url?: SortOrder
+    banner_url?: SortOrder
+    color_primario?: SortOrder
+    color_secundario?: SortOrder
     tiene_sedes?: SortOrder
     created_at?: SortOrder
     updated_at?: SortOrder
@@ -22224,6 +22360,24 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedStringFilter<$PrismaModel>
     _max?: NestedStringFilter<$PrismaModel>
+  }
+
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type BoolWithAggregatesFilter<$PrismaModel = never> = {
@@ -22299,29 +22453,9 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
-  export type StringNullableFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedStringNullableFilter<$PrismaModel> | string | null
-  }
-
   export type SedesNullableScalarRelationFilter = {
     is?: SedesWhereInput | null
     isNot?: SedesWhereInput | null
-  }
-
-  export type SortOrderInput = {
-    sort: SortOrder
-    nulls?: NullsOrder
   }
 
   export type AdministradoresCountOrderByAggregateInput = {
@@ -22395,24 +22529,6 @@ export namespace Prisma {
     _sum?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedIntNullableFilter<$PrismaModel>
     _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
-  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type PasswordResetTokensCountOrderByAggregateInput = {
@@ -23131,6 +23247,10 @@ export namespace Prisma {
     set?: string
   }
 
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
+  }
+
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
   }
@@ -23535,10 +23655,6 @@ export namespace Prisma {
     create?: XOR<SedesCreateWithoutAdministradoresInput, SedesUncheckedCreateWithoutAdministradoresInput>
     connectOrCreate?: SedesCreateOrConnectWithoutAdministradoresInput
     connect?: SedesWhereUniqueInput
-  }
-
-  export type NullableStringFieldUpdateOperationsInput = {
-    set?: string | null
   }
 
   export type InstitucionesUpdateOneRequiredWithoutAdministradoresNestedInput = {
@@ -24660,6 +24776,20 @@ export namespace Prisma {
     not?: NestedStringFilter<$PrismaModel> | string
   }
 
+  export type NestedStringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
   export type NestedBoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
@@ -24720,6 +24850,34 @@ export namespace Prisma {
     _max?: NestedStringFilter<$PrismaModel>
   }
 
+  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
@@ -24740,31 +24898,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type NestedIntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedStringNullableFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
   export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -24792,23 +24925,6 @@ export namespace Prisma {
     gt?: number | FloatFieldRefInput<$PrismaModel>
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type AdministradoresCreateWithoutInstitucionInput = {
@@ -25461,6 +25577,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -25483,6 +25603,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -25568,6 +25692,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -25590,6 +25718,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -25611,6 +25743,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -25633,6 +25769,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -25696,6 +25836,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -25718,6 +25862,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -25771,6 +25919,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -25793,6 +25945,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -25991,6 +26147,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -26013,6 +26173,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -26186,6 +26350,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -26208,6 +26376,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -26414,6 +26586,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -26436,6 +26612,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -26537,6 +26717,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -26559,6 +26743,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -26666,6 +26854,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -26688,6 +26880,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -26769,6 +26965,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -26791,6 +26991,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -26947,6 +27151,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -26969,6 +27177,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27166,6 +27378,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -27188,6 +27404,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -27315,6 +27535,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27337,6 +27561,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27752,6 +27980,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -27774,6 +28006,10 @@ export namespace Prisma {
     telefono_contacto: string
     email: string
     password: string
+    logo_url?: string | null
+    banner_url?: string | null
+    color_primario?: string
+    color_secundario?: string
     tiene_sedes?: boolean
     jornadas?: InstitucionesCreatejornadasInput | string[]
     created_at?: Date | string
@@ -27906,6 +28142,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27928,6 +28168,10 @@ export namespace Prisma {
     telefono_contacto?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     password?: StringFieldUpdateOperationsInput | string
+    logo_url?: NullableStringFieldUpdateOperationsInput | string | null
+    banner_url?: NullableStringFieldUpdateOperationsInput | string | null
+    color_primario?: StringFieldUpdateOperationsInput | string
+    color_secundario?: StringFieldUpdateOperationsInput | string
     tiene_sedes?: BoolFieldUpdateOperationsInput | boolean
     jornadas?: InstitucionesUpdatejornadasInput | string[]
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string

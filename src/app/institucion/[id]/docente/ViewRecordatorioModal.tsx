@@ -26,7 +26,7 @@ interface Recordatorio {
     id: number;
     nombre: string;
   };
-  estudiantes: Array<{
+  estudiantes?: Array<{
     estudiante: {
       id: number;
       nombres: string;
@@ -262,9 +262,9 @@ export default function ViewRecordatorioModal({
           {/* Estudiantes */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-slate-700">
-              Estudiantes Asignados ({recordatorio.estudiantes.length})
+              Estudiantes Asignados ({recordatorio.estudiantes?.length ?? 0})
             </label>
-            {recordatorio.estudiantes.length > 0 ? (
+            {recordatorio.estudiantes && recordatorio.estudiantes.length > 0 ? (
               <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 max-h-64 overflow-y-auto">
                 <div className="grid grid-cols-1 gap-2">
                   {recordatorio.estudiantes.map((est, idx) => (

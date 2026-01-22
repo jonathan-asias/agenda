@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useMemo, useEffect } from 'react';
 
@@ -390,7 +391,7 @@ export default function AddRecordatorioModal({
               onChange={handleInputChange}
               required
               maxLength={255}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
               placeholder="Ej: Revisar exámenes de Matemáticas"
             />
           </div>
@@ -406,7 +407,7 @@ export default function AddRecordatorioModal({
                 value={formData.tipo}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none cursor-pointer pr-10"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none cursor-pointer pr-10"
               >
                 <option value="">Selecciona un tipo</option>
                 {tiposRecordatorio.map((tipo) => (
@@ -438,7 +439,7 @@ export default function AddRecordatorioModal({
               required
               rows={4}
               maxLength={1000}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 resize-none"
               placeholder="Describe los detalles del recordatorio..."
             />
             <p className="text-xs text-slate-500">
@@ -458,7 +459,7 @@ export default function AddRecordatorioModal({
               onChange={handleInputChange}
               required
               min={hoy}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
             <p className="text-xs text-slate-500">
               Selecciona la fecha para la cual es el recordatorio
@@ -654,7 +655,7 @@ export default function AddRecordatorioModal({
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {submitting ? (
                 <>

@@ -28,12 +28,20 @@ interface Recordatorio {
     id: number;
     nombre: string;
   };
+  estudiantes?: Array<{
+    estudiante: {
+      id: number;
+      nombres: string;
+      apellidos: string;
+      codigo_estudiantil: string;
+    };
+  }>;
 }
 
 interface EditRecordatorioModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (recordatorio?: Recordatorio) => void;
   recordatorio: Recordatorio | null;
 }
 
@@ -232,7 +240,7 @@ export default function EditRecordatorioModal({
               onChange={handleInputChange}
               required
               maxLength={255}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 placeholder:text-slate-400"
               placeholder="Ej: Revisar exámenes de Matemáticas"
             />
           </div>
@@ -269,7 +277,7 @@ export default function EditRecordatorioModal({
               onChange={handleInputChange}
               required
               min={hoy}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
             />
             <p className="text-xs text-slate-500">
               Selecciona la fecha para la cual es el recordatorio
@@ -291,7 +299,7 @@ export default function EditRecordatorioModal({
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {submitting ? (
                 <>

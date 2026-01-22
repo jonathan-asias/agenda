@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 
+interface MateriaGradoAsignacion {
+  materiaId: number;
+  gradoId: number;
+}
+
+interface MateriaGradosPayload {
+  institucionId: number;
+  asignaciones: MateriaGradoAsignacion[];
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('=== INICIO ENDPOINT MATERIA-GRADOS ===');
     
-    const body = await request.json();
+    const body = (await request.json()) as MateriaGradosPayload;
     console.log('Body recibido:', JSON.stringify(body, null, 2));
     
     const { institucionId, asignaciones } = body;
@@ -81,7 +91,7 @@ export async function POST(request: NextRequest) {
     // Crear nuevas asignaciones
     console.log('Creando asignaciones materia-grado...');
     const asignacionesCreadas = await Promise.all(
-      asignaciones.map(async (asignacion: any) => {
+      asignaciones.map(async (asignacion) => {
         console.log(`Asignando materia ${asignacion.materiaId} al grado ${asignacion.gradoId}`);
         
         try {

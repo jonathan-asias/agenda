@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
-import { supabase } from '../../../../../lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured } from '../../../../../lib/supabase';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
@@ -89,7 +89,9 @@ export async function POST(request: NextRequest) {
 
     // Actualizar la contraseña en Supabase Auth
     try {
-      const { error: authError } = await supabase.auth.admin.updateUserById(
+      if (isSupabaseConfigured()) {
+        const supabaseClient = getSupabaseClient();
+        const { error: authError } = await supabaseClient.auth.admin.updateUserById(
         resetToken.email,
         { password: password }
       );
@@ -97,6 +99,9 @@ export async function POST(request: NextRequest) {
       if (authError) {
         console.error('Error actualizando contraseña en Supabase:', authError);
         // No fallar si no se puede actualizar en Supabase, ya que se actualizó en la BD
+      }
+      } else {
+        console.error('Supabase no está configurado. No se actualizará la contraseña en Supabase Auth.');
       }
     } catch (error) {
       console.error('Error en actualización de Supabase:', error);

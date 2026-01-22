@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { supabaseAdmin } from '../../../../../lib/supabase-admin';
-import { supabase } from '../../../../../lib/supabase';
+import {
+  getSupabaseAdminClient,
+  isSupabaseAdminConfigured,
+} from '@/lib/supabase-admin';
+import {
+  getSupabaseClient,
+  isSupabaseConfigured,
+} from '@/lib/supabase';
 
 export async function GET(
   request: NextRequest,
@@ -176,7 +182,17 @@ export async function POST(
 
     // Crear usuario en Supabase Auth usando el mismo método que las instituciones
     try {
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      if (!isSupabaseAdminConfigured()) {
+        console.error('Supabase admin no está configurado. No se puede crear el administrador en Auth.');
+        return NextResponse.json(
+          { error: 'El servicio de autenticación no está configurado. Contacta al administrador.' },
+          { status: 500 }
+        );
+      }
+
+      const supabaseAdminClient = getSupabaseAdminClient();
+
+      const { data: authData, error: authError } = await supabaseAdminClient.auth.admin.createUser({
         email: correo.toLowerCase().trim(),
         password: password, // Usar la contraseña original antes del hash
         email_confirm: false, // NO confirmar automáticamente para que se envíe correo
@@ -219,37 +235,42 @@ export async function POST(
         // Enviar correo de confirmación usando el cliente público (como las instituciones)
         try {
           console.log('Enviando correo de confirmación usando cliente público...');
-          const { error: emailError } = await supabase.auth.resend({
-            type: 'signup',
-            email: correo.toLowerCase().trim(),
-            options: {
-              emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
-            }
-          });
+            if (isSupabaseConfigured()) {
+              const supabaseClient = getSupabaseClient();
+              const { error: emailError } = await supabaseClient.auth.resend({
+                type: 'signup',
+                email: correo.toLowerCase().trim(),
+                options: {
+                  emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
+                }
+              });
 
-          if (emailError) {
-            console.error('Error enviando correo de confirmación:', emailError);
-            console.error('Detalles del error de correo:', JSON.stringify(emailError, null, 2));
-            
-            // Intentar método alternativo con generateLink
-            console.log('Intentando método alternativo con generateLink...');
-            const { error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-              type: 'signup',
-              email: correo.toLowerCase().trim(),
-              password: password,
-              options: {
-                redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
+              if (emailError) {
+                console.error('Error enviando correo de confirmación:', emailError);
+                console.error('Detalles del error de correo:', JSON.stringify(emailError, null, 2));
+                
+                // Intentar método alternativo con generateLink
+                console.log('Intentando método alternativo con generateLink...');
+                const { error: linkError } = await supabaseAdminClient.auth.admin.generateLink({
+                  type: 'signup',
+                  email: correo.toLowerCase().trim(),
+                  password: password,
+                  options: {
+                    redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
+                  }
+                });
+
+                if (linkError) {
+                  console.error('Error con método alternativo:', linkError);
+                } else {
+                  console.log('Correo enviado exitosamente con método alternativo');
+                }
+              } else {
+                console.log('Correo de confirmación enviado exitosamente');
               }
-            });
-
-            if (linkError) {
-              console.error('Error con método alternativo:', linkError);
             } else {
-              console.log('Correo enviado exitosamente con método alternativo');
+              console.error('Supabase público no está configurado. No se envió el correo de confirmación.');
             }
-          } else {
-            console.log('Correo de confirmación enviado exitosamente');
-          }
         } catch (emailError) {
           console.error('Error enviando correo de confirmación:', emailError);
           console.error('Stack trace del error de correo:', emailError instanceof Error ? emailError.stack : 'No stack trace available');

@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+type CursoInput = {
+  nombre: string;
+};
+
+type GradoCursoInput = {
+  grado_id: number;
+  cursos: CursoInput[];
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const { institucionId, gradosCursos } = await request.json();
+    const { institucionId, gradosCursos } = await request.json() as {
+      institucionId: number;
+      gradosCursos: GradoCursoInput[];
+    };
 
     if (!institucionId || !gradosCursos || !Array.isArray(gradosCursos)) {
       return NextResponse.json(
@@ -13,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que la institución existe
-    const institucion = await prisma.Instituciones.findUnique({
+    const institucion = await prisma.instituciones.findUnique({
       where: { id: institucionId }
     });
 
@@ -22,6 +34,50 @@ export async function POST(request: NextRequest) {
         { error: 'Institución no encontrada' },
         { status: 404 }
       );
+    }
+
+    const nombresCursos = gradosCursos
+      .flatMap(gradoCurso => gradoCurso.cursos.map(curso => curso.nombre?.trim()))
+      .filter((nombre): nombre is string => Boolean(nombre));
+
+    const nombresNormalizados = nombresCursos.map(nombre => nombre.toLowerCase());
+    const duplicadosEnPayload = nombresCursos.filter((nombre, index) => {
+      return nombresNormalizados.indexOf(nombre.toLowerCase()) !== index;
+    });
+
+    if (duplicadosEnPayload.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Ya existen cursos duplicados en la lista enviada',
+          duplicateNames: Array.from(new Set(duplicadosEnPayload))
+        },
+        { status: 409 }
+      );
+    }
+
+    if (nombresCursos.length > 0) {
+      const cursosExistentes = await prisma.cursos.findMany({
+        where: {
+          institucion_id: institucionId,
+          OR: nombresCursos.map(nombre => ({
+            nombre: { equals: nombre, mode: 'insensitive' }
+          }))
+        },
+        select: { nombre: true }
+      });
+
+      if (cursosExistentes.length > 0) {
+        const duplicateNames = Array.from(
+          new Set(cursosExistentes.map(curso => curso.nombre))
+        );
+        return NextResponse.json(
+          {
+            error: 'Ya existen cursos con el mismo nombre en la institución',
+            duplicateNames
+          },
+          { status: 409 }
+        );
+      }
     }
 
     // Grados predeterminados (mismos que en el modal)
@@ -43,12 +99,15 @@ export async function POST(request: NextRequest) {
       { id: 15, nombre: '11°', nivel: 'Media', orden: 15 }
     ];
 
-    const cursosCreados = [];
-    const gradosCreados = [];
+    type CursoRecord = Awaited<ReturnType<typeof prisma.cursos.create>>;
+    type GradoRecord = Awaited<ReturnType<typeof prisma.grados.create>>;
+
+    const cursosCreados: CursoRecord[] = [];
+    const gradosCreados: GradoRecord[] = [];
 
     for (const gradoCurso of gradosCursos) {
       const gradoId = gradoCurso.grado_id;
-      
+
       // Buscar el grado en los predeterminados
       const gradoPredeterminado = gradosPredeterminados.find(g => g.id === gradoId);
       if (!gradoPredeterminado) {
@@ -59,17 +118,17 @@ export async function POST(request: NextRequest) {
       }
 
       // Verificar si el grado ya existe en la base de datos
-      let grado = await prisma.Grados.findFirst({
-        where: { 
+      let grado = await prisma.grados.findFirst({
+        where: {
           nombre: gradoPredeterminado.nombre,
-          institucion_id: institucionId 
+          institucion_id: institucionId
         }
       });
 
       // Si no existe, crearlo
       if (!grado) {
         console.log(`Creando grado: ${gradoPredeterminado.nombre} (${gradoPredeterminado.nivel})`);
-        grado = await prisma.Grados.create({
+        grado = await prisma.grados.create({
           data: {
             nombre: gradoPredeterminado.nombre,
             nivel: gradoPredeterminado.nivel,
@@ -86,15 +145,15 @@ export async function POST(request: NextRequest) {
       // Crear los cursos para este grado
       for (const cursoData of gradoCurso.cursos) {
         console.log(`Creando curso: ${cursoData.nombre} para grado: ${grado.nombre}`);
-        
-        const curso = await prisma.Cursos.create({
+
+        const curso = await prisma.cursos.create({
           data: {
             nombre: cursoData.nombre,
             grado_id: grado.id,
             institucion_id: institucionId
           }
         });
-        
+
         cursosCreados.push(curso);
         console.log(`✅ Curso ${curso.nombre} creado exitosamente`);
       }

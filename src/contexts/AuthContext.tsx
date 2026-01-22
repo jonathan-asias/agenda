@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -27,6 +27,21 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const obtainSupabaseClient = () => {
+    if (!isSupabaseConfigured()) {
+      console.error(
+        'Supabase no está configurado. La autenticación no funcionará hasta que definas NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+      );
+      return null;
+    }
+    try {
+      return getSupabaseClient();
+    } catch (error) {
+      console.error('No se pudo inicializar el cliente de Supabase:', error);
+      return null;
+    }
+  };
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [institutionId, setInstitutionId] = useState<number | null>(null);
@@ -44,7 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!resp.ok) return null;
       const data = await resp.json();
       return typeof data?.institutionId === 'number' ? data.institutionId : null;
-    } catch (error) {
+    } catch {
       // Evitar ruido en consola; solo devolver null
       return null;
     }
@@ -59,9 +74,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Solo ejecutar en el cliente después de montar
     if (!isMounted) return;
 
+    const supabaseClient = obtainSupabaseClient();
+    if (!supabaseClient) {
+      setLoading(false);
+      return;
+    }
+
     // Obtener la sesión actual
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseClient.auth.getSession();
       
       setUser(session?.user ?? null);
       
@@ -79,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getSession();
 
     // Escuchar cambios en la autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null);
         
@@ -95,11 +116,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, [isMounted]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const supabaseClient = obtainSupabaseClient();
+    if (!supabaseClient) {
+      setInstitutionId(null);
+      setUser(null);
+      return;
+    }
+    await supabaseClient.auth.signOut();
     setInstitutionId(null);
   };
 

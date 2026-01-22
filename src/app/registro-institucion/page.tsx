@@ -1,7 +1,8 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase';
 
 interface Sede {
   id: string;
@@ -19,8 +20,11 @@ export default function RegistroInstitucion() {
     telefono_contacto: '',
     email: '',
     password: '',
+    confirm_password: '',
     tiene_sedes: false,
-    jornadas: [] as string[]
+    jornadas: [] as string[],
+    color_primario: '#2563eb',
+    color_secundario: '#0f172a'
   });
 
   const [sedes, setSedes] = useState<Sede[]>([]);
@@ -32,12 +36,18 @@ export default function RegistroInstitucion() {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [emailDuplicateError, setEmailDuplicateError] = useState<string>('');
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [securityErrors, setSecurityErrors] = useState<{[key: string]: string}>({});
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [fileErrors, setFileErrors] = useState<{ logo?: string; banner?: string }>({});
 
   const steps = [
     { id: 1, name: 'Información Básica', description: 'Datos principales de la institución' },
     { id: 2, name: 'Información de Contacto', description: 'Datos de contacto' },
-    { id: 3, name: 'Configuración de Sedes', description: 'Jornadas y sedes' }
+    { id: 3, name: 'Configuración de Sedes', description: 'Jornadas y sedes' },
+    { id: 4, name: 'Personalización', description: 'Logo, banner y colores institucionales' }
   ];
 
   const showToastMessage = (message: string, type: 'success' | 'error') => {
@@ -45,6 +55,23 @@ export default function RegistroInstitucion() {
     setToastType(type);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 5000);
+  };
+
+  const obtainSupabaseClient = () => {
+    if (!isSupabaseConfigured()) {
+      showToastMessage(
+        'El servicio de autenticación no está configurado. Contacta al administrador del sistema.',
+        'error'
+      );
+      return null;
+    }
+    try {
+      return getSupabaseClient();
+    } catch (error) {
+      console.error('No se pudo inicializar Supabase:', error);
+      showToastMessage('No se pudo conectar con el servicio de autenticación. Intenta más tarde.', 'error');
+      return null;
+    }
   };
 
   // Validación de email
@@ -76,6 +103,9 @@ export default function RegistroInstitucion() {
     if (!formData.telefono_contacto.trim()) errors.push('El teléfono de contacto es requerido');
     if (!formData.email.trim()) errors.push('El correo electrónico es requerido');
     if (!formData.password.trim()) errors.push('La contraseña es requerida');
+    if (!formData.confirm_password.trim()) errors.push('Debe repetir la contraseña');
+    if (!formData.color_primario.trim()) errors.push('El color primario es requerido');
+    if (!formData.color_secundario.trim()) errors.push('El color secundario es requerido');
     
     return errors;
   };
@@ -84,10 +114,38 @@ export default function RegistroInstitucion() {
   const checkEmailDuplicate = async (email: string): Promise<boolean> => {
     try {
       const response = await fetch(`/api/instituciones/by-email/${encodeURIComponent(email)}`);
-      return response.ok; // Si la respuesta es ok, significa que el email ya existe
+      if (!response.ok) {
+        return false;
+      }
+      const data = await response.json();
+      return Boolean(data?.exists);
     } catch (error) {
       return false; // En caso de error, asumimos que no está duplicado
     }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!formData.email || !isValidEmail(formData.email)) {
+      setEmailDuplicateError('Ingrese un correo electrónico válido');
+      setIsEmailVerified(false);
+      return;
+    }
+
+    if (securityErrors.email) {
+      setIsEmailVerified(false);
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    const isDuplicate = await checkEmailDuplicate(formData.email);
+    if (isDuplicate) {
+      setEmailDuplicateError('Este correo electrónico ya está registrado');
+      setIsEmailVerified(false);
+    } else {
+      setEmailDuplicateError('');
+      setIsEmailVerified(true);
+    }
+    setIsCheckingEmail(false);
   };
 
   // Validación de contraseña segura
@@ -117,6 +175,51 @@ export default function RegistroInstitucion() {
     return errors;
   };
 
+  const generateStrongPassword = () => {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghijkmnpqrstuvwxyz';
+    const numbers = '23456789';
+    const symbols = '!@#$%^&*()_+-=[]{};:,.?';
+    const all = upper + lower + numbers + symbols;
+    const length = 12;
+
+    const pick = (pool: string) => pool[Math.floor(Math.random() * pool.length)];
+    let password = [
+      pick(upper),
+      pick(lower),
+      pick(numbers),
+      pick(symbols),
+    ];
+
+    for (let i = password.length; i < length; i += 1) {
+      password.push(pick(all));
+    }
+
+    // Shuffle
+    password = password.sort(() => Math.random() - 0.5);
+
+    const generated = password.join('');
+    setFormData(prev => ({
+      ...prev,
+      password: generated,
+      confirm_password: generated
+    }));
+
+    const errors = validatePassword(generated);
+    setPasswordErrors(errors);
+
+    const securityError = validateSecurePassword(generated);
+    if (securityError) {
+      setSecurityErrors(prev => ({ ...prev, password: securityError }));
+    } else {
+      setSecurityErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.password;
+        return newErrors;
+      });
+    }
+  };
+
   // ========== FUNCIONES DE SEGURIDAD CONTRA INYECCIÓN ==========
 
   // Función para sanitizar entrada de texto
@@ -141,7 +244,7 @@ export default function RegistroInstitucion() {
       .replace(/&quot;/g, '"') // Convertir &quot; a "
       .replace(/&#x27;/g, "'") // Convertir &#x27; a '
       .replace(/&#x2F;/g, '/') // Convertir &#x2F; a /
-      .trim();
+      ;
   };
 
   // Función para validar entrada segura
@@ -268,12 +371,15 @@ export default function RegistroInstitucion() {
         const emailValid = formData.email && isValidEmail(formData.email) && !emailDuplicateError;
         const passwordValid = formData.password && validatePassword(formData.password).length === 0;
         const phoneValid = formData.telefono_contacto && isValidPhone(formData.telefono_contacto);
+        const passwordMatch = formData.password && formData.confirm_password && formData.password === formData.confirm_password;
         return !!(
           formData.nombre_contacto.trim() && 
           formData.telefono_contacto.trim() && 
           phoneValid && 
           emailValid && 
-          passwordValid
+          isEmailVerified &&
+          passwordValid &&
+          passwordMatch
         );
       case 3:
         if (formData.tiene_sedes) {
@@ -281,6 +387,15 @@ export default function RegistroInstitucion() {
         } else {
           return formData.jornadas.length > 0;
         }
+      case 4:
+        return !!(
+          logoFile &&
+          bannerFile &&
+          !fileErrors.logo &&
+          !fileErrors.banner &&
+          formData.color_primario.trim() &&
+          formData.color_secundario.trim()
+        );
       default:
         return false;
     }
@@ -325,16 +440,10 @@ export default function RegistroInstitucion() {
       }
     }
 
-    // Validar email duplicado en tiempo real
-    if (name === 'email' && processedValue && isValidEmail(processedValue)) {
-      const isDuplicate = await checkEmailDuplicate(processedValue);
-      if (isDuplicate) {
-        setEmailDuplicateError('Este correo electrónico ya está registrado');
-      } else {
-        setEmailDuplicateError('');
-      }
-      
-      // Validar seguridad de email
+    // Validar seguridad de email
+    if (name === 'email') {
+      setIsEmailVerified(false);
+      setEmailDuplicateError('');
       const securityError = validateSecureEmail(processedValue);
       if (securityError) {
         setSecurityErrors(prev => ({ ...prev, email: securityError }));
@@ -345,8 +454,6 @@ export default function RegistroInstitucion() {
           return newErrors;
         });
       }
-    } else if (name === 'email') {
-      setEmailDuplicateError('');
     }
 
     // Validar seguridad de otros campos
@@ -434,6 +541,210 @@ export default function RegistroInstitucion() {
     }));
   };
 
+  const isAllowedImageFile = (file: File): boolean => {
+    const allowedTypes = ['image/png', 'image/svg+xml'];
+    if (allowedTypes.includes(file.type)) {
+      return true;
+    }
+    const lowerName = file.name.toLowerCase();
+    return lowerName.endsWith('.png') || lowerName.endsWith('.svg');
+  };
+
+  const parseSvgDimensions = (svgText: string): { width: number; height: number } | null => {
+    const widthMatch = svgText.match(/width="([\d.]+)(px)?"/i);
+    const heightMatch = svgText.match(/height="([\d.]+)(px)?"/i);
+    if (widthMatch && heightMatch) {
+      const width = Number.parseFloat(widthMatch[1]);
+      const height = Number.parseFloat(heightMatch[1]);
+      if (Number.isFinite(width) && Number.isFinite(height)) {
+        return { width, height };
+      }
+    }
+
+    const viewBoxMatch = svgText.match(/viewBox="([\d.\s]+)"/i);
+    if (viewBoxMatch) {
+      const parts = viewBoxMatch[1].trim().split(/\s+/).map(Number);
+      if (parts.length === 4 && parts.every(value => Number.isFinite(value))) {
+        return { width: parts[2], height: parts[3] };
+      }
+    }
+
+    return null;
+  };
+
+  const getImageDimensions = async (file: File): Promise<{ width: number; height: number } | null> => {
+    const lowerName = file.name.toLowerCase();
+    const isSvg = file.type === 'image/svg+xml' || lowerName.endsWith('.svg');
+    if (isSvg) {
+      try {
+        const svgText = await file.text();
+        const parsed = parseSvgDimensions(svgText);
+        if (parsed) {
+          return parsed;
+        }
+      } catch (error) {
+        return null;
+      }
+    }
+
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const dimensions = { width: img.naturalWidth, height: img.naturalHeight };
+        URL.revokeObjectURL(url);
+        resolve(dimensions.width && dimensions.height ? dimensions : null);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  };
+
+  const validateLogoDimensions = (width: number, height: number): string => {
+    if (width !== 710 || height !== 305) {
+      return 'El logo debe tener un tamaño de 710 x 305 px';
+    }
+    return '';
+  };
+
+  const validateBannerDimensions = (width: number, height: number): string => {
+    if (width !== 1177 || height !== 301) {
+      return 'El banner debe tener un tamaño de 1177 x 301 px';
+    }
+    return '';
+  };
+
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    kind: 'logo' | 'banner'
+  ) => {
+    const file = e.target.files?.[0] || null;
+    if (!file) {
+      setFileErrors(prev => ({ ...prev, [kind]: undefined }));
+      if (kind === 'logo') {
+        setLogoFile(null);
+      } else {
+        setBannerFile(null);
+      }
+      return;
+    }
+
+    if (!isAllowedImageFile(file)) {
+      setFileErrors(prev => ({
+        ...prev,
+        [kind]: 'Solo se permiten archivos PNG o SVG'
+      }));
+      if (kind === 'logo') {
+        setLogoFile(null);
+      } else {
+        setBannerFile(null);
+      }
+      return;
+    }
+
+    const dimensions = await getImageDimensions(file);
+    if (!dimensions) {
+      setFileErrors(prev => ({
+        ...prev,
+        [kind]: 'No se pudieron leer las dimensiones. Asegure width/height o viewBox en el SVG'
+      }));
+      if (kind === 'logo') {
+        setLogoFile(null);
+      } else {
+        setBannerFile(null);
+      }
+      return;
+    }
+
+    const dimensionError = kind === 'logo'
+      ? validateLogoDimensions(dimensions.width, dimensions.height)
+      : validateBannerDimensions(dimensions.width, dimensions.height);
+
+    if (dimensionError) {
+      setFileErrors(prev => ({ ...prev, [kind]: dimensionError }));
+      if (kind === 'logo') {
+        setLogoFile(null);
+      } else {
+        setBannerFile(null);
+      }
+      return;
+    }
+
+    setFileErrors(prev => ({ ...prev, [kind]: undefined }));
+    if (kind === 'logo') {
+      setLogoFile(file);
+    } else {
+      setBannerFile(file);
+    }
+  };
+
+  const uploadInstitutionAsset = async (
+    supabaseClient: ReturnType<typeof getSupabaseClient>,
+    institucionId: number,
+    file: File,
+    kind: 'logo' | 'banner'
+  ): Promise<string | null> => {
+    const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'instituciones';
+    const extension = file.name.split('.').pop()?.toLowerCase() || (file.type === 'image/svg+xml' ? 'svg' : 'png');
+    const fileName = `${kind}.${extension}`;
+    const filePath = `instituciones/${institucionId}/${fileName}`;
+
+    const { error } = await supabaseClient.storage.from(bucket).upload(filePath, file, {
+      upsert: true,
+      contentType: file.type || undefined,
+      cacheControl: '3600'
+    });
+
+    if (error) {
+      console.error(`Error subiendo ${kind}:`, error);
+      showToastMessage(
+        `No se pudo subir el ${kind}. ${error.message || 'Verifique el bucket y las policies.'}`,
+        'error'
+      );
+      return null;
+    }
+
+    return filePath;
+  };
+
+  const validateSelectedImages = async (): Promise<boolean> => {
+    const newErrors: { logo?: string; banner?: string } = {};
+
+    if (!logoFile) {
+      newErrors.logo = 'Debe adjuntar un logo válido';
+    } else {
+      const logoDimensions = await getImageDimensions(logoFile);
+      if (!logoDimensions) {
+        newErrors.logo = 'No se pudieron leer las dimensiones del logo';
+      } else {
+        const logoError = validateLogoDimensions(logoDimensions.width, logoDimensions.height);
+        if (logoError) {
+          newErrors.logo = logoError;
+        }
+      }
+    }
+
+    if (!bannerFile) {
+      newErrors.banner = 'Debe adjuntar un banner válido';
+    } else {
+      const bannerDimensions = await getImageDimensions(bannerFile);
+      if (!bannerDimensions) {
+        newErrors.banner = 'No se pudieron leer las dimensiones del banner';
+      } else {
+        const bannerError = validateBannerDimensions(bannerDimensions.width, bannerDimensions.height);
+        if (bannerError) {
+          newErrors.banner = bannerError;
+        }
+      }
+    }
+
+    setFileErrors(newErrors);
+    return !newErrors.logo && !newErrors.banner;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -472,17 +783,16 @@ export default function RegistroInstitucion() {
         return;
       }
 
-      // 6. Validar contraseña
-      const passwordErrors = validatePassword(formData.password);
-      if (passwordErrors.length > 0) {
-        showToastMessage(`Contraseña inválida: ${passwordErrors.join(', ')}`, 'error');
+      // 6. Validar verificación de email
+      if (!isEmailVerified) {
+        showToastMessage('Debe verificar el correo antes de continuar', 'error');
         return;
       }
 
-      // 7. Validar email duplicado
-      const isEmailDuplicate = await checkEmailDuplicate(formData.email);
-      if (isEmailDuplicate) {
-        showToastMessage('Este correo electrónico ya está registrado. Use otro correo.', 'error');
+      // 7. Validar contraseña
+      const passwordErrors = validatePassword(formData.password);
+      if (passwordErrors.length > 0) {
+        showToastMessage(`Contraseña inválida: ${passwordErrors.join(', ')}`, 'error');
         return;
       }
 
@@ -504,24 +814,37 @@ export default function RegistroInstitucion() {
         }
       }
 
-      // 9. Sanitizar todos los datos antes del envío
+      // 9. Validar personalización requerida
+      const imagesValid = await validateSelectedImages();
+      if (!imagesValid) {
+        showToastMessage('Corrija los errores del logo o banner antes de continuar', 'error');
+        return;
+      }
+
+      // 10. Sanitizar todos los datos antes del envío
+      const { confirm_password, ...baseFormData } = formData;
       const sanitizedFormData = {
-        ...formData,
-        nombre: sanitizeInput(formData.nombre),
-        direccion_principal: sanitizeInput(formData.direccion_principal),
-        nombre_contacto: sanitizeInput(formData.nombre_contacto),
-        email: sanitizeInput(formData.email),
+        ...baseFormData,
+        nombre: sanitizeInput(formData.nombre).trim(),
+        direccion_principal: sanitizeInput(formData.direccion_principal).trim(),
+        nombre_contacto: sanitizeInput(formData.nombre_contacto).trim(),
+        email: sanitizeInput(formData.email).trim(),
         password: sanitizeInput(formData.password)
       };
 
       const sanitizedSedes = sedes.map(sede => ({
         ...sede,
-        nombre: sanitizeInput(sede.nombre)
+        nombre: sanitizeInput(sede.nombre).trim()
       }));
 
       // Si todas las validaciones pasan, proceder con el registro
       // Primero crear el usuario en Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const supabaseClient = obtainSupabaseClient();
+      if (!supabaseClient) {
+        return;
+      }
+
+      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
         email: sanitizedFormData.email,
         password: sanitizedFormData.password,
       });
@@ -545,6 +868,45 @@ export default function RegistroInstitucion() {
 
       if (response.ok) {
         const result = await response.json();
+        const institucionId = result?.data?.id;
+        if (!institucionId) {
+          showToastMessage('No se pudo obtener el ID de la institución para guardar el branding', 'error');
+          return;
+        }
+
+        const logoPath = await uploadInstitutionAsset(
+          supabaseClient,
+          institucionId,
+          logoFile as File,
+          'logo'
+        );
+        if (!logoPath) {
+          return;
+        }
+        const bannerPath = await uploadInstitutionAsset(
+          supabaseClient,
+          institucionId,
+          bannerFile as File,
+          'banner'
+        );
+        if (!bannerPath) {
+          return;
+        }
+
+        const brandingResponse = await fetch(`/api/instituciones/${institucionId}/branding`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            logo_url: logoPath,
+            banner_url: bannerPath
+          })
+        });
+
+        if (!brandingResponse.ok) {
+          showToastMessage('La institución se creó, pero no se pudo guardar el logo y banner', 'error');
+          return;
+        }
+
         showToastMessage('¡Institución registrada exitosamente! Revise su correo para confirmar la cuenta.', 'success');
         
         // Limpiar el formulario
@@ -556,13 +918,19 @@ export default function RegistroInstitucion() {
           telefono_contacto: '',
           email: '',
           password: '',
+          confirm_password: '',
           tiene_sedes: false,
-          jornadas: []
+          jornadas: [],
+          color_primario: '#2563eb',
+          color_secundario: '#0f172a'
         });
         setSedes([]);
         setPasswordErrors([]);
         setEmailDuplicateError('');
         setSecurityErrors({});
+        setLogoFile(null);
+        setBannerFile(null);
+        setFileErrors({});
         setCurrentStep(1);
         
         // Redirigir a la página de login después de 3 segundos
@@ -596,8 +964,8 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.nombre}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
-                  securityErrors.nombre ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  securityErrors.nombre ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                 }`}
                 placeholder="Ingrese el nombre de la institución"
                 maxLength={255}
@@ -623,8 +991,8 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.direccion_principal}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
-                  securityErrors.direccion_principal ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  securityErrors.direccion_principal ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                 }`}
                 placeholder="Ingrese la dirección principal"
                 maxLength={500}
@@ -650,10 +1018,10 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.nit}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                   (formData.nit && !isValidNIT(formData.nit)) || securityErrors.nit
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-slate-200'
+                    : ''
                 }`}
                 placeholder="Ingrese el NIT (solo números)"
                 maxLength={20}
@@ -687,8 +1055,8 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.nombre_contacto}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
-                  securityErrors.nombre_contacto ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  securityErrors.nombre_contacto ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                 }`}
                 placeholder="Ingrese el nombre del contacto"
                 maxLength={255}
@@ -714,10 +1082,10 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.telefono_contacto}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                   (formData.telefono_contacto && !isValidPhone(formData.telefono_contacto)) || securityErrors.telefono_contacto
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-slate-200'
+                    : ''
                 }`}
                 placeholder="Ingrese el teléfono (solo números)"
                 maxLength={12}
@@ -736,9 +1104,19 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                Correo Electrónico *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+                  Correo Electrónico *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleVerifyEmail}
+                  disabled={!formData.email || !isValidEmail(formData.email) || isCheckingEmail || !!securityErrors.email}
+                  className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCheckingEmail ? 'Verificando...' : 'Verificar correo'}
+                </button>
+              </div>
               <input
                 id="email"
                 name="email"
@@ -746,10 +1124,10 @@ export default function RegistroInstitucion() {
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                   (formData.email && !isValidEmail(formData.email)) || emailDuplicateError || securityErrors.email
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-slate-200'
+                    : ''
                 }`}
                 placeholder="correo@ejemplo.com"
                 maxLength={254}
@@ -759,6 +1137,9 @@ export default function RegistroInstitucion() {
               )}
               {emailDuplicateError && (
                 <p className="mt-1 text-xs text-red-600">{emailDuplicateError}</p>
+              )}
+              {isEmailVerified && !emailDuplicateError && (
+                <p className="mt-1 text-xs text-green-600">Correo disponible</p>
               )}
               {securityErrors.email && (
                 <p className="mt-1 text-xs text-red-600 flex items-center">
@@ -782,10 +1163,12 @@ export default function RegistroInstitucion() {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 pr-12 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
+                  autoComplete="new-password"
+                  disabled={!isEmailVerified}
+                  className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                     passwordErrors.length > 0 || securityErrors.password
                       ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-slate-200'
+                      : ''
                   }`}
                   placeholder="Ingrese una contraseña segura"
                   maxLength={128}
@@ -805,6 +1188,16 @@ export default function RegistroInstitucion() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   )}
+                </button>
+              </div>
+
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={generateStrongPassword}
+                  className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100"
+                >
+                  Generar contraseña automáticamente
                 </button>
               </div>
               
@@ -840,6 +1233,32 @@ export default function RegistroInstitucion() {
                   </svg>
                   {securityErrors.password}
                 </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="confirm_password" className="block text-sm font-medium text-slate-700 mb-2">
+                Repetir Contraseña *
+              </label>
+              <input
+                id="confirm_password"
+                name="confirm_password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={formData.confirm_password}
+                onChange={handleInputChange}
+                autoComplete="new-password"
+                  disabled={!isEmailVerified}
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  formData.confirm_password && formData.password !== formData.confirm_password
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    : ''
+                }`}
+                placeholder="Repita la contraseña"
+                maxLength={128}
+              />
+              {formData.confirm_password && formData.password !== formData.confirm_password && (
+                <p className="mt-1 text-xs text-red-600">Las contraseñas no coinciden</p>
               )}
             </div>
           </div>
@@ -924,7 +1343,7 @@ export default function RegistroInstitucion() {
                   <button
                     type="button"
                     onClick={addSede}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
                     + Agregar Sede
                   </button>
@@ -951,7 +1370,7 @@ export default function RegistroInstitucion() {
                         type="text"
                         value={sede.nombre}
                         onChange={(e) => updateSede(sede.id, 'nombre', e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200"
+                        className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
                         placeholder="Nombre de la sede"
                         required
                       />
@@ -1013,12 +1432,101 @@ export default function RegistroInstitucion() {
                 {sedes.length === 0 && (
                   <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-dashed border-slate-300">
                     <p className="text-sm text-slate-500">
-                      No hay sedes agregadas. Haga clic en "Agregar Sede" para comenzar.
+                      No hay sedes agregadas. Haga clic en &quot;Agregar Sede&quot; para comenzar.
                     </p>
                   </div>
                 )}
               </div>
             )}
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Logo institucional (710 x 305 px) *
+              </label>
+              <input
+                type="file"
+                accept="image/png,image/svg+xml"
+                onChange={(e) => handleFileChange(e, 'logo')}
+                className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {logoFile && (
+                <p className="mt-2 text-xs text-slate-500">Archivo seleccionado: {logoFile.name}</p>
+              )}
+              {fileErrors.logo && (
+                <p className="mt-2 text-xs text-red-600">{fileErrors.logo}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Banner institucional (1177 x 301 px) *
+              </label>
+              <input
+                type="file"
+                accept="image/png,image/svg+xml"
+                onChange={(e) => handleFileChange(e, 'banner')}
+                className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {bannerFile && (
+                <p className="mt-2 text-xs text-slate-500">Archivo seleccionado: {bannerFile.name}</p>
+              )}
+              {fileErrors.banner && (
+                <p className="mt-2 text-xs text-red-600">{fileErrors.banner}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Color primario *
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    name="color_primario"
+                    value={formData.color_primario}
+                    onChange={handleInputChange}
+                    className="h-10 w-14 rounded border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    name="color_primario"
+                    value={formData.color_primario}
+                    onChange={handleInputChange}
+                    maxLength={7}
+                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Color secundario *
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    name="color_secundario"
+                    value={formData.color_secundario}
+                    onChange={handleInputChange}
+                    className="h-10 w-14 rounded border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    name="color_secundario"
+                    value={formData.color_secundario}
+                    onChange={handleInputChange}
+                    maxLength={7}
+                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         );
 
@@ -1028,11 +1536,11 @@ export default function RegistroInstitucion() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-blue-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
@@ -1069,9 +1577,9 @@ export default function RegistroInstitucion() {
                   <div className="flex flex-col items-center mr-4">
                     <div className={`flex items-center justify-center w-10 h-10 rounded-xl text-sm font-medium transition-all duration-300 ${
                       currentStep > step.id
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg'
+                        ? 'bg-emerald-500 text-white shadow-lg'
                         : currentStep === step.id
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg ring-4 ring-blue-200'
+                        ? 'bg-blue-500 text-white shadow-lg ring-4 ring-blue-200'
                         : 'bg-slate-100 text-slate-400 border-2 border-slate-200'
                     }`}>
                       {currentStep > step.id ? (
@@ -1084,7 +1592,7 @@ export default function RegistroInstitucion() {
                     </div>
                     {index < steps.length - 1 && (
                       <div className={`w-1 h-8 mt-2 rounded-full transition-all duration-300 ${
-                        currentStep > step.id ? 'bg-gradient-to-b from-emerald-500 to-teal-500' : 'bg-slate-200'
+                        currentStep > step.id ? 'bg-emerald-500' : 'bg-slate-200'
                       }`} />
                     )}
                   </div>
@@ -1109,7 +1617,7 @@ export default function RegistroInstitucion() {
               <div className="text-xs font-medium text-slate-700 mb-2">Progreso General</div>
               <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-700 ease-out"
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-700 ease-out"
                   style={{ width: `${(currentStep / steps.length) * 100}%` }}
                 />
               </div>
@@ -1121,55 +1629,56 @@ export default function RegistroInstitucion() {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Step Content */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-800">
-                  {steps[currentStep - 1].name}
-                </h3>
-                <p className="text-sm text-slate-600 mt-1">
-                  {steps[currentStep - 1].description}
-                </p>
+            <form onSubmit={handleSubmit}>
+              {/* Step Content */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden">
+                <div className="px-6 py-4 bg-blue-50 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    {steps[currentStep - 1].name}
+                  </h3>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {steps[currentStep - 1].description}
+                  </p>
+                </div>
+                
+                <div className="px-6 py-6">
+                  {renderStepContent()}
+                </div>
               </div>
-              
-              <div className="px-6 py-6">
-                {renderStepContent()}
-              </div>
-            </div>
 
-            {/* Navigation */}
-            <div className="mt-6 flex justify-between">
-              <button
-                type="button"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                ← Anterior
-              </button>
-              
-              <div className="flex space-x-3">
-                {currentStep < steps.length ? (
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    disabled={!validateStep(currentStep)}
-                    className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                  >
-                    Siguiente →
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={!validateStep(currentStep) || isSubmitting}
-                    className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-teal-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                  >
-                    {isSubmitting ? 'Registrando...' : '✓ Registrar Institución'}
-                  </button>
-                )}
+              {/* Navigation */}
+              <div className="mt-6 flex justify-between">
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  ← Anterior
+                </button>
+                
+                <div className="flex space-x-3">
+                  {currentStep < steps.length ? (
+                    <button
+                      type="button"
+                      onClick={nextStep}
+                      disabled={!validateStep(currentStep)}
+                      className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Siguiente →
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!validateStep(currentStep) || isSubmitting}
+                      className="px-6 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isSubmitting ? 'Registrando...' : '✓ Registrar Institución'}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
 
@@ -1178,8 +1687,8 @@ export default function RegistroInstitucion() {
           <div className="fixed top-4 right-4 z-50 max-w-md w-full">
             <div className={`w-full bg-white shadow-2xl rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border ${
               toastType === 'success' 
-                ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50' 
-                : 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
+                ? 'border-green-200 bg-green-50' 
+                : 'border-red-200 bg-red-50'
             }`}>
               <div className="p-6">
                 <div className="flex items-start">

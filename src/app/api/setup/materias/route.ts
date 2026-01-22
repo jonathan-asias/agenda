@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+type MateriaInput = {
+  nombre: string;
+  area_id: number | string;
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const { institucionId, materias } = await request.json();
+    const { institucionId, materias } = await request.json() as {
+      institucionId: number;
+      materias: MateriaInput[];
+    };
 
     if (!institucionId || !materias || !Array.isArray(materias)) {
       return NextResponse.json(
@@ -23,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que la institución existe
-    const institucion = await prisma.Instituciones.findUnique({
+    const institucion = await prisma.instituciones.findUnique({
       where: { id: institucionId }
     });
 
@@ -51,12 +59,19 @@ export async function POST(request: NextRequest) {
       { id: 13, nombre: 'Comportamiento y disciplina', es_opcional: true, orden: 13 }
     ];
 
-    // Crear las materias en la base de datos
-    const materiasCreadas = [];
-    
+    type MateriaRecord = Awaited<ReturnType<typeof prisma.materias.create>>;
+    const materiasCreadas: MateriaRecord[] = [];
+
     for (const materiaData of materias) {
-      const areaId = parseInt(materiaData.area_id);
-      
+      const areaId = Number(materiaData.area_id);
+
+      if (!Number.isFinite(areaId)) {
+        return NextResponse.json(
+          { error: `Área con identificador ${materiaData.area_id} no es válida` },
+          { status: 400 }
+        );
+      }
+
       // Buscar el área en las predeterminadas
       const areaPredeterminada = areasPredeterminadas.find(a => a.id === areaId);
       if (!areaPredeterminada) {
@@ -67,17 +82,17 @@ export async function POST(request: NextRequest) {
       }
 
       // Buscar el área existente en la base de datos por nombre e institución
-      let area = await prisma.Areas.findFirst({
-        where: { 
+      let area = await prisma.areas.findFirst({
+        where: {
           nombre: areaPredeterminada.nombre,
-          institucion_id: institucionId 
+          institucion_id: institucionId
         }
       });
 
       // Si no existe, crearla con un ID auto-generado
       if (!area) {
         console.log(`Creando nueva área: ${areaPredeterminada.nombre}`);
-        area = await prisma.Areas.create({
+        area = await prisma.areas.create({
           data: {
             nombre: areaPredeterminada.nombre,
             es_opcional: areaPredeterminada.es_opcional,
@@ -92,18 +107,18 @@ export async function POST(request: NextRequest) {
       }
 
       console.log(`Creando materia: ${materiaData.nombre} para área: ${area.nombre} (ID: ${area.id})`);
-      
-      const materia = await prisma.Materias.create({
+
+      const materia = await prisma.materias.create({
         data: {
           nombre: materiaData.nombre,
           area_id: area.id, // Usar el ID real del área (existente o recién creada)
           institucion_id: institucionId
         }
       });
-      
+
       console.log(`✅ Materia ${materia.nombre} creada exitosamente`);
       console.log(`📝 Nota: La materia debe ser asignada manualmente a grados desde el modal correspondiente`);
-      
+
       materiasCreadas.push(materia);
     }
 

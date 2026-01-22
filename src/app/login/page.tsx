@@ -1,10 +1,10 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
-import Swal from 'sweetalert2';
+import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -137,11 +137,31 @@ export default function LoginPage() {
     }
   };
 
+  const obtainSupabaseClient = () => {
+    if (!isSupabaseConfigured()) {
+      setError('El servicio de autenticación no está configurado. Contacta al administrador.');
+      return null;
+    }
+    try {
+      return getSupabaseClient();
+    } catch (clientError) {
+      console.error('No se pudo inicializar Supabase:', clientError);
+      setError('No se pudo conectar con el servicio de autenticación. Intenta más tarde.');
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setValidationErrors({});
+
+    const supabaseClient = obtainSupabaseClient();
+    if (!supabaseClient) {
+      setLoading(false);
+      return;
+    }
 
     try {
       // 1. Validar campos vacíos
@@ -180,7 +200,7 @@ export default function LoginPage() {
       }
 
       // 6. Intentar login con Supabase
-      const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
+      const { data, error: supabaseError } = await supabaseClient.auth.signInWithPassword({
         email: sanitizedEmail,
         password: password, // Usar la contraseña original, no sanitizada
       });
@@ -219,7 +239,7 @@ export default function LoginPage() {
             router.push(`/institucion/${adminData.administrador.institucion.id}/admin`);
           } else {
             setError('No se encontró un administrador con este correo');
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
           }
         } else if (userType === 'docente') {
           // Buscar docente
@@ -229,17 +249,22 @@ export default function LoginPage() {
             router.push(`/institucion/${docenteData.docente.institucion.id}/docente`);
           } else {
             setError('No se encontró un docente con este correo');
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
           }
         } else {
           // Buscar institución
           const instResponse = await fetch(`/api/instituciones/by-email/${encodeURIComponent(sanitizedEmail)}`);
           if (instResponse.ok) {
             const instData = await instResponse.json();
-            router.push(`/institucion/${instData.id}/perfil`);
+            if (instData?.exists && instData?.id) {
+              router.push(`/institucion/${instData.id}/perfil`);
+            } else {
+              setError('No se encontró una institución con este correo');
+              await supabaseClient.auth.signOut();
+            }
           } else {
             setError('No se encontró una institución con este correo');
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
           }
         }
       }
@@ -252,11 +277,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
@@ -370,8 +395,9 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => handleSecureInputChange(e.target.value, 'email', setEmail)}
-                className={`w-full px-4 py-3 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
-                  validationErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
+                  autoComplete="email"
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  validationErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                 }`}
                 placeholder="correo@ejemplo.com"
                 maxLength={254}
@@ -410,11 +436,12 @@ export default function LoginPage() {
                       });
                     }
                   }}
-                  className={`w-full px-4 py-3 pr-12 text-sm border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white/50 backdrop-blur-sm transition-all duration-200 ${
-                    validationErrors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-200'
+                  className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                    validationErrors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                   }`}
                   placeholder="Ingrese su contraseña"
                   maxLength={128}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -463,7 +490,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <div className="flex items-center">

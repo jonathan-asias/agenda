@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ViewDocenteModal from './modals/ViewDocenteModal';
 import EditDocenteModal from './modals/EditDocenteModal';
 import DeleteDocenteModal from './modals/DeleteDocenteModal';
@@ -23,6 +23,9 @@ interface Materia {
   materiaGrados: {
     grado: { nombre: string; nivel: string };
   }[];
+  _count?: {
+    materiaGrados: number;
+  };
 }
 
 interface Grado {
@@ -53,6 +56,8 @@ interface Estudiante {
   grado: { nombre: string; nivel: string };
   curso: { nombre: string; jornada: string | null };
   activo: boolean;
+  grado_id?: number | null;
+  curso_id?: number | null;
 }
 
 interface DashboardSectionsProps {
@@ -210,7 +215,7 @@ export default function DashboardSections({
   };
 
   // Función para aplicar filtros a estudiantes
-  const aplicarFiltrosEstudiantes = () => {
+  const aplicarFiltrosEstudiantes = useCallback(() => {
     let estudiantesFiltrados = [...estudiantes];
 
     // Debug: Mostrar información de estudiantes y filtros
@@ -226,7 +231,7 @@ export default function DashboardSections({
       estudiantesFiltrados = estudiantesFiltrados.filter(
         estudiante => {
           const gradoId = estudiante.grado_id;
-          const coincide = gradoId && gradoId.toString() === filtrosEstudiantes.grado;
+          const coincide = typeof gradoId === 'number' && gradoId.toString() === filtrosEstudiantes.grado;
           console.log(`Estudiante ${estudiante.nombres}: grado_id=${gradoId}, coincide=${coincide}`);
           return coincide;
         }
@@ -241,7 +246,7 @@ export default function DashboardSections({
       estudiantesFiltrados = estudiantesFiltrados.filter(
         estudiante => {
           const cursoId = estudiante.curso_id;
-          const coincide = cursoId && cursoId.toString() === filtrosEstudiantes.curso;
+          const coincide = typeof cursoId === 'number' && cursoId.toString() === filtrosEstudiantes.curso;
           console.log(`Estudiante ${estudiante.nombres}: curso_id=${cursoId}, coincide=${coincide}`);
           return coincide;
         }
@@ -276,7 +281,7 @@ export default function DashboardSections({
     console.log('📊 Resultado final:', estudiantesFiltrados.length, 'estudiantes filtrados');
     console.log('Estudiantes filtrados:', estudiantesFiltrados);
     setEstudiantesFiltrados(estudiantesFiltrados);
-  };
+  }, [estudiantes, filtrosEstudiantes]);
 
   // Función para limpiar filtros
   const limpiarFiltrosEstudiantes = () => {
@@ -291,7 +296,7 @@ export default function DashboardSections({
   };
 
   // Función para aplicar filtros a docentes
-  const aplicarFiltrosDocentes = () => {
+  const aplicarFiltrosDocentes = useCallback(() => {
     let docentesFiltrados = [...docentes];
 
     // Debug: Mostrar información de docentes y filtros
@@ -344,7 +349,7 @@ export default function DashboardSections({
 
     console.log('📊 Resultado final:', docentesFiltrados.length, 'docentes filtrados');
     setDocentesFiltrados(docentesFiltrados);
-  };
+  }, [docentes, filtrosDocentes]);
 
   // Función para limpiar filtros de docentes
   const limpiarFiltrosDocentes = () => {
@@ -377,11 +382,11 @@ export default function DashboardSections({
   // Aplicar filtros automáticamente cuando cambien
   useEffect(() => {
     aplicarFiltrosEstudiantes();
-  }, [filtrosEstudiantes, estudiantes]);
+  }, [aplicarFiltrosEstudiantes]);
 
   useEffect(() => {
     aplicarFiltrosDocentes();
-  }, [filtrosDocentes, docentes]);
+  }, [aplicarFiltrosDocentes]);
 
   return (
     <div className="space-y-8">
@@ -566,7 +571,7 @@ export default function DashboardSections({
               <select
                 value={filtrosDocentes.grado}
                 onChange={(e) => handleFiltroDocenteChange('grado', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los grados</option>
                 {grados.map((grado) => (
@@ -583,7 +588,7 @@ export default function DashboardSections({
               <select
                 value={filtrosDocentes.curso}
                 onChange={(e) => handleFiltroDocenteChange('curso', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los cursos</option>
                 {cursos.map((curso) => (
@@ -602,7 +607,7 @@ export default function DashboardSections({
                 placeholder="Buscar por nombre..."
                 value={filtrosDocentes.nombre}
                 onChange={(e) => handleFiltroDocenteChange('nombre', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
               />
             </div>
 
@@ -612,7 +617,7 @@ export default function DashboardSections({
               <select
                 value={filtrosDocentes.area}
                 onChange={(e) => handleFiltroDocenteChange('area', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todas las áreas</option>
                 {areas.map((area) => (
@@ -629,7 +634,7 @@ export default function DashboardSections({
               <select
                 value={filtrosDocentes.materia}
                 onChange={(e) => handleFiltroDocenteChange('materia', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todas las materias</option>
                 {materias.map((materia) => (
@@ -775,7 +780,7 @@ export default function DashboardSections({
               <select
                 value={filtrosEstudiantes.grado}
                 onChange={(e) => handleFiltroChange('grado', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los grados</option>
                 {grados.map((grado) => (
@@ -792,7 +797,7 @@ export default function DashboardSections({
               <select
                 value={filtrosEstudiantes.curso}
                 onChange={(e) => handleFiltroChange('curso', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los cursos</option>
                 {cursos.map((curso) => (
@@ -809,7 +814,7 @@ export default function DashboardSections({
               <select
                 value={filtrosEstudiantes.estado}
                 onChange={(e) => handleFiltroChange('estado', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los estados</option>
                 <option value="activo">Activos</option>
@@ -825,7 +830,7 @@ export default function DashboardSections({
                 placeholder="Buscar por acudiente..."
                 value={filtrosEstudiantes.acudiente}
                 onChange={(e) => handleFiltroChange('acudiente', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
               />
             </div>
 
@@ -837,7 +842,7 @@ export default function DashboardSections({
                 placeholder="Buscar por código..."
                 value={filtrosEstudiantes.codigo}
                 onChange={(e) => handleFiltroChange('codigo', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm text-black"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
               />
             </div>
           </div>

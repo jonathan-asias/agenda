@@ -1,0 +1,27 @@
+# dependencias locales
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# artefactos de build
+.next
+out
+build
+dist
+
+# entornos y variables
+.env
+.env.*
+.env.docker
+
+# control de versiones y configuraciones locales
+.git
+.gitignore
+.vscode
+.idea
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+

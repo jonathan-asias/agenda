@@ -1,14 +1,40 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+let supabaseClient: SupabaseClient | null = null;
+let hasLoggedMissingConfig = false;
 
-if (!supabaseUrl) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
-}
+const missingConfigMessage =
+  'Supabase no está configurado. Define NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en las variables de entorno.';
 
-if (!supabaseAnonKey) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
-}
+export const isSupabaseConfigured = (): boolean =>
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const createSupabaseClient = (): SupabaseClient => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (!hasLoggedMissingConfig) {
+      console.error(missingConfigMessage);
+      hasLoggedMissingConfig = true;
+    }
+    throw new Error(missingConfigMessage);
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey);
+};
+
+export const getSupabaseClient = (): SupabaseClient => {
+  if (!supabaseClient) {
+    supabaseClient = createSupabaseClient();
+  }
+  return supabaseClient;
+};
+
+export const tryGetSupabaseClient = (): SupabaseClient | null => {
+  try {
+    return getSupabaseClient();
+  } catch {
+    return null;
+  }
+};

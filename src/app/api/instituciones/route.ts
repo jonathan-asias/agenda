@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 
+interface SedeInput {
+  nombre: string;
+  jornadas: string[];
+}
+
+interface CreateInstitucionPayload {
+  nombre: string;
+  direccion_principal: string;
+  nit: string;
+  nombre_contacto: string;
+  telefono_contacto: string;
+  email: string;
+  password: string;
+  logo_url?: string | null;
+  banner_url?: string | null;
+  color_primario?: string;
+  color_secundario?: string;
+  tiene_sedes: boolean;
+  jornadas?: string[];
+  sedes?: SedeInput[];
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as CreateInstitucionPayload;
     const { 
       nombre, 
       direccion_principal, 
@@ -12,6 +34,10 @@ export async function POST(request: NextRequest) {
       telefono_contacto,
       email,
       password,
+      logo_url,
+      banner_url,
+      color_primario,
+      color_secundario,
       tiene_sedes,
       jornadas = [],
       sedes = []
@@ -127,6 +153,10 @@ export async function POST(request: NextRequest) {
           telefono_contacto: telefono_contacto.trim(),
           email: email.trim(),
           password: password, // En producción, aquí deberías hashear la contraseña
+          logo_url: logo_url ?? null,
+          banner_url: banner_url ?? null,
+          color_primario: color_primario?.trim() || '#2563eb',
+          color_secundario: color_secundario?.trim() || '#0f172a',
           tiene_sedes: Boolean(tiene_sedes),
           jornadas: tiene_sedes ? [] : jornadas,
         },
@@ -135,7 +165,7 @@ export async function POST(request: NextRequest) {
       // Crear las sedes si existen
       if (tiene_sedes && sedes.length > 0) {
         await tx.sedes.createMany({
-          data: sedes.map((sede: any) => ({
+          data: sedes.map((sede) => ({
             nombre: sede.nombre.trim(),
             jornadas: sede.jornadas,
             institucion_id: institucion.id,

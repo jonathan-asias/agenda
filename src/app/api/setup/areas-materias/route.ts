@@ -1,16 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 
+type AreaInput = {
+  nombre: string;
+  es_opcional: boolean;
+  orden: number;
+};
+
+type MateriaInput = {
+  nombre: string;
+  areaId: number | string;
+};
+
 export async function POST(request: NextRequest) {
   try {
     console.log('=== INICIO ENDPOINT AREAS-MATERIAS ===');
     console.log('Request URL:', request.url);
     console.log('Request method:', request.method);
     
-    let body;
+    let rawBody: unknown = {};
     try {
-      body = await request.json();
-      console.log('Body recibido:', JSON.stringify(body, null, 2));
+      rawBody = await request.json();
+      console.log('Body recibido:', JSON.stringify(rawBody, null, 2));
     } catch (jsonError) {
       console.error('Error parsing JSON:', jsonError);
       return NextResponse.json(
@@ -22,8 +33,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    const { institucionId, areas, materias } = body;
+
+    const { institucionId, areas, materias } = rawBody as {
+      institucionId: number;
+      areas: AreaInput[];
+      materias: MateriaInput[];
+    };
 
     if (!institucionId) {
       throw new Error('institucionId es requerido');
@@ -74,7 +89,7 @@ export async function POST(request: NextRequest) {
     // Guardar áreas
     console.log('Creando áreas...');
     const areasCreadas = await Promise.all(
-      areas.map(async (area: any) => {
+      areas.map(async (area) => {
         console.log('Creando área:', area.nombre);
         return await prisma.areas.create({
           data: {
@@ -91,7 +106,7 @@ export async function POST(request: NextRequest) {
     console.log('Áreas creadas exitosamente:', areasCreadas.length);
 
     // Crear un mapa de areaId (del frontend) a id (de la base de datos)
-    const areaIdMap = new Map();
+    const areaIdMap = new Map<number, number>();
     areasCreadas.forEach(area => {
       areaIdMap.set(area.orden, area.id);
     });
@@ -104,10 +119,16 @@ export async function POST(request: NextRequest) {
     console.log('Mapa de áreas:', Object.fromEntries(areaIdMap));
     
     // Crear materias una por una para evitar problemas de conexión
-    const materiasCreadas = [];
+    const materiasCreadas: Array<Awaited<ReturnType<typeof prisma.materias.create>>> = [];
     for (let i = 0; i < materias.length; i++) {
       const materia = materias[i];
-      const areaId = areaIdMap.get(materia.areaId);
+      const areaKey = Number(materia.areaId);
+
+      if (!Number.isFinite(areaKey)) {
+        throw new Error(`El identificador de área ${materia.areaId} no es válido`);
+      }
+
+      const areaId = areaIdMap.get(areaKey);
       
       if (!areaId) {
         throw new Error(`No se encontró el área con orden ${materia.areaId}`);

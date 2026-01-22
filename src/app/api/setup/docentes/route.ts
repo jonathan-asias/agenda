@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdminClient, isSupabaseAdminConfigured } from '@/lib/supabase-admin';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+type DocenteInput = {
+  nombres: string;
+  apellidos: string;
+  telefono: string;
+  email: string;
+  password: string;
+};
+
+type AsignacionMateriaInput = number | { id: number };
+
+type AsignacionesPayload = {
+  grados: Array<number | string>;
+  cursos: Record<number | string, Array<number | string>>;
+  materias: Record<number | string, Array<AsignacionMateriaInput | string>>;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,8 +25,22 @@ export async function POST(request: NextRequest) {
     // Verificar variables de entorno
     console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configurada' : 'NO CONFIGURADA');
     console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Configurada' : 'NO CONFIGURADA');
+
+    if (!isSupabaseAdminConfigured()) {
+      console.error('Supabase admin no está configurado. No se pueden crear docentes.');
+      return NextResponse.json(
+        { success: false, error: 'El servicio de autenticación no está configurado. Contacta al administrador.' },
+        { status: 500 }
+      );
+    }
+
+    const supabaseAdminClient = getSupabaseAdminClient();
     
-    const body = await request.json();
+    const body = await request.json() as {
+      institucionId: number;
+      docentes: DocenteInput[];
+      asignaciones?: AsignacionesPayload;
+    };
     console.log('Datos recibidos:', JSON.stringify(body, null, 2));
     
     const { institucionId, docentes, asignaciones } = body;
@@ -68,8 +93,25 @@ export async function POST(request: NextRequest) {
     
     console.log('Sede asignada:', sedeId);
     
-    const docentesCreados = [];
-    const errores = [];
+    type DocenteCreadoResponse = {
+      id: number;
+      nombres: string;
+      apellidos: string;
+      email: string;
+      auth_user_id?: string;
+      asignaciones_creadas: number;
+    };
+
+    type ErrorRegistro = {
+      docente: string;
+      error: string;
+      code?: string;
+      details?: unknown;
+      stack?: string;
+    };
+
+    const docentesCreados: DocenteCreadoResponse[] = [];
+    const errores: ErrorRegistro[] = [];
     
     // Crear cada docente
     console.log('Iniciando bucle de creación de docentes...');
@@ -83,7 +125,7 @@ export async function POST(request: NextRequest) {
         console.log(`Creando docente ${i + 1}/${docentes.length}:`, docente.email);
         
                // 1. Crear usuario en Supabase Auth
-               const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+               const { data: authData, error: authError } = await supabaseAdminClient.auth.admin.createUser({
                  email: docente.email,
                  password: docente.password,
                  email_confirm: false, // NO confirmar automáticamente para enviar correo
@@ -154,34 +196,54 @@ export async function POST(request: NextRequest) {
           console.log('Creando asignaciones para docente:', docenteCreado.id);
           console.log('Asignaciones recibidas:', JSON.stringify(asignaciones, null, 2));
           
-          const asignacionesData = [];
+          const asignacionesData: Array<{
+            docente_id: number;
+            grado_id: number;
+            curso_id: number;
+            materia_id: number;
+          }> = [];
           
           // Para cada grado seleccionado
-          asignaciones.grados.forEach(gradoId => {
-            const cursos = asignaciones.cursos[gradoId] || [];
-            const materias = asignaciones.materias[gradoId] || [];
+          asignaciones.grados.forEach((gradoId) => {
+            const gradoKey = String(gradoId);
+            const gradoNumber = Number(gradoId);
+            if (!Number.isFinite(gradoNumber)) {
+              return;
+            }
+
+            const cursos = asignaciones.cursos[gradoKey] ?? [];
+            const materias = asignaciones.materias[gradoKey] ?? [];
             
             console.log(`Procesando grado ${gradoId}:`);
             console.log('- Cursos:', cursos);
             console.log('- Materias (objetos):', materias);
             
             // Extraer IDs de materias (pueden ser objetos o números)
-            const materiaIds = materias.map(materia => {
-              if (typeof materia === 'object' && materia.id) {
-                return materia.id;
-              }
-              return materia;
-            }).filter(id => id != null);
+            const materiaIds = materias
+              .map((materia): number | null => {
+                if (typeof materia === 'object' && materia !== null && 'id' in materia) {
+                  return Number((materia as { id: number }).id);
+                }
+                if (typeof materia === 'number') {
+                  return materia;
+                }
+                return null;
+              })
+              .filter((id): id is number => id !== null && Number.isFinite(id));
             
             console.log('- Materias (IDs):', materiaIds);
             
             // Para cada curso del grado
-            cursos.forEach(cursoId => {
+            cursos.forEach((cursoIdRaw) => {
+              const cursoId = Number(cursoIdRaw);
+              if (!Number.isFinite(cursoId)) {
+                return;
+              }
               // Para cada materia del grado
-              materiaIds.forEach(materiaId => {
+              materiaIds.forEach((materiaId) => {
                 asignacionesData.push({
                   docente_id: docenteCreado.id,
-                  grado_id: gradoId,
+                  grado_id: gradoNumber,
                   curso_id: cursoId,
                   materia_id: materiaId
                 });
@@ -203,19 +265,35 @@ export async function POST(request: NextRequest) {
               
               // Crear relaciones MateriaGrados para que las materias aparezcan asignadas a grados
               console.log('=== CREANDO RELACIONES MATERIA-GRADOS ===');
-              const materiaGradosData = [];
+              const materiaGradosData: Array<{
+                materia_id: number;
+                grado_id: number;
+              }> = [];
               
               // Para cada grado seleccionado
-              asignaciones.grados.forEach(gradoId => {
-                const materias = asignaciones.materias[gradoId] || [];
-                console.log(`Procesando grado ${gradoId} con materias:`, materias);
+              asignaciones.grados.forEach((gradoId) => {
+                const gradoKey = String(gradoId);
+                const gradoNumber = Number(gradoId);
+                if (!Number.isFinite(gradoNumber)) {
+                  return;
+                }
+
+                const materiasPorGrado = asignaciones.materias[gradoKey] ?? [];
+                console.log(`Procesando grado ${gradoId} con materias:`, materiasPorGrado);
                 
-                // Para cada materia del grado, crear relación con el grado
-                materias.forEach(materiaId => {
-                  materiaGradosData.push({
-                    materia_id: materiaId,
-                    grado_id: gradoId
-                  });
+                materiasPorGrado.forEach((materia) => {
+                  const materiaId = typeof materia === 'object' && materia !== null && 'id' in materia
+                    ? Number((materia as { id: number }).id)
+                    : typeof materia === 'number'
+                      ? materia
+                      : null;
+
+                  if (materiaId !== null && Number.isFinite(materiaId)) {
+                    materiaGradosData.push({
+                      materia_id: materiaId,
+                      grado_id: gradoNumber
+                    });
+                  }
                 });
               });
               
@@ -259,7 +337,7 @@ export async function POST(request: NextRequest) {
         // 4. Enviar correo de confirmación usando el cliente público (como los administradores)
         try {
           console.log(`Enviando correo de confirmación a: ${docente.email}`);
-          const { error: emailError } = await supabase.auth.resend({
+          const { error: emailError } = await supabaseAdminClient.auth.resend({
             type: 'signup',
             email: docente.email.toLowerCase().trim(),
             options: {
@@ -273,7 +351,7 @@ export async function POST(request: NextRequest) {
             
             // Intentar método alternativo con generateLink
             console.log('Intentando método alternativo con generateLink...');
-            const { error: linkError } = await supabase.auth.admin.generateLink({
+            const { error: linkError } = await supabaseAdminClient.auth.admin.generateLink({
               type: 'signup',
               email: docente.email.toLowerCase().trim(),
               password: docente.password,

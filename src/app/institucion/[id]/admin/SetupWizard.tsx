@@ -1,6 +1,10 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 
 interface SetupWizardProps {
   institucionId: number;
@@ -78,7 +82,45 @@ interface AsignacionDocente {
 
 export default function SetupWizard({ institucionId, onClose }: SetupWizardProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  const [brandingColors, setBrandingColors] = useState({
+    primary: '#2563eb',
+    secondary: '#0f172a'
+  });
   const [cursos, setCursos] = useState<Curso[]>([]);
+  const [cursoParaEliminar, setCursoParaEliminar] = useState<{
+    cursoId: number;
+    gradoId: number;
+    nombre: string;
+  } | null>(null);
+  const [eliminandoCurso, setEliminandoCurso] = useState(false);
+  const [duplicadosCursos, setDuplicadosCursos] = useState<string[] | null>(null);
+  const [mostrarExitoGradosCursos, setMostrarExitoGradosCursos] = useState<{
+    gradosCreados: number;
+    cursosCreados: number;
+  } | null>(null);
+  const [mostrarExitoAreasMaterias, setMostrarExitoAreasMaterias] = useState<{
+    areasCreadas: number;
+    materiasCreadas: number;
+  } | null>(null);
+  const [modalEmailDocente, setModalEmailDocente] = useState<{
+    tipo: 'success' | 'error' | 'info';
+    titulo: string;
+    mensaje: string;
+  } | null>(null);
+  const [modalDocenteAccion, setModalDocenteAccion] = useState<{
+    tipo: 'success' | 'error' | 'info';
+    titulo: string;
+    mensaje: string;
+  } | null>(null);
+  const [modalEstudianteAccion, setModalEstudianteAccion] = useState<{
+    tipo: 'success' | 'error' | 'info';
+    titulo: string;
+    mensaje: string;
+  } | null>(null);
+  const [estudianteParaEliminar, setEstudianteParaEliminar] = useState<{
+    estudianteId: number;
+    nombre: string;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   
   // Estados para áreas y materias
@@ -231,19 +273,20 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   // Grados predeterminados
   const gradosPredeterminados = [
     { id: 1, nombre: 'PÁRVULOS', nivel: 'Educación Inicial', orden: 1 },
-    { id: 2, nombre: 'PREKINDER', nivel: 'Educación Inicial', orden: 2 },
-    { id: 3, nombre: 'KINDER', nivel: 'Educación Inicial', orden: 3 },
-    { id: 4, nombre: '1°', nivel: 'Primaria', orden: 4 },
-    { id: 5, nombre: '2°', nivel: 'Primaria', orden: 5 },
-    { id: 6, nombre: '3°', nivel: 'Primaria', orden: 6 },
-    { id: 7, nombre: '4°', nivel: 'Primaria', orden: 7 },
-    { id: 8, nombre: '5°', nivel: 'Primaria', orden: 8 },
-    { id: 9, nombre: '6°', nivel: 'Secundaria', orden: 9 },
-    { id: 10, nombre: '7°', nivel: 'Secundaria', orden: 10 },
-    { id: 11, nombre: '8°', nivel: 'Secundaria', orden: 11 },
-    { id: 12, nombre: '9°', nivel: 'Secundaria', orden: 12 },
-    { id: 13, nombre: '10°', nivel: 'Media', orden: 13 },
-    { id: 14, nombre: '11°', nivel: 'Media', orden: 14 },
+    { id: 2, nombre: 'PRE-JARDÍN', nivel: 'Educación Inicial', orden: 2 },
+    { id: 3, nombre: 'JARDÍN', nivel: 'Educación Inicial', orden: 3 },
+    { id: 4, nombre: 'TRANSICIÓN', nivel: 'Educación Inicial', orden: 4 },
+    { id: 5, nombre: '1°', nivel: 'Primaria', orden: 5 },
+    { id: 6, nombre: '2°', nivel: 'Primaria', orden: 6 },
+    { id: 7, nombre: '3°', nivel: 'Primaria', orden: 7 },
+    { id: 8, nombre: '4°', nivel: 'Primaria', orden: 8 },
+    { id: 9, nombre: '5°', nivel: 'Primaria', orden: 9 },
+    { id: 10, nombre: '6°', nivel: 'Secundaria', orden: 10 },
+    { id: 11, nombre: '7°', nivel: 'Secundaria', orden: 11 },
+    { id: 12, nombre: '8°', nivel: 'Secundaria', orden: 12 },
+    { id: 13, nombre: '9°', nivel: 'Secundaria', orden: 13 },
+    { id: 14, nombre: '10°', nivel: 'Media', orden: 14 },
+    { id: 15, nombre: '11°', nivel: 'Media', orden: 15 }
   ];
 
   // Áreas predefinidas según Ley 115 de 1994
@@ -263,6 +306,22 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     { id: 13, nombre: 'Comportamiento y disciplina', es_opcional: true, orden: 13 },
   ];
 
+  const ejemplosMateriasPorArea: Record<number, string[]> = {
+    1: ['Biología', 'Física', 'Química', 'Ciencias ambientales'],
+    2: ['Historia', 'Geografía', 'Ciencias sociales', 'Democracia'],
+    3: ['Artes plásticas', 'Música', 'Teatro', 'Danza'],
+    4: ['Ética', 'Valores', 'Convivencia', 'Ciudadanía'],
+    5: ['Educación física', 'Deportes', 'Recreación', 'Psicomotricidad'],
+    6: ['Religión', 'Ética religiosa', 'Cultura religiosa', 'Espiritualidad'],
+    7: ['Lengua castellana', 'Inglés', 'Lectura crítica', 'Literatura'],
+    8: ['Álgebra', 'Cálculo', 'Matemáticas básicas', 'Geometría'],
+    9: ['Informática', 'Programación', 'Robótica', 'Tecnología'],
+    10: ['Lógica', 'Filosofía', 'Pensamiento crítico', 'Ética filosófica'],
+    11: ['Educación sexual', 'Salud sexual', 'Autocuidado', 'Afectividad'],
+    12: ['Emprendimiento', 'Finanzas básicas', 'Proyectos', 'Innovación'],
+    13: ['Disciplina', 'Convivencia', 'Normas', 'Comportamiento']
+  };
+
   // Agrupar grados por nivel
   const gradosPorNivel = gradosPredeterminados.reduce((acc, grado) => {
     if (!acc[grado.nivel]) {
@@ -273,12 +332,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   }, {} as Record<string, typeof gradosPredeterminados>);
 
   const agregarCurso = (gradoId: number) => {
-    const cursosDelGrado = cursos.filter(c => c.gradoId === gradoId);
-    const siguienteLetra = String.fromCharCode(65 + cursosDelGrado.length); // A, B, C...
-    
     const nuevoCurso: Curso = {
       id: `temp-${Date.now()}`,
-      nombre: `Curso ${siguienteLetra}`,
+      nombre: '',
       gradoId,
     };
 
@@ -291,6 +347,43 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
   const editarNombreCurso = (cursoId: string, nuevoNombre: string) => {
     setCursos(cursos.map(c => c.id === cursoId ? { ...c, nombre: nuevoNombre } : c));
+  };
+
+  const eliminarCursoGuardado = async (cursoId: number, gradoId: number) => {
+    try {
+      const response = await fetch(`/api/cursos/${cursoId}?institucionId=${institucionId}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: data?.error || 'No se pudo eliminar el curso'
+        });
+        return;
+      }
+
+      setGradosCargados(prev =>
+        prev.map((grado: any) =>
+          grado.id === gradoId
+            ? { ...grado, cursos: grado.cursos.filter((c: any) => c.id !== cursoId) }
+            : grado
+        )
+      );
+      setCursosDisponibles(prev => prev.filter((curso: any) => curso.id !== cursoId));
+      setTodosLosCursos(prev => prev.filter((curso: any) => curso.id !== cursoId));
+      setAsignacionesGradoCurso(prev => prev.filter(asignacion => asignacion.cursoId !== cursoId));
+      setEstudianteActual(prev => (prev.curso_id === cursoId ? { ...prev, curso_id: 0 } : prev));
+    } catch (error) {
+      console.error('Error eliminando curso:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error de conexión',
+        text: 'Error de conexión al eliminar el curso'
+      });
+    }
   };
 
   // Función para cargar grados desde la BD
@@ -920,7 +1013,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   // Función para verificar manualmente el email
   const verificarEmailManual = async () => {
     if (!docenteActual.email.trim() || !validarEmail(docenteActual.email.trim())) {
-      alert('Por favor ingresa un email válido primero');
+      setModalEmailDocente({
+        tipo: 'error',
+        titulo: 'Email inválido',
+        mensaje: 'Por favor ingresa un email válido primero.'
+      });
       return;
     }
 
@@ -938,7 +1035,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         setEmailVerificado(false);
         // Deshabilitar el campo de contraseña cuando el email no esté disponible
         setCamposHabilitados(prev => ({ ...prev, password: false }));
-        alert('❌ Este email ya está registrado. Por favor usa otro email.');
+        setModalEmailDocente({
+          tipo: 'error',
+          titulo: 'Email no disponible',
+          mensaje: 'Este email ya está registrado. Por favor usa otro email.'
+        });
       } else {
         setErroresValidacion(prev => {
           const newErrors = { ...prev };
@@ -948,11 +1049,19 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         setEmailVerificado(true);
         // Habilitar el campo de contraseña cuando el email esté verificado
         setCamposHabilitados(prev => ({ ...prev, password: true }));
-        alert('✅ Email disponible. Puedes continuar con la contraseña.');
+        setModalEmailDocente({
+          tipo: 'success',
+          titulo: 'Email disponible',
+          mensaje: 'Puedes continuar con la contraseña.'
+        });
       }
     } catch (error) {
       console.error('Error verificando email:', error);
-      alert('❌ Error verificando email. Intenta nuevamente.');
+      setModalEmailDocente({
+        tipo: 'error',
+        titulo: 'Error verificando email',
+        mensaje: 'Intenta nuevamente.'
+      });
     } finally {
       setVerificandoEmail(false);
     }
@@ -1186,43 +1295,71 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   const handleAgregarDocente = () => {
     // Validaciones básicas
     if (!docenteActual.nombres.trim() || !docenteActual.apellidos.trim() || !docenteActual.telefono.trim() || !docenteActual.email.trim() || !docenteActual.password.trim()) {
-      alert('❌ Por favor completa todos los campos');
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Campos incompletos',
+        mensaje: 'Por favor completa todos los campos.'
+      });
       return;
     }
 
     // Validar nombres y apellidos (solo letras y espacios)
     const nombreRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
     if (!nombreRegex.test(docenteActual.nombres.trim())) {
-      alert('❌ Los nombres solo pueden contener letras y espacios');
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Nombre inválido',
+        mensaje: 'Los nombres solo pueden contener letras y espacios.'
+      });
       return;
     }
     if (!nombreRegex.test(docenteActual.apellidos.trim())) {
-      alert('❌ Los apellidos solo pueden contener letras y espacios');
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Apellido inválido',
+        mensaje: 'Los apellidos solo pueden contener letras y espacios.'
+      });
       return;
     }
 
     // Validar email
     if (!validarEmail(docenteActual.email.trim())) {
-      alert('❌ Por favor ingresa un email válido');
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Email inválido',
+        mensaje: 'Por favor ingresa un email válido.'
+      });
       return;
     }
 
     // Validar teléfono celular colombiano
     if (!validarTelefonoColombiano(docenteActual.telefono.trim())) {
-      alert('❌ Por favor ingresa un número de celular colombiano válido (10 dígitos empezando por 3)');
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Teléfono inválido',
+        mensaje: 'Por favor ingresa un número de celular colombiano válido (10 dígitos empezando por 3).'
+      });
       return;
     }
 
     // Validar contraseña (mínimo 8 caracteres)
     if (docenteActual.password.length < 8) {
-      alert('❌ La contraseña debe tener al menos 8 caracteres');
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Contraseña inválida',
+        mensaje: 'La contraseña debe tener al menos 8 caracteres.'
+      });
       return;
     }
 
     // Verificar si el email ya existe en la lista local
     const emailExiste = docentes.some(d => d.email.toLowerCase() === docenteActual.email.trim().toLowerCase());
     if (emailExiste) {
-      alert('❌ Ya existe un docente con este email en la lista actual');
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Email duplicado',
+        mensaje: 'Ya existe un docente con este email en la lista actual.'
+      });
       return;
     }
 
@@ -1250,7 +1387,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     }));
     
     limpiarFormularioDocente();
-    alert('✅ Docente agregado correctamente');
+    setModalDocenteAccion({
+      tipo: 'success',
+      titulo: 'Docente agregado',
+      mensaje: 'Docente agregado correctamente.'
+    });
   };
 
   // Función para eliminar un docente de la lista
@@ -1275,7 +1416,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       });
       
       console.log(`🗑️ Docente eliminado: ${docenteId}`);
-      alert('✅ Docente eliminado correctamente');
+      Swal.fire({
+        icon: 'success',
+        title: 'Docente eliminado',
+        text: 'Docente eliminado correctamente'
+      });
     }
   };
 
@@ -1286,32 +1431,52 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         !estudianteActual.codigo_estudiantil.trim() || !estudianteActual.nombre_acudiente.trim() ||
         !estudianteActual.correo_acudiente.trim() || !estudianteActual.telefono_acudiente.trim() ||
         estudianteActual.grado_id === 0 || estudianteActual.curso_id === 0) {
-      alert('❌ Por favor completa todos los campos');
+      setModalEstudianteAccion({
+        tipo: 'error',
+        titulo: 'Campos incompletos',
+        mensaje: 'Por favor completa todos los campos.'
+      });
       return;
     }
 
     // Validar email del acudiente
     if (!validarEmail(estudianteActual.correo_acudiente.trim())) {
-      alert('❌ Por favor ingresa un email válido para el acudiente');
+      setModalEstudianteAccion({
+        tipo: 'error',
+        titulo: 'Email inválido',
+        mensaje: 'Por favor ingresa un email válido para el acudiente.'
+      });
       return;
     }
 
     // Validar teléfono del acudiente
     if (!validarTelefonoColombiano(estudianteActual.telefono_acudiente.trim())) {
-      alert('❌ Por favor ingresa un número de celular colombiano válido para el acudiente');
+      setModalEstudianteAccion({
+        tipo: 'error',
+        titulo: 'Teléfono inválido',
+        mensaje: 'Por favor ingresa un número de celular colombiano válido para el acudiente.'
+      });
       return;
     }
 
     // Verificar que no haya errores de validación
     if (Object.keys(erroresValidacionEstudiante).length > 0) {
-      alert('❌ Por favor corrige los errores antes de continuar');
+      setModalEstudianteAccion({
+        tipo: 'error',
+        titulo: 'Errores de validación',
+        mensaje: 'Por favor corrige los errores antes de continuar.'
+      });
       return;
     }
 
     // Verificar que no exista un estudiante con el mismo código
     const estudianteExistente = estudiantes.find(e => e.codigo_estudiantil === estudianteActual.codigo_estudiantil.trim());
     if (estudianteExistente) {
-      alert('❌ Ya existe un estudiante con este código');
+      setModalEstudianteAccion({
+        tipo: 'error',
+        titulo: 'Código duplicado',
+        mensaje: 'Ya existe un estudiante con este código.'
+      });
       return;
     }
 
@@ -1334,19 +1499,21 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     setEstudiantes([...estudiantes, nuevoEstudiante]);
     
     limpiarFormularioEstudiante();
-    alert('✅ Estudiante agregado correctamente');
+    setModalEstudianteAccion({
+      tipo: 'success',
+      titulo: 'Estudiante agregado',
+      mensaje: 'Estudiante agregado correctamente.'
+    });
   };
 
   // Función para eliminar un estudiante de la lista
   const eliminarEstudiante = (estudianteId: number) => {
-    // Confirmar eliminación
-    if (confirm('¿Estás seguro de que quieres eliminar este estudiante?')) {
-      // Remover de la lista de estudiantes
-      setEstudiantes(prev => prev.filter(e => e.id !== estudianteId));
-      
-      console.log(`🗑️ Estudiante eliminado: ${estudianteId}`);
-      alert('✅ Estudiante eliminado correctamente');
-    }
+    const estudiante = estudiantes.find(e => e.id === estudianteId);
+    if (!estudiante) return;
+    setEstudianteParaEliminar({
+      estudianteId,
+      nombre: `${estudiante.nombres} ${estudiante.apellidos}`
+    });
   };
 
   // Función para alternar la expansión de asignaciones
@@ -1360,7 +1527,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   // Función para guardar docentes en la base de datos
   const handleSaveDocentes = async () => {
     if (docentes.length === 0) {
-      alert('❌ No hay docentes para guardar');
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Sin docentes',
+        mensaje: 'No hay docentes para guardar.'
+      });
       return;
     }
 
@@ -1386,6 +1557,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
       // Procesar cada docente individualmente con sus asignaciones
       const resultados = [];
+      const erroresDocentes: string[] = [];
       
       for (let i = 0; i < docentes.length; i++) {
         const docente = docentes[i];
@@ -1477,7 +1649,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         
         if (!response.ok) {
           console.error(`Error guardando docente ${docente.email}:`, responseData);
-          alert(`❌ Error guardando ${docente.nombres} ${docente.apellidos}: ${responseData.error || responseData.details || 'Error desconocido'}`);
+          erroresDocentes.push(
+            `Error guardando ${docente.nombres} ${docente.apellidos}: ${
+              responseData.error || responseData.details || 'Error desconocido'
+            }`
+          );
         }
       }
       
@@ -1490,16 +1666,31 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       console.log('Fallidos:', fallidos);
       
       if (exitosos > 0) {
-        alert(`✅ Se crearon ${exitosos} docente(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}`);
+        setModalDocenteAccion({
+          tipo: fallidos > 0 ? 'info' : 'success',
+          titulo: fallidos > 0 ? 'Docentes creados con errores' : 'Docentes creados',
+          mensaje: `Se crearon ${exitosos} docente(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}.`
+        });
+        if (erroresDocentes.length > 0) {
+          console.error('Errores al guardar docentes:', erroresDocentes);
+        }
         // Avanzar al siguiente paso solo si se crearon docentes exitosamente
         setCurrentStep(4);
       } else {
-        alert('❌ No se pudo crear ningún docente. Revisa los errores mostrados.');
+        setModalDocenteAccion({
+          tipo: 'error',
+          titulo: 'No se pudieron crear docentes',
+          mensaje: 'No se pudo crear ningún docente. Revisa los errores.'
+        });
       }
       
     } catch (error) {
       console.error('Error de conexión:', error);
-      alert('❌ Error de conexión: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Error de conexión',
+        mensaje: error instanceof Error ? error.message : 'Error desconocido'
+      });
     } finally {
       setSaving(false);
     }
@@ -1549,7 +1740,13 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         
         if (!response.ok) {
           console.error(`Error guardando estudiante ${estudiante.codigo_estudiantil}:`, responseData);
-          alert(`❌ Error guardando ${estudiante.nombres} ${estudiante.apellidos}: ${responseData.error || responseData.details || 'Error desconocido'}`);
+          await Swal.fire({
+            icon: 'error',
+            title: 'Error guardando estudiante',
+            text: `Error guardando ${estudiante.nombres} ${estudiante.apellidos}: ${
+              responseData.error || responseData.details || 'Error desconocido'
+            }`
+          });
         }
       }
       
@@ -1562,16 +1759,28 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       console.log('Fallidos:', fallidos);
       
       if (exitosos > 0) {
-        alert(`✅ Se crearon ${exitosos} estudiante(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}`);
+        await Swal.fire({
+          icon: 'success',
+          title: 'Estudiantes creados',
+          text: `Se crearon ${exitosos} estudiante(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}`
+        });
         // Avanzar al siguiente paso solo si se crearon estudiantes exitosamente
         setCurrentStep(5);
       } else {
-        alert('❌ No se pudo crear ningún estudiante. Revisa los errores mostrados.');
+        await Swal.fire({
+          icon: 'error',
+          title: 'No se pudieron crear estudiantes',
+          text: 'No se pudo crear ningún estudiante. Revisa los errores mostrados.'
+        });
       }
       
     } catch (error) {
       console.error('Error de conexión:', error);
-      alert('❌ Error de conexión: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error de conexión',
+        text: error instanceof Error ? error.message : 'Error desconocido'
+      });
     } finally {
       setSaving(false);
     }
@@ -1660,17 +1869,27 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
           
           if (asignacionesResponse.ok) {
             setMostrarResumenAreas(false);
-            alert('✅ Áreas, materias y asignaciones guardadas correctamente!');
+            setMostrarExitoAreasMaterias({
+              areasCreadas: areasActivas.length,
+              materiasCreadas: responseData?.materiasCreadas?.length || materias.length
+            });
             console.log('Asignaciones guardadas:', asignacionesData);
             // Avanzar al siguiente paso
             setCurrentStep(3);
           } else {
             console.error('Error guardando asignaciones:', asignacionesData);
-            alert(`❌ Error al guardar asignaciones: ${asignacionesData.details || asignacionesData.error || 'Error desconocido'}`);
+            await Swal.fire({
+              icon: 'error',
+              title: 'Error al guardar asignaciones',
+              text: asignacionesData.details || asignacionesData.error || 'Error desconocido'
+            });
           }
         } else {
           setMostrarResumenAreas(false);
-          alert('✅ Áreas y materias guardadas correctamente!');
+          setMostrarExitoAreasMaterias({
+            areasCreadas: areasActivas.length,
+            materiasCreadas: responseData?.materiasCreadas?.length || materias.length
+          });
           console.log('Datos guardados:', responseData);
           // Avanzar al siguiente paso
           setCurrentStep(3);
@@ -1681,11 +1900,19 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         console.error('Headers del response:', response.headers);
         
         const errorMessage = responseData.details || responseData.error || responseData.message || 'Error desconocido del servidor';
-        alert(`❌ Error al guardar: ${errorMessage}`);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al guardar',
+          text: errorMessage
+        });
       }
     } catch (error) {
       console.error('Error de conexión:', error);
-      alert('❌ Error de conexión: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error de conexión',
+        text: error instanceof Error ? error.message : 'Error desconocido'
+      });
     } finally {
       setSaving(false);
     }
@@ -1694,9 +1921,32 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   const handleSaveGradosYCursos = async () => {
     setSaving(true);
     try {
+      const normalizarNombre = (nombre: string) => nombre.trim().toLowerCase();
+      const cursosExistentesPorGrado = new Map<number, Set<string>>();
+      gradosCargados.forEach((grado: any) => {
+        cursosExistentesPorGrado.set(
+          grado.id,
+          new Set((grado.cursos || []).map((curso: any) => normalizarNombre(curso.nombre || '')))
+        );
+      });
+
+      const cursosNuevos = cursos.filter((curso) => {
+        const nombre = normalizarNombre(curso.nombre || '');
+        if (!nombre) return false;
+        const existentes = cursosExistentesPorGrado.get(curso.gradoId) || new Set<string>();
+        return !existentes.has(nombre);
+      });
+
+      if (cursosNuevos.length === 0) {
+        setMostrarResumen(false);
+        setSaving(false);
+        setMostrarExitoGradosCursos({ gradosCreados: 0, cursosCreados: 0 });
+        return;
+      }
+
       // Solo obtener los grados que tienen cursos
       const gradosConCursos = gradosPredeterminados.filter(grado => 
-        cursos.some(curso => curso.gradoId === grado.id)
+        cursosNuevos.some(curso => curso.gradoId === grado.id)
       );
       
       console.log('=== DATOS QUE SE ENVÍAN ===');
@@ -1706,7 +1956,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       // Transformar los datos para que coincidan con la estructura esperada por la API
       const gradosCursos = gradosConCursos.map(grado => ({
         grado_id: grado.id,
-        cursos: cursos
+        cursos: cursosNuevos
           .filter(curso => curso.gradoId === grado.id)
           .map(curso => ({
             nombre: curso.nombre
@@ -1735,25 +1985,40 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         setMostrarResumen(false);
         setGradosGuardados(responseData.data.gradosCreados);
         setCursosGuardados(responseData.data.cursosCreados);
-        alert('✅ Grados y cursos guardados correctamente!');
+        setMostrarExitoGradosCursos({
+          gradosCreados: responseData.data.gradosCreados?.length || 0,
+          cursosCreados: responseData.data.cursosCreados?.length || 0
+        });
         console.log('Datos guardados:', responseData);
+        await cargarGrados();
         // Avanzar al siguiente paso
         setCurrentStep(2);
+      } else if (response.status === 409) {
+        const duplicateNames = responseData?.duplicateNames;
+        setDuplicadosCursos(Array.isArray(duplicateNames) && duplicateNames.length > 0 ? duplicateNames : []);
       } else {
         console.error('Error del servidor:', responseData);
-        alert(`❌ Error al guardar: ${responseData.details || responseData.error || 'Error desconocido'}`);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al guardar',
+          text: responseData.details || responseData.error || 'Error desconocido'
+        });
       }
     } catch (error) {
       console.error('Error de conexión:', error);
-      alert('❌ Error de conexión: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error de conexión',
+        text: error instanceof Error ? error.message : 'Error desconocido'
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  // Cargar grados cuando se llegue al Paso 2
+  // Cargar grados cuando se llegue al Paso 1 o 2
   useEffect(() => {
-    if (currentStep === 2 && gradosCargados.length === 0) {
+    if ((currentStep === 1 || currentStep === 2) && gradosCargados.length === 0) {
       cargarGrados();
     }
   }, [currentStep]);
@@ -1770,6 +2035,40 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       cargarGradosEstudiantes();
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    if (!institucionId) return;
+
+    const cargarBranding = async () => {
+      try {
+        const response = await fetch(`/api/instituciones/${institucionId}/branding`);
+        if (!response.ok) return;
+        const data = await response.json();
+        setBrandingColors({
+          primary: data.color_primario || '#2563eb',
+          secondary: data.color_secundario || '#0f172a'
+        });
+      } catch (error) {
+        console.error('Error cargando branding:', error);
+      }
+    };
+
+    cargarBranding();
+  }, [institucionId]);
+
+  const getContrastingTextColor = (hexColor: string) => {
+    const hex = hexColor.replace('#', '');
+    if (hex.length !== 6) return '#ffffff';
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    const toLinear = (value: number) =>
+      value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+    const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+    return luminance > 0.6 ? '#0f172a' : '#ffffff';
+  };
+
+  const headerTextColor = getContrastingTextColor(brandingColors.secondary);
 
   // Actualizar estado de secciones cuando cambien los datos
   useEffect(() => {
@@ -1797,19 +2096,411 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
   return (
     <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          {duplicadosCursos !== null && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">Cursos duplicados</h3>
+                  <button
+                    type="button"
+                    onClick={() => setDuplicadosCursos(null)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-4 text-sm text-slate-600">
+                  <p className="text-slate-800 font-medium">
+                    No se pueden crear cursos con nombres duplicados.
+                  </p>
+                  {duplicadosCursos.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {duplicadosCursos.map((nombre) => (
+                        <div
+                          key={nombre}
+                          className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                        >
+                          <span className="font-medium">{nombre}</span>
+                          <span className="text-xs font-semibold text-red-600">Duplicado</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2">Revisa los nombres de los cursos.</p>
+                  )}
+                </div>
+                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setDuplicadosCursos(null)}
+                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {mostrarExitoGradosCursos && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">Configuración guardada</h3>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarExitoGradosCursos(null)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-4 text-sm text-slate-600">
+                  {mostrarExitoGradosCursos.cursosCreados > 0 ? (
+                    <>
+                      <p className="text-slate-800 font-medium">
+                        ✅ Grados y cursos guardados correctamente.
+                      </p>
+                      <div className="mt-2">
+                        Grados creados: <span className="font-semibold">{mostrarExitoGradosCursos.gradosCreados}</span>
+                      </div>
+                      <div>
+                        Cursos creados: <span className="font-semibold">{mostrarExitoGradosCursos.cursosCreados}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-slate-800 font-medium">
+                        No hay cursos nuevos para guardar.
+                      </p>
+                      <p className="mt-2">Agrega un curso nuevo y vuelve a intentar.</p>
+                    </>
+                  )}
+                </div>
+                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarExitoGradosCursos(null)}
+                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {mostrarExitoAreasMaterias && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">Configuración guardada</h3>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarExitoAreasMaterias(null)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-4 text-sm text-slate-600">
+                  <p className="text-slate-800 font-medium">
+                    ✅ Áreas y materias guardadas correctamente.
+                  </p>
+                  <div className="mt-2">
+                    Áreas activas: <span className="font-semibold">{mostrarExitoAreasMaterias.areasCreadas}</span>
+                  </div>
+                  <div>
+                    Materias creadas: <span className="font-semibold">{mostrarExitoAreasMaterias.materiasCreadas}</span>
+                  </div>
+                </div>
+                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarExitoAreasMaterias(null)}
+                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {modalEmailDocente && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">{modalEmailDocente.titulo}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setModalEmailDocente(null)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-4 text-sm text-slate-600">
+                  <p
+                    className={`font-medium ${
+                      modalEmailDocente.tipo === 'success'
+                        ? 'text-green-700'
+                        : modalEmailDocente.tipo === 'error'
+                        ? 'text-red-700'
+                        : 'text-slate-800'
+                    }`}
+                  >
+                    {modalEmailDocente.mensaje}
+                  </p>
+                </div>
+                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setModalEmailDocente(null)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      modalEmailDocente.tipo === 'success'
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : modalEmailDocente.tipo === 'error'
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-slate-600 text-white hover:bg-slate-700'
+                    }`}
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {modalDocenteAccion && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">{modalDocenteAccion.titulo}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setModalDocenteAccion(null)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-4 text-sm text-slate-600">
+                  <p
+                    className={`font-medium ${
+                      modalDocenteAccion.tipo === 'success'
+                        ? 'text-green-700'
+                        : modalDocenteAccion.tipo === 'error'
+                        ? 'text-red-700'
+                        : 'text-slate-800'
+                    }`}
+                  >
+                    {modalDocenteAccion.mensaje}
+                  </p>
+                </div>
+                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setModalDocenteAccion(null)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      modalDocenteAccion.tipo === 'success'
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : modalDocenteAccion.tipo === 'error'
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-slate-600 text-white hover:bg-slate-700'
+                    }`}
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {modalEstudianteAccion && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">{modalEstudianteAccion.titulo}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setModalEstudianteAccion(null)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-4 text-sm text-slate-600">
+                  <p
+                    className={`font-medium ${
+                      modalEstudianteAccion.tipo === 'success'
+                        ? 'text-green-700'
+                        : modalEstudianteAccion.tipo === 'error'
+                        ? 'text-red-700'
+                        : 'text-slate-800'
+                    }`}
+                  >
+                    {modalEstudianteAccion.mensaje}
+                  </p>
+                </div>
+                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setModalEstudianteAccion(null)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      modalEstudianteAccion.tipo === 'success'
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : modalEstudianteAccion.tipo === 'error'
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-slate-600 text-white hover:bg-slate-700'
+                    }`}
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {estudianteParaEliminar && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">Eliminar estudiante</h3>
+                  <button
+                    type="button"
+                    onClick={() => setEstudianteParaEliminar(null)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-4 text-sm text-slate-600">
+                  <p className="text-slate-800 font-medium">
+                    ¿Eliminar al estudiante "{estudianteParaEliminar.nombre}"?
+                  </p>
+                  <p className="mt-2">Esta acción lo removerá de la lista actual.</p>
+                </div>
+                <div className="px-6 py-4 border-t border-slate-200 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setEstudianteParaEliminar(null)}
+                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEstudiantes(prev =>
+                        prev.filter(e => e.id !== estudianteParaEliminar.estudianteId)
+                      );
+                      console.log(`🗑️ Estudiante eliminado: ${estudianteParaEliminar.estudianteId}`);
+                      setEstudianteParaEliminar(null);
+                      setModalEstudianteAccion({
+                        tipo: 'success',
+                        titulo: 'Estudiante eliminado',
+                        mensaje: 'Estudiante eliminado correctamente.'
+                      });
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {cursoParaEliminar && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">Confirmar eliminación</h3>
+                  <button
+                    type="button"
+                    onClick={() => !eliminandoCurso && setCursoParaEliminar(null)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="px-6 py-4 text-sm text-slate-600">
+                  <p className="text-slate-800 font-medium">
+                    ¿Eliminar el curso "{cursoParaEliminar.nombre}"?
+                  </p>
+                  <p className="mt-2">
+                    Ten en cuenta que se eliminará toda la información relacionada: estudiantes,
+                    asignaciones y recordatorios.
+                  </p>
+                </div>
+                <div className="px-6 py-4 border-t border-slate-200 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setCursoParaEliminar(null)}
+                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={eliminandoCurso}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setEliminandoCurso(true);
+                      await eliminarCursoGuardado(cursoParaEliminar.cursoId, cursoParaEliminar.gradoId);
+                      setEliminandoCurso(false);
+                      setCursoParaEliminar(null);
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center"
+                    disabled={eliminandoCurso}
+                  >
+                    {eliminandoCurso ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Eliminando...
+                      </>
+                    ) : (
+                      'Eliminar'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4">
+        <div className="px-6 py-4" style={{ backgroundColor: brandingColors.secondary, color: headerTextColor }}>
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">Configuración Inicial</h2>
-              <p className="text-blue-100 text-sm mt-1">
+              <p className="text-sm mt-1" style={{ color: headerTextColor }}>
                 Paso {currentStep} de 5
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors"
+              className="hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors"
+              style={{ color: headerTextColor }}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1894,6 +2585,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     <div className="space-y-4">
                       {grados.map((grado) => {
                         const cursosDelGrado = cursos.filter(c => c.gradoId === grado.id);
+                        const ejemploCurso = `${grado.nombre} A`;
+                        const gradoExistente = gradosCargados.find((g: any) => g.nombre === grado.nombre);
+                        const cursosExistentes = gradoExistente?.cursos || [];
                         
                         return (
                           <div key={grado.id} className="bg-white rounded-lg p-4 border border-slate-200">
@@ -1902,6 +2596,26 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                 <span className="font-semibold text-slate-900 text-lg">
                                   {grado.nombre}
                                 </span>
+                                <div className="relative group ml-2">
+                                  <button
+                                    type="button"
+                                    aria-label={`Ejemplo de curso para ${grado.nombre}`}
+                                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                                  >
+                                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                      <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
+                                    </svg>
+                                  </button>
+                                  <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                                    <div className="font-semibold text-slate-700">Ejemplos:</div>
+                                    <div>{ejemploCurso}</div>
+                                    <div>{grado.nombre} B</div>
+                                    <div>{grado.nombre} C</div>
+                                    <div className="mt-2 text-[11px] text-orange-600">
+                                      Ten en cuenta que el nombre del curso debe seguir los estándares de la institución.
+                                    </div>
+                                  </div>
+                                </div>
                                 <span className="ml-3 text-sm text-slate-500">
                                   ({cursosDelGrado.length} curso{cursosDelGrado.length !== 1 ? 's' : ''})
                                 </span>
@@ -1917,9 +2631,28 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                               </button>
                             </div>
 
+                            {cursosExistentes.length > 0 && (
+                              <div className="mb-3 rounded-lg border border-blue-100 bg-blue-50 p-3">
+                                <div className="text-xs font-semibold uppercase text-blue-700">
+                                  Cursos ya creados
+                                </div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {cursosExistentes.map((curso: any) => (
+                                    <span
+                                      key={curso.id}
+                                      className="rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-700 border border-blue-200"
+                                    >
+                                      {curso.nombre}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
                             {cursosDelGrado.length > 0 && (
                               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                {cursosDelGrado.map((curso) => (
+                                {cursosDelGrado.map((curso) => {
+                                  return (
                                   <div
                                     key={curso.id}
                                     className="flex items-center space-x-2 bg-slate-50 rounded-lg p-2 border border-slate-200"
@@ -1929,6 +2662,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                       value={curso.nombre}
                                       onChange={(e) => editarNombreCurso(curso.id, e.target.value)}
                                       className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm font-medium text-slate-900"
+                                      placeholder={ejemploCurso}
                                     />
                                     <button
                                       onClick={() => eliminarCurso(curso.id)}
@@ -1939,7 +2673,8 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                       </svg>
                                     </button>
                                   </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -1995,7 +2730,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
           {mostrarResumen && (
             <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4">
+                <div className="bg-green-600 text-white px-6 py-4">
                   <div className="flex justify-between items-center">
                     <div>
                       <h2 className="text-2xl font-bold">📋 Resumen - Grados y Cursos</h2>
@@ -2139,7 +2874,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
           {mostrarResumenAreas && (
             <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4">
+                <div className="bg-purple-600 text-white px-6 py-4">
                   <div className="flex justify-between items-center">
                     <div>
                       <h2 className="text-2xl font-bold">📚 Resumen - Áreas y Materias</h2>
@@ -2347,8 +3082,36 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         <div className="text-sm text-slate-600">
                           {grado.cursos.length} curso{grado.cursos.length !== 1 ? 's' : ''}
                         </div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          {grado.cursos.map((c: any) => c.nombre).join(', ')}
+                        <div className="mt-2 space-y-1">
+                          {grado.cursos.length === 0 ? (
+                            <span className="text-xs text-slate-500">Sin cursos registrados</span>
+                          ) : (
+                            grado.cursos.map((curso: any) => (
+                              <div
+                                key={curso.id}
+                                className="flex items-center justify-between text-xs text-slate-600 bg-slate-50 rounded border border-slate-200 px-2 py-1"
+                              >
+                                <span>{curso.nombre}</span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setCursoParaEliminar({
+                                      cursoId: curso.id,
+                                      gradoId: grado.id,
+                                      nombre: curso.nombre
+                                    })
+                                  }
+                                  className="text-red-600 hover:bg-red-50 rounded p-1 transition-colors"
+                                  aria-label={`Eliminar curso ${curso.nombre}`}
+                                  title="Eliminar curso"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
                     ))}
@@ -2437,9 +3200,33 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                       return (
                         <div key={areaId} className="bg-white rounded-lg p-4 border border-slate-200">
                           <div className="flex justify-between items-center mb-3">
-                            <h5 className="font-semibold text-slate-900">
-                              {area?.nombre}
-                            </h5>
+                            <div className="flex items-center">
+                              <h5 className="font-semibold text-slate-900">
+                                {area?.nombre}
+                              </h5>
+                              <div className="relative group ml-2">
+                                <button
+                                  type="button"
+                                  aria-label={`Ejemplo de materias para ${area?.nombre}`}
+                                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                                >
+                                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
+                                  </svg>
+                                </button>
+                                <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                                  <div className="font-semibold text-slate-700">Ejemplos:</div>
+                                  {(ejemplosMateriasPorArea[area?.id || 0] || ['Materia A', 'Materia B', 'Materia C'])
+                                    .slice(0, 3)
+                                    .map((ejemplo) => (
+                                      <div key={ejemplo}>{ejemplo}</div>
+                                    ))}
+                                  <div className="mt-2 text-[11px] text-orange-600">
+                                    Ten en cuenta que el nombre de la materia debe seguir los estándares de la institución.
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                             <button
                               onClick={() => {
                                 const nuevaMateria: Materia = {
@@ -2667,7 +3454,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampo('nombres', e.target.value);
                       }}
                       disabled={!camposHabilitados.nombres}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacion.nombres ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitados.nombres ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="Ingresa los nombres"
@@ -2697,7 +3484,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampo('apellidos', e.target.value);
                       }}
                       disabled={!camposHabilitados.apellidos}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacion.apellidos ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitados.apellidos ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="Ingresa los apellidos"
@@ -2729,7 +3516,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampo('telefono', valorNumerico);
                       }}
                       disabled={!camposHabilitados.telefono}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacion.telefono ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitados.telefono ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="3001234567"
@@ -2764,7 +3551,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                           validarCampo('email', e.target.value);
                         }}
                         disabled={!camposHabilitados.email}
-                        className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                        className={`flex-1 px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                           erroresValidacion.email ? 'border-red-500' : 'border-slate-300'
                         } ${!camposHabilitados.email ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         placeholder="correo@ejemplo.com"
@@ -2817,7 +3604,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         <svg className="w-3 h-3 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
-                        Email válido. Haz clic en "Verificar" para comprobar disponibilidad
+                        Email válido. Haz clic en &quot;Verificar&quot; para comprobar disponibilidad
                       </p>
                     )}
                   </div>
@@ -3405,7 +4192,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampoEstudiante('nombres', e.target.value);
                       }}
                       disabled={!camposHabilitadosEstudiante.nombres}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacionEstudiante.nombres ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitadosEstudiante.nombres ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="Ingresa los nombres"
@@ -3436,7 +4223,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampoEstudiante('apellidos', e.target.value);
                       }}
                       disabled={!camposHabilitadosEstudiante.apellidos}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacionEstudiante.apellidos ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitadosEstudiante.apellidos ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="Ingresa los apellidos"
@@ -3467,7 +4254,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampoEstudiante('codigo_estudiantil', e.target.value);
                       }}
                       disabled={!camposHabilitadosEstudiante.codigo_estudiantil}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacionEstudiante.codigo_estudiantil ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitadosEstudiante.codigo_estudiantil ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="Ej: EST001"
@@ -3498,7 +4285,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampoEstudiante('nombre_acudiente', e.target.value);
                       }}
                       disabled={!camposHabilitadosEstudiante.nombre_acudiente}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacionEstudiante.nombre_acudiente ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitadosEstudiante.nombre_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="Nombre completo del acudiente"
@@ -3529,7 +4316,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampoEstudiante('correo_acudiente', e.target.value);
                       }}
                       disabled={!camposHabilitadosEstudiante.correo_acudiente}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacionEstudiante.correo_acudiente ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitadosEstudiante.correo_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="correo@ejemplo.com"
@@ -3562,7 +4349,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampoEstudiante('telefono_acudiente', valorNumerico);
                       }}
                       disabled={!camposHabilitadosEstudiante.telefono_acudiente}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacionEstudiante.telefono_acudiente ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitadosEstudiante.telefono_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="3001234567"
@@ -3594,7 +4381,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampoEstudiante('grado_id', gradoId);
                       }}
                       disabled={!camposHabilitadosEstudiante.grado_id}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacionEstudiante.grado_id ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitadosEstudiante.grado_id ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
@@ -3631,7 +4418,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         validarCampoEstudiante('curso_id', cursoId);
                       }}
                       disabled={!camposHabilitadosEstudiante.curso_id || cursosDisponibles.length === 0}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                         erroresValidacionEstudiante.curso_id ? 'border-red-500' : 'border-slate-300'
                       } ${!camposHabilitadosEstudiante.curso_id || cursosDisponibles.length === 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
@@ -3772,7 +4559,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               {/* Cards de Estadísticas */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {/* Total Docentes */}
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="bg-blue-600 rounded-xl p-6 text-white shadow-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-blue-100 text-sm font-medium">Total Docentes</p>
@@ -3787,7 +4574,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </div>
 
                 {/* Total Estudiantes */}
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="bg-green-600 rounded-xl p-6 text-white shadow-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-green-100 text-sm font-medium">Total Estudiantes</p>
@@ -3803,7 +4590,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </div>
 
                 {/* Total Materias */}
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="bg-purple-600 rounded-xl p-6 text-white shadow-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-purple-100 text-sm font-medium">Total Materias</p>
@@ -3818,7 +4605,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </div>
 
                 {/* Total Grados */}
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="bg-orange-600 rounded-xl p-6 text-white shadow-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-orange-100 text-sm font-medium">Total Grados</p>
@@ -3951,7 +4738,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     // Limpiar todos los datos en caché
                     limpiarDatosCompletos();
                     
-                    alert('🎉 ¡Configuración completada exitosamente!\n\nTu institución está lista para comenzar a usar el sistema de agenda virtual.');
+                    Swal.fire({
+                      icon: 'success',
+                      title: '¡Configuración completada!',
+                      text: 'Tu institución está lista para comenzar a usar el sistema de agenda virtual.'
+                    });
                     onClose();
                   }}
                   className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-lg font-medium"
@@ -4004,7 +4795,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       {mostrarConfirmacionGuardado && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4">
+            <div className="bg-blue-600 text-white px-6 py-4">
               <div className="flex items-center">
                 <svg className="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

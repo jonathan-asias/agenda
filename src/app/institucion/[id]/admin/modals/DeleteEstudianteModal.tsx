@@ -10,6 +10,8 @@ interface Estudiante {
   codigo_estudiantil: string;
   grado: { nombre: string; nivel: string };
   curso: { nombre: string; jornada: string | null };
+  grado_id?: number | null;
+  curso_id?: number | null;
 }
 
 interface DeleteEstudianteModalProps {

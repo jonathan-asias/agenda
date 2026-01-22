@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect } from 'react';
 
@@ -99,7 +100,7 @@ export default function AddGradoModal({ isOpen, onClose, institucionId, onSucces
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
                   placeholder="Ej: 1°, 2°, PÁRVULOS"
                   required
                 />
@@ -112,7 +113,7 @@ export default function AddGradoModal({ isOpen, onClose, institucionId, onSucces
                 <select
                   value={formData.nivel}
                   onChange={(e) => setFormData({ ...formData, nivel: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
                   required
                 >
                   <option value="">Seleccionar nivel</option>
@@ -133,7 +134,7 @@ export default function AddGradoModal({ isOpen, onClose, institucionId, onSucces
                   min="1"
                   value={formData.orden}
                   onChange={(e) => setFormData({ ...formData, orden: parseInt(e.target.value) || 1 })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
                   required
                 />
                 <p className="text-xs text-slate-500 mt-1">

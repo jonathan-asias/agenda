@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { supabaseAdmin } from '../../../../lib/supabase-admin';
+import {
+  getSupabaseAdminClient,
+  isSupabaseAdminConfigured,
+} from '@/lib/supabase-admin';
+
+type AsignacionMateriaInput = number | { id: number };
+
+type AsignacionesPayload = {
+  grados: Array<number | string>;
+  cursos: Record<number | string, Array<number | string>>;
+  materias: Record<number | string, Array<AsignacionMateriaInput | string>>;
+};
 
 export async function DELETE(
   request: NextRequest,
@@ -79,22 +90,27 @@ export async function DELETE(
     // 4. Eliminar usuario de Supabase Auth si tiene auth_user_id
     if (docente.auth_user_id) {
       console.log('Eliminando usuario de Supabase Auth con ID:', docente.auth_user_id);
-      try {
-        const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(
-          docente.auth_user_id
-        );
-        
-        if (authError) {
+      if (!isSupabaseAdminConfigured()) {
+        console.error('Supabase admin no está configurado. No se eliminará el usuario en Auth.');
+      } else {
+        const supabaseAdminClient = getSupabaseAdminClient();
+        try {
+          const { error: authError } = await supabaseAdminClient.auth.admin.deleteUser(
+            docente.auth_user_id
+          );
+          
+          if (authError) {
+            console.error('Error al eliminar usuario de Supabase Auth:', authError);
+            console.error('Detalles del error:', JSON.stringify(authError, null, 2));
+            // Continuamos con la eliminación de la base de datos aunque falle Supabase
+          } else {
+            console.log('Usuario eliminado exitosamente de Supabase Auth');
+          }
+        } catch (authError) {
           console.error('Error al eliminar usuario de Supabase Auth:', authError);
-          console.error('Detalles del error:', JSON.stringify(authError, null, 2));
+          console.error('Stack trace:', authError instanceof Error ? authError.stack : 'No stack trace available');
           // Continuamos con la eliminación de la base de datos aunque falle Supabase
-        } else {
-          console.log('Usuario eliminado exitosamente de Supabase Auth');
         }
-      } catch (authError) {
-        console.error('Error al eliminar usuario de Supabase Auth:', authError);
-        console.error('Stack trace:', authError instanceof Error ? authError.stack : 'No stack trace available');
-        // Continuamos con la eliminación de la base de datos aunque falle Supabase
       }
     } else {
       console.log('No se encontró auth_user_id para el docente:', docente.id);
@@ -154,8 +170,13 @@ export async function PUT(
   try {
     const { id } = await params;
     const docenteId = parseInt(id);
-    const body = await request.json();
-    const { nombres, apellidos, telefono, institucionId, asignaciones } = body;
+    const body = await request.json() as {
+      nombres: string;
+      apellidos: string;
+      telefono: string;
+      asignaciones?: AsignacionesPayload;
+    };
+    const { nombres, apellidos, telefono, asignaciones } = body;
 
     if (isNaN(docenteId)) {
       return NextResponse.json(
@@ -194,16 +215,45 @@ export async function PUT(
       });
 
       // Crear nuevas asignaciones
-      const nuevasAsignaciones = [];
-      for (const gradoId of asignaciones.grados) {
-        const cursosDelGrado = asignaciones.cursos[gradoId] || [];
-        const materiasDelGrado = asignaciones.materias[gradoId] || [];
+      const nuevasAsignaciones: Array<{
+        docente_id: number;
+        grado_id: number;
+        curso_id: number;
+        materia_id: number;
+      }> = [];
 
-        for (const cursoId of cursosDelGrado) {
+      for (const gradoId of asignaciones.grados) {
+        const gradoKey = String(gradoId);
+        const gradoNumber = Number(gradoId);
+        if (!Number.isFinite(gradoNumber)) {
+          continue;
+        }
+
+        const cursosDelGrado = asignaciones.cursos[gradoKey] ?? [];
+        const materiasDelGradoRaw = asignaciones.materias[gradoKey] ?? [];
+
+        const materiasDelGrado = materiasDelGradoRaw
+          .map((materia): number | null => {
+            if (typeof materia === 'object' && materia !== null && 'id' in materia) {
+              return Number((materia as { id: number }).id);
+            }
+            if (typeof materia === 'number') {
+              return materia;
+            }
+            return null;
+          })
+          .filter((materiaId): materiaId is number => materiaId !== null && Number.isFinite(materiaId));
+
+        for (const cursoIdRaw of cursosDelGrado) {
+          const cursoId = Number(cursoIdRaw);
+          if (!Number.isFinite(cursoId)) {
+            continue;
+          }
+
           for (const materiaId of materiasDelGrado) {
             nuevasAsignaciones.push({
               docente_id: docenteId,
-              grado_id: gradoId,
+              grado_id: gradoNumber,
               curso_id: cursoId,
               materia_id: materiaId
             });

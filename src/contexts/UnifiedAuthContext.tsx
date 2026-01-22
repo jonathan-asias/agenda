@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
 
 interface Institucion {
   id: number;
@@ -53,6 +53,21 @@ export const useUnifiedAuth = () => {
 };
 
 export const UnifiedAuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const obtainSupabaseClient = () => {
+    if (!isSupabaseConfigured()) {
+      console.error(
+        'Supabase no está configurado. Define NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY para habilitar la autenticación.'
+      );
+      return null;
+    }
+    try {
+      return getSupabaseClient();
+    } catch (error) {
+      console.error('No se pudo inicializar el cliente de Supabase:', error);
+      return null;
+    }
+  };
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [userType, setUserType] = useState<'institucion' | 'administrador' | null>(null);
@@ -69,8 +84,14 @@ export const UnifiedAuthProvider = ({ children }: { children: React.ReactNode })
 
     // Verificar sesión inicial - SIN determinar tipo automáticamente
     const checkAuth = async () => {
+      const supabaseClient = obtainSupabaseClient();
+      if (!supabaseClient) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         
         if (session?.user) {
           setUser(session.user);
@@ -95,7 +116,12 @@ export const UnifiedAuthProvider = ({ children }: { children: React.ReactNode })
     checkAuth();
 
     // Escuchar cambios en la autenticación - SIN determinar tipo automáticamente
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const supabaseClient = obtainSupabaseClient();
+    if (!supabaseClient) {
+      return;
+    }
+
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user);
@@ -110,46 +136,20 @@ export const UnifiedAuthProvider = ({ children }: { children: React.ReactNode })
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, [isMounted]);
 
-  const determineUserType = async (user: User) => {
-    try {
-      // Primero verificar si es administrador
-      const adminResponse = await fetch(`/api/administradores/by-email/${encodeURIComponent(user.email!)}`);
-      if (adminResponse.ok) {
-        const adminData = await adminResponse.json();
-        setUserType('administrador');
-        setAdministrador(adminData.administrador);
-        setInstitucion(null);
-        return;
-      }
-
-      // Si no es administrador, verificar si es institución
-      const instResponse = await fetch(`/api/instituciones/by-email/${encodeURIComponent(user.email!)}`);
-      if (instResponse.ok) {
-        const instData = await instResponse.json();
-        setUserType('institucion');
-        setInstitucion(instData);
-        setAdministrador(null);
-        return;
-      }
-
-      // Si no es ninguno, limpiar todo
-      setUserType(null);
-      setInstitucion(null);
-      setAdministrador(null);
-    } catch (error) {
-      console.error('Error determinando tipo de usuario:', error);
-      setUserType(null);
-      setInstitucion(null);
-      setAdministrador(null);
-    }
-  };
-
   const signOut = async () => {
+    const supabaseClient = obtainSupabaseClient();
+    if (!supabaseClient) {
+      setUser(null);
+      setUserType(null);
+      setInstitucion(null);
+      setAdministrador(null);
+      return;
+    }
     try {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
     } catch (error) {
       console.error('Error en logout:', error);
     } finally {

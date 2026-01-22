@@ -6,39 +6,24 @@ export async function GET(
   { params }: { params: Promise<{ email: string }> }
 ) {
   try {
-    const { email: emailParam } = await params;
-    const email = decodeURIComponent(emailParam);
+    const { email } = await params;
+    const decodedEmail = decodeURIComponent(email || '').trim().toLowerCase();
 
-    if (!email || email.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Email es requerido' },
-        { status: 400 }
-      );
+    if (!decodedEmail) {
+      return NextResponse.json({ exists: false, error: 'Email requerido' }, { status: 200 });
     }
 
-    const institucion = await prisma.instituciones.findUnique({
-      where: {
-        email: email.trim()
-      },
-      include: {
-        sedes: true,
-        administradores: true
-      }
+    const institucion = await prisma.instituciones.findFirst({
+      where: { email: decodedEmail },
+      select: { id: true }
     });
 
-    if (!institucion) {
-      return NextResponse.json(
-        { error: 'Institución no encontrada' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(institucion);
-  } catch (error) {
-    console.error('Error al buscar institución por email:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
+      { exists: Boolean(institucion), id: institucion?.id ?? null },
+      { status: 200 }
     );
+  } catch (error) {
+    console.error('Error al verificar email de institución:', error);
+    return NextResponse.json({ exists: false, error: 'Error interno del servidor' }, { status: 200 });
   }
 }

@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { getSupabaseClient, isSupabaseConfigured } from '../../../../lib/supabase';
 import InstitucionAuthGuard from '../InstitucionAuthGuard';
 import Swal from 'sweetalert2';
 import AddAdministradorModal from '../AddAdministradorModal';
+import Footer from '../Footer';
+import Header from '../Header';
 
 interface Institucion {
   id: number;
@@ -28,6 +31,20 @@ interface Sede {
   jornadas: string[];
 }
 
+interface BrandingData {
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  colorPrimario: string;
+  colorSecundario: string;
+}
+
+interface PerfilFormData {
+  email: string;
+  direccion_principal: string;
+  nombre_contacto: string;
+  telefono_contacto: string;
+}
+
 export default function PerfilPage() {
   const params = useParams();
   const router = useRouter();
@@ -36,28 +53,198 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [headerRefreshKey, setHeaderRefreshKey] = useState(0);
+  const [formData, setFormData] = useState<PerfilFormData>({
+    email: '',
+    direccion_principal: '',
+    nombre_contacto: '',
+    telefono_contacto: ''
+  });
+  const [branding, setBranding] = useState<BrandingData>({
+    logoUrl: null,
+    bannerUrl: null,
+    colorPrimario: '#2563eb',
+    colorSecundario: '#0f172a'
+  });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+
+  const fetchInstitucion = async () => {
+    try {
+      const response = await fetch(`/api/instituciones/${params.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setInstitucion(data);
+        setFormData({
+          email: data.email || '',
+          direccion_principal: data.direccion_principal || '',
+          nombre_contacto: data.nombre_contacto || '',
+          telefono_contacto: data.telefono_contacto || ''
+        });
+      } else {
+        setError('Institución no encontrada');
+      }
+    } catch (error) {
+      console.error('Error al cargar la institución:', error);
+      setError('Error al cargar la institución');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBranding = async () => {
+    try {
+      const response = await fetch(`/api/instituciones/${params.id}/branding`);
+      if (response.ok) {
+        const data = await response.json();
+        setBranding({
+          logoUrl: data.logoUrl ?? null,
+          bannerUrl: data.bannerUrl ?? null,
+          colorPrimario: data.color_primario || '#2563eb',
+          colorSecundario: data.color_secundario || '#0f172a'
+        });
+      }
+    } catch (error) {
+      console.error('Error al cargar branding:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchInstitucion = async () => {
-      try {
-        const response = await fetch(`/api/instituciones/${params.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setInstitucion(data);
-        } else {
-          setError('Institución no encontrada');
-        }
-      } catch (err) {
-        setError('Error al cargar la institución');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (params.id) {
       fetchInstitucion();
+      fetchBranding();
     }
   }, [params.id]);
+
+  const obtainSupabaseClient = () => {
+    if (!isSupabaseConfigured()) {
+      Swal.fire('Error', 'Supabase no está configurado.', 'error');
+      return null;
+    }
+    try {
+      return getSupabaseClient();
+    } catch (clientError) {
+      console.error('No se pudo inicializar Supabase:', clientError);
+      Swal.fire('Error', 'No se pudo conectar con Supabase.', 'error');
+      return null;
+    }
+  };
+
+  const uploadInstitutionAsset = async (
+    supabaseClient: ReturnType<typeof getSupabaseClient>,
+    institucionId: number,
+    file: File,
+    kind: 'logo' | 'banner'
+  ): Promise<string | null> => {
+    const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'instituciones';
+    const extension =
+      file.name.split('.').pop()?.toLowerCase() || (file.type === 'image/svg+xml' ? 'svg' : 'png');
+    const filePath = `instituciones/${institucionId}/${kind}.${extension}`;
+
+    const { error: uploadError } = await supabaseClient.storage.from(bucket).upload(filePath, file, {
+      upsert: true,
+      contentType: file.type || undefined,
+      cacheControl: '3600'
+    });
+
+    if (uploadError) {
+      console.error(`Error subiendo ${kind}:`, uploadError);
+      Swal.fire('Error', `No se pudo subir el ${kind}.`, 'error');
+      return null;
+    }
+
+    return filePath;
+  };
+
+  const handleSaveChanges = async () => {
+    if (!institucion) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/instituciones/${institucion.id}/perfil`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        Swal.fire(
+          'No se pudo guardar',
+          errorData.error || 'Verifica los datos ingresados e intenta nuevamente.',
+          'error'
+        );
+        return;
+      }
+
+      let logoPath: string | null = null;
+      let bannerPath: string | null = null;
+      if (logoFile || bannerFile) {
+        const supabaseClient = obtainSupabaseClient();
+        if (!supabaseClient) {
+          return;
+        }
+        if (logoFile) {
+          logoPath = await uploadInstitutionAsset(supabaseClient, institucion.id, logoFile, 'logo');
+          if (!logoPath) {
+            return;
+          }
+        }
+        if (bannerFile) {
+          bannerPath = await uploadInstitutionAsset(supabaseClient, institucion.id, bannerFile, 'banner');
+          if (!bannerPath) {
+            return;
+          }
+        }
+      }
+
+      const brandingResponse = await fetch(`/api/instituciones/${institucion.id}/branding`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          logo_url: logoPath ?? undefined,
+          banner_url: bannerPath ?? undefined,
+          color_primario: branding.colorPrimario,
+          color_secundario: branding.colorSecundario
+        })
+      });
+
+      if (!brandingResponse.ok) {
+        Swal.fire(
+          'Actualización parcial',
+          'Se guardó la información, pero no se pudo actualizar el branding.',
+          'warning'
+        );
+        return;
+      }
+
+      const updatedInstitucion = await response.json();
+      setInstitucion(updatedInstitucion.data);
+      await fetchBranding();
+      setHeaderRefreshKey(prev => prev + 1);
+      setLogoFile(null);
+      setBannerFile(null);
+      setIsEditing(false);
+      Swal.fire(
+        'Actualización exitosa',
+        'Los datos de la institución y la personalización fueron guardados.',
+        'success'
+      );
+    } catch (saveError) {
+      console.error('Error al guardar cambios:', saveError);
+      Swal.fire(
+        'Error inesperado',
+        'Ocurrió un problema al guardar los cambios. Intenta nuevamente.',
+        'error'
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleSignOut = async () => {
     // Mostrar diálogo informativo antes de cerrar sesión
@@ -125,7 +312,7 @@ export default function PerfilPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando perfil...</p>
@@ -136,7 +323,7 @@ export default function PerfilPage() {
 
   if (error || !institucion) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,51 +344,14 @@ export default function PerfilPage() {
   }
 
   return (
-    <InstitucionAuthGuard institucionId={parseInt(params.id as string)}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-800 mb-2">
-                Perfil de {institucion.nombre}
-              </h1>
-              <p className="text-slate-600">
-                Información detallada de la institución
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <Link
-                href={`/institucion/${params.id}`}
-                className="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Volver al Dashboard
-              </Link>
-              <Link
-                href={`/institucion/${params.id}/configuracion`}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Editar Perfil
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
+    <InstitucionAuthGuard>
+      <Header
+        key={`institucion-header-${headerRefreshKey}`}
+        title={`Perfil de ${institucion.nombre}`}
+        subtitle="Información detallada de la institución"
+      />
+      <div className="min-h-screen bg-blue-50 flex flex-col">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
 
         {/* Información Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -219,11 +369,31 @@ export default function PerfilPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                <p className="text-slate-800 font-medium">{institucion.email}</p>
+                {isEditing ? (
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-slate-800 font-medium">{institucion.email}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Dirección Principal</label>
-                <p className="text-slate-800 font-medium">{institucion.direccion_principal}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.direccion_principal}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, direccion_principal: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-slate-800 font-medium">{institucion.direccion_principal}</p>
+                )}
               </div>
             </div>
           </div>
@@ -234,11 +404,33 @@ export default function PerfilPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Nombre de Contacto</label>
-                <p className="text-slate-800 font-medium">{institucion.nombre_contacto}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.nombre_contacto}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, nombre_contacto: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-slate-800 font-medium">{institucion.nombre_contacto}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Teléfono de Contacto</label>
-                <p className="text-slate-800 font-medium">{institucion.telefono_contacto}</p>
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    value={formData.telefono_contacto}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, telefono_contacto: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-slate-800 font-medium">{institucion.telefono_contacto}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Fecha de Registro</label>
@@ -314,57 +506,109 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        {/* Acciones Rápidas */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-          <h2 className="text-xl font-semibold text-slate-800 mb-4">Acciones Rápidas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => setShowAddAdminModal(true)}
-              className="w-full flex items-center p-4 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors text-left"
-            >
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-medium text-slate-800">Gestionar Administradores</h3>
-                <p className="text-sm text-slate-600">Agregar y administrar usuarios</p>
-              </div>
-            </button>
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-8">
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Personalización</h2>
 
-            <Link
-              href={`/institucion/${params.id}/configuracion`}
-              className="flex items-center p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors"
-            >
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Logo (PNG/SVG)</label>
+                <input
+                  type="file"
+                  accept="image/png,image/svg+xml"
+                  disabled={!isEditing}
+                  onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                />
               </div>
               <div>
-                <h3 className="font-medium text-slate-800">Configuración</h3>
-                <p className="text-sm text-slate-600">Editar información y configuraciones</p>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Banner (PNG/SVG)</label>
+                <input
+                  type="file"
+                  accept="image/png,image/svg+xml"
+                  disabled={!isEditing}
+                  onChange={(e) => setBannerFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                />
               </div>
-            </Link>
+            </div>
 
-            <Link
-              href={`/institucion/${params.id}`}
-              className="flex items-center p-4 bg-purple-50 rounded-lg border border-purple-200 hover:bg-purple-100 transition-colors"
-            >
-              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Color primario</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={branding.colorPrimario}
+                    disabled={!isEditing}
+                    onChange={(e) => setBranding(prev => ({ ...prev, colorPrimario: e.target.value }))}
+                    className="h-10 w-14 rounded border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={branding.colorPrimario}
+                    disabled={!isEditing}
+                    onChange={(e) => setBranding(prev => ({ ...prev, colorPrimario: e.target.value }))}
+                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900"
+                  />
+                </div>
               </div>
               <div>
-                <h3 className="font-medium text-slate-800">Dashboard</h3>
-                <p className="text-sm text-slate-600">Ver resumen y estadísticas</p>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Color secundario</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={branding.colorSecundario}
+                    disabled={!isEditing}
+                    onChange={(e) => setBranding(prev => ({ ...prev, colorSecundario: e.target.value }))}
+                    className="h-10 w-14 rounded border border-slate-300 bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={branding.colorSecundario}
+                    disabled={!isEditing}
+                    onChange={(e) => setBranding(prev => ({ ...prev, colorSecundario: e.target.value }))}
+                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900"
+                  />
+                </div>
               </div>
-            </Link>
+            </div>
           </div>
         </div>
+
+        <div className="flex justify-end gap-3 mb-8">
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="px-4 py-2 text-sm font-semibold text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50"
+            >
+              Editar
+            </button>
+          )}
+          {isEditing && (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveChanges}
+                disabled={isSaving}
+                className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {isSaving ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Acciones Rápidas */}
+        
       </div>
 
       {/* Modal para Agregar Administrador */}
@@ -380,6 +624,7 @@ export default function PerfilPage() {
         }}
         institucionId={parseInt(params.id as string)}
       />
+      <Footer />
     </div>
     </InstitucionAuthGuard>
   );

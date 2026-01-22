@@ -1,6 +1,7 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import SetupWizard from './SetupWizard';
@@ -8,6 +9,8 @@ import DashboardStats from './DashboardStats';
 import DashboardSections from './DashboardSections';
 import AddItemModal from './AddItemModal';
 import Swal from 'sweetalert2';
+import Footer from '../Footer';
+import Header from '../Header';
 
 interface Administrador {
   id: number;
@@ -70,6 +73,43 @@ export default function AdminDashboardContent() {
     cantidadEstudiantes: ''
   });
 
+  const fetchRecordatorios = useCallback(async (institucionIdValue: number) => {
+    setLoadingRecordatorios(true);
+    try {
+      const response = await fetch(`/api/recordatorios/by-institucion/${institucionIdValue}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecordatorios(data.recordatorios || []);
+      }
+    } catch (error) {
+      console.error('Error fetching recordatorios:', error);
+    } finally {
+      setLoadingRecordatorios(false);
+    }
+  }, []);
+
+  const fetchDashboardData = useCallback(async (institucionIdParam?: number) => {
+    const id = institucionIdParam || administrador?.institucion?.id;
+    if (!id) return;
+    
+    if (dashboardLoaded && !institucionIdParam) return;
+    
+    setDashboardLoading(true);
+    try {
+      const response = await fetch(`/api/instituciones/${id}/dashboard`);
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardData(data);
+        setDashboardLoaded(true);
+        fetchRecordatorios(id);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, [administrador?.institucion?.id, dashboardLoaded, fetchRecordatorios]);
+
   useEffect(() => {
     const fetchAdminData = async () => {
       if (!user?.email) return;
@@ -80,7 +120,6 @@ export default function AdminDashboardContent() {
           const data = await response.json();
           setAdministrador(data.administrador);
           setInstitucionId(data.administrador?.institucion?.id || null);
-          // Cargar datos del dashboard automáticamente solo si no se han cargado
           if (data.administrador?.institucion?.id && !dashboardLoaded) {
             fetchDashboardData(data.administrador.institucion.id);
           }
@@ -93,7 +132,7 @@ export default function AdminDashboardContent() {
     };
 
     fetchAdminData();
-  }, [user, dashboardLoaded]);
+  }, [user, dashboardLoaded, fetchDashboardData]);
 
   const handleLogout = async () => {
     // Mostrar diálogo informativo antes de cerrar sesión
@@ -159,49 +198,10 @@ export default function AdminDashboardContent() {
     }
   };
 
-  const fetchDashboardData = async (institucionId?: number) => {
-    const id = institucionId || administrador?.institucion?.id;
-    if (!id) return;
-    
-    // Solo evitar cargar si ya está cargado y no se está forzando una actualización
-    if (dashboardLoaded && !institucionId) return;
-    
-    setDashboardLoading(true);
-    try {
-      const response = await fetch(`/api/instituciones/${id}/dashboard`);
-      if (response.ok) {
-        const data = await response.json();
-        setDashboardData(data);
-        setDashboardLoaded(true);
-        // Cargar recordatorios cuando se carga el dashboard
-        fetchRecordatorios(id);
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setDashboardLoading(false);
-    }
-  };
-
   const handleAddSuccess = () => {
     // Recargar datos del dashboard después de agregar un elemento
     setDashboardLoaded(false);
     fetchDashboardData();
-  };
-
-  const fetchRecordatorios = async (institucionId: number) => {
-    setLoadingRecordatorios(true);
-    try {
-      const response = await fetch(`/api/recordatorios/by-institucion/${institucionId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setRecordatorios(data.recordatorios || []);
-      }
-    } catch (error) {
-      console.error('Error fetching recordatorios:', error);
-    } finally {
-      setLoadingRecordatorios(false);
-    }
   };
 
   // Extraer opciones únicas para los filtros
@@ -264,7 +264,7 @@ export default function AdminDashboardContent() {
 
   if (loading || !administrador) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando información del administrador...</p>
@@ -274,39 +274,15 @@ export default function AdminDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                Panel de Administrador
-              </h1>
-              <p className="text-slate-600">
-                {administrador.institucion.nombre}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-slate-900">
-                  {administrador.nombre} {administrador.apellido}
-                </p>
-                <p className="text-sm text-slate-600">{administrador.cargo}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <>
+      <Header 
+        title="Panel de Administrador" 
+        subtitle={administrador.institucion.nombre}
+      />
+      <div className="min-h-screen bg-blue-50 flex flex-col">
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         <div className="space-y-8">
           {/* Header con botones de acción */}
           <div className="flex justify-between items-center">
@@ -401,7 +377,7 @@ export default function AdminDashboardContent() {
                         onChange={(e) => {
                           setFiltros(prev => ({ ...prev, area: e.target.value, materia: '' }));
                         }}
-                        className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                        className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                       >
                         <option value="">Todas las áreas</option>
                         {opcionesFiltros.areas.map((area) => (
@@ -420,7 +396,7 @@ export default function AdminDashboardContent() {
                       <select
                         value={filtros.materia}
                         onChange={(e) => setFiltros(prev => ({ ...prev, materia: e.target.value }))}
-                        className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                        className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                         disabled={!filtros.area}
                       >
                         <option value="">Todas las materias</option>
@@ -442,7 +418,7 @@ export default function AdminDashboardContent() {
                       <select
                         value={filtros.docente}
                         onChange={(e) => setFiltros(prev => ({ ...prev, docente: e.target.value }))}
-                        className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                        className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                       >
                         <option value="">Todos los docentes</option>
                         {opcionesFiltros.docentes.map((docente) => (
@@ -461,7 +437,7 @@ export default function AdminDashboardContent() {
                       <select
                         value={filtros.cantidadEstudiantes}
                         onChange={(e) => setFiltros(prev => ({ ...prev, cantidadEstudiantes: e.target.value }))}
-                        className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                        className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                       >
                         <option value="">Todas las cantidades</option>
                         <option value="1-5">1 - 5 estudiantes</option>
@@ -688,7 +664,7 @@ export default function AdminDashboardContent() {
                 </p>
                 <button
                   onClick={() => setShowWizard(true)}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 flex items-center justify-center shadow-lg mx-auto"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center shadow-lg mx-auto"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -959,6 +935,8 @@ export default function AdminDashboardContent() {
           </div>
         </div>
       )}
-    </div>
+      <Footer />
+      </div>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
 
 interface Sede {
   id: number;
@@ -54,6 +53,7 @@ export default function AddAdministradorModal({
   const [cargoValid, setCargoValid] = useState(false);
   const [passwordValid, setPasswordValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');
 
   // Cargar información de la institución
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function AddAdministradorModal({
       [name]: processedValue
     }));
 
-    // Validación en tiempo real para el correo
+    // Validación básica para el correo (sin verificación automática)
     if (name === 'correo') {
       if (value.trim() && !validateEmail(value)) {
         setEmailError('Formato de correo inválido');
@@ -102,14 +102,8 @@ export default function AddAdministradorModal({
         setCanProceedToPassword(false);
       } else {
         setEmailError('');
-        // Limpiar timeout anterior
-        if (emailTimeoutRef.current) {
-          clearTimeout(emailTimeoutRef.current);
-        }
-        // Verificar disponibilidad del correo con debounce
-        emailTimeoutRef.current = setTimeout(() => {
-          checkEmailAvailability(value);
-        }, 500);
+        setEmailAvailable(null);
+        setCanProceedToPassword(false);
       }
     }
 
@@ -132,13 +126,9 @@ export default function AddAdministradorModal({
 
     // Validación en tiempo real para la contraseña
     if (name === 'password') {
-      if (value.trim() && !validatePassword(value)) {
-        setPasswordError('La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas, números y símbolos');
-        setPasswordValid(false);
-      } else {
-        setPasswordError('');
-        setPasswordValid(validatePassword(value));
-      }
+      const isValid = validatePassword(value);
+      setPasswordValid(isValid);
+      setPasswordError('');
     }
   };
 
@@ -166,20 +156,21 @@ export default function AddAdministradorModal({
         body: JSON.stringify({ email }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setEmailAvailable(data.available);
-        setCanProceedToPassword(data.available);
-        
-        if (!data.available) {
-          setEmailError(data.message);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const available = !data.exists;
+        setEmailAvailable(available);
+        setCanProceedToPassword(available);
+        if (!available) {
+          setEmailError('Este correo ya está registrado');
         }
       } else {
         setEmailAvailable(false);
         setCanProceedToPassword(false);
-        setEmailError('Error al verificar el correo');
+        setEmailError(data.error || 'Error al verificar el correo');
       }
     } catch (error) {
+      console.error('Error verificando disponibilidad del correo:', error);
       setEmailAvailable(false);
       setCanProceedToPassword(false);
       setEmailError('Error de conexión');
@@ -188,9 +179,55 @@ export default function AddAdministradorModal({
     }
   };
 
+  const handleVerifyEmail = () => {
+    if (!formData.correo.trim()) {
+      setEmailError('El correo es requerido');
+      setEmailAvailable(null);
+      setCanProceedToPassword(false);
+      return;
+    }
+    if (!validateEmail(formData.correo)) {
+      setEmailError('Formato de correo inválido');
+      setEmailAvailable(null);
+      setCanProceedToPassword(false);
+      return;
+    }
+    checkEmailAvailability(formData.correo);
+  };
+
+  const getPasswordRequirements = (password: string) => ({
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    symbol: /[@$!%*?&]/.test(password)
+  });
+
   const validatePassword = (password: string) => {
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[a-zA-Z\d@$!%*?&]{8,}$/;
-    return passwordRegex.test(password);
+    const reqs = getPasswordRequirements(password);
+    return Object.values(reqs).every(Boolean);
+  };
+
+  const generateStrongPassword = () => {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghijkmnpqrstuvwxyz';
+    const numbers = '23456789';
+    const symbols = '!@#$%^&*()_+-=[]{};:,.?';
+    const all = upper + lower + numbers + symbols;
+    const length = 12;
+
+    const pick = (pool: string) => pool[Math.floor(Math.random() * pool.length)];
+    let password = [pick(upper), pick(lower), pick(numbers), pick(symbols)];
+    for (let i = password.length; i < length; i += 1) {
+      password.push(pick(all));
+    }
+    password = password.sort(() => Math.random() - 0.5);
+
+    const generated = password.join('');
+    setFormData(prev => ({ ...prev, password: generated }));
+    setGeneratedPassword(generated);
+    setPasswordError('');
+    setPasswordValid(true);
   };
 
   const validateNombre = (nombre: string) => {
@@ -202,8 +239,8 @@ export default function AddAdministradorModal({
   };
 
   const validateTelefono = (telefono: string) => {
-    const telefonoRegex = /^[\+]?[0-9\s\-\(\)]{7,15}$/;
-    return telefonoRegex.test(telefono.trim());
+    const digitsOnly = telefono.replace(/\D/g, '');
+    return digitsOnly.length >= 10;
   };
 
   const validateCargo = (cargo: string) => {
@@ -276,6 +313,7 @@ export default function AddAdministradorModal({
         setError(errorData.error || 'Error al crear administrador');
       }
     } catch (err) {
+      console.error('Error al crear administrador:', err);
       setError('Error al crear administrador');
     } finally {
       setSubmitting(false);
@@ -336,10 +374,10 @@ export default function AddAdministradorModal({
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
-                Nombre
+                Nombre *
                 {nombreValid && (
                   <span className="text-green-600 text-xs ml-2">✓</span>
                 )}
@@ -350,20 +388,17 @@ export default function AddAdministradorModal({
                 value={formData.nombre}
                 onChange={handleInputChange}
                 required
-                className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                   nombreValid
                     ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
                     : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
                 }`}
-                placeholder="Nombre del administrador"
+                placeholder="Ingrese Nombre del administrador"
               />
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
-                Apellido
-                {!nombreValid && (
-                  <span className="text-slate-500 text-xs ml-2">(Completa el nombre primero)</span>
-                )}
+                Apellido *
                 {apellidoValid && (
                   <span className="text-green-600 text-xs ml-2">✓</span>
                 )}
@@ -375,27 +410,108 @@ export default function AddAdministradorModal({
                 onChange={handleInputChange}
                 required
                 disabled={!nombreValid}
-                className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                   !nombreValid
                     ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                     : apellidoValid
                     ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
                     : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
                 }`}
-                placeholder={
-                  !nombreValid 
-                    ? "Primero completa el nombre"
-                    : "Apellido del administrador"
-                }
+                placeholder="Ingrese el apellido del administrador"
               />
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
-                Correo
-                {!apellidoValid && (
-                  <span className="text-slate-500 text-xs ml-2">(Completa el apellido primero)</span>
+                Cargo del administrador *
+                {cargoValid && (
+                  <span className="text-green-600 text-xs ml-2">✓</span>
                 )}
               </label>
+              <input
+                type="text"
+                name="cargo"
+                value={formData.cargo}
+                onChange={handleInputChange}
+                required
+                disabled={!apellidoValid}
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  !apellidoValid
+                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : cargoValid
+                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
+                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                }`}
+                placeholder="Ingrese el cargo del administrador"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">
+                Teléfono celular * (mínimo 10 dígitos)
+                {telefonoValid && (
+                  <span className="text-green-600 text-xs ml-2">✓</span>
+                )}
+              </label>
+              <input
+                type="tel"
+                name="telefono"
+                value={formData.telefono}
+                onChange={handleInputChange}
+                required
+                disabled={!cargoValid}
+                maxLength={12}
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  !cargoValid
+                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : telefonoValid
+                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
+                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                }`}
+                placeholder="Ingrese el teléfono (solo números)"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Sede *</label>
+              <select
+                name="sede_id"
+                value={formData.sede_id}
+                onChange={handleInputChange}
+                required
+                disabled={!telefonoValid}
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                <option value="">Seleccione una sede</option>
+                {institucion?.sedes && institucion.sedes.length > 0 ? (
+                  institucion.sedes.map((sede) => (
+                    <option key={sede.id} value={sede.id} className="text-slate-800">
+                      {sede.nombre}
+                    </option>
+                  ))
+                ) : (
+                  <option value="principal" className="text-slate-800">
+                    Sede Principal
+                  </option>
+                )}
+              </select>
+              {institucion?.sedes && institucion.sedes.length === 0 && (
+                <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
+                  ℹ️ Esta institución no tiene sedes configuradas. El administrador se asignará a la sede principal.
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-semibold text-slate-700">
+                  Correo electrónico *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleVerifyEmail}
+                  disabled={!telefonoValid || !formData.sede_id || !formData.correo.trim() || emailValidating || !!emailError}
+                  className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {emailValidating ? 'Verificando...' : 'Verificar correo'}
+                </button>
+              </div>
               <div className="relative">
                 <input
                   type="email"
@@ -403,9 +519,9 @@ export default function AddAdministradorModal({
                   value={formData.correo}
                   onChange={handleInputChange}
                   required
-                  disabled={!apellidoValid}
-                  className={`w-full px-4 py-3 pr-12 bg-slate-50 border-2 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                    !apellidoValid
+                  disabled={!telefonoValid || !formData.sede_id}
+                  className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                    !telefonoValid || !formData.sede_id
                       ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                       : emailError 
                       ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
@@ -413,11 +529,7 @@ export default function AddAdministradorModal({
                       ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
                       : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
                   }`}
-                  placeholder={
-                    !apellidoValid 
-                      ? "Primero completa el apellido"
-                      : "correo@ejemplo.com"
-                  }
+                  placeholder="Ingrese el correo electrónico del administrador"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   {emailValidating ? (
@@ -450,165 +562,87 @@ export default function AddAdministradorModal({
                 </p>
               )}
             </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">
-                Teléfono
-                {!canProceedToPassword && (
-                  <span className="text-slate-500 text-xs ml-2">(Completa el correo primero)</span>
-                )}
-                {telefonoValid && (
-                  <span className="text-green-600 text-xs ml-2">✓</span>
-                )}
-              </label>
-              <input
-                type="tel"
-                name="telefono"
-                value={formData.telefono}
-                onChange={handleInputChange}
-                required
-                disabled={!canProceedToPassword}
-                maxLength={12}
-                className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                  !canProceedToPassword
-                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                    : telefonoValid
-                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
-                }`}
-                placeholder={
-                  !canProceedToPassword 
-                    ? "Primero verifica que el correo esté disponible"
-                    : "+57 300 123 4567"
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">
-                Cargo
-                {!telefonoValid && (
-                  <span className="text-slate-500 text-xs ml-2">(Completa el teléfono primero)</span>
-                )}
-                {cargoValid && (
-                  <span className="text-green-600 text-xs ml-2">✓</span>
-                )}
-              </label>
-              <input
-                type="text"
-                name="cargo"
-                value={formData.cargo}
-                onChange={handleInputChange}
-                required
-                disabled={!telefonoValid}
-                className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                  !telefonoValid
-                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                    : cargoValid
-                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
-                }`}
-                placeholder={
-                  !telefonoValid 
-                    ? "Primero completa el teléfono"
-                    : "Director, Coordinador, etc."
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">
-                Contraseña
-                {!cargoValid && (
-                  <span className="text-slate-500 text-xs ml-2">(Completa el cargo primero)</span>
-                )}
-                {passwordValid && (
-                  <span className="text-green-600 text-xs ml-2">✓</span>
-                )}
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  disabled={!cargoValid}
-                  className={`w-full px-4 py-3 pr-12 bg-slate-50 border-2 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                    !cargoValid
-                      ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : passwordError
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : passwordValid
-                      ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                      : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
-                  }`}
-                  placeholder={
-                    !cargoValid 
-                      ? "Primero completa el cargo"
-                      : "Mínimo 8 caracteres, incluir mayúsculas, minúsculas, números y símbolos"
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={!cargoValid}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  {showPassword ? (
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-              {passwordError ? (
-                <p className="text-red-600 text-sm flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  {passwordError}
-                </p>
-              ) : cargoValid ? (
-                <p className="text-xs text-slate-500">
-                  La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas, números y símbolos
-                </p>
-              ) : (
-                <p className="text-xs text-slate-400">
-                  Completa el cargo para continuar
-                </p>
-              )}
-            </div>
           </div>
 
-          {/* Campo de Sede */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-slate-700">Sede</label>
-            <select
-              name="sede_id"
-              value={formData.sede_id}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            >
-              <option value="">Seleccione una sede</option>
-              {institucion?.sedes && institucion.sedes.length > 0 ? (
-                institucion.sedes.map((sede) => (
-                  <option key={sede.id} value={sede.id} className="text-slate-800">
-                    {sede.nombre}
-                  </option>
-                ))
-              ) : (
-                <option value="principal" className="text-slate-800">
-                  Sede Principal
-                </option>
+            <label className="block text-sm font-semibold text-slate-700">
+              Contraseña *
+              {passwordValid && (
+                <span className="text-green-600 text-xs ml-2">✓</span>
               )}
-            </select>
-            {institucion?.sedes && institucion.sedes.length === 0 && (
-              <p className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
-                ℹ️ Esta institución no tiene sedes configuradas. El administrador se asignará a la sede principal.
+              <button
+                type="button"
+                onClick={generateStrongPassword}
+                disabled={!cargoValid}
+                className="ml-4 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Generar contraseña
+              </button>
+            </label>
+
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                disabled={!cargoValid}
+                className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  !cargoValid
+                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : passwordValid
+                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
+                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                }`}
+                placeholder="Mínimo 8 caracteres, incluir mayúsculas, minúsculas, números y símbolos"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={!cargoValid}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors"
+              >
+                {showPassword ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {!cargoValid ? (
+              <p className="text-xs text-slate-400">
+                Completa el cargo para continuar
+              </p>
+            ) : (
+              <div className="text-xs text-slate-500 space-y-1">
+                {(() => {
+                  const reqs = getPasswordRequirements(formData.password);
+                  const item = (ok: boolean, label: string) => (
+                    <p className={ok ? 'text-green-600' : 'text-slate-500'}>
+                      {ok ? '✓' : '•'} {label}
+                    </p>
+                  );
+                  return (
+                    <>
+                      {item(reqs.length, 'Al menos 8 caracteres')}
+                      {item(reqs.upper, 'Una letra mayúscula')}
+                      {item(reqs.lower, 'Una letra minúscula')}
+                      {item(reqs.number, 'Un número')}
+                      {item(reqs.symbol, 'Un símbolo')}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+            {generatedPassword && (
+              <p className="text-xs text-slate-500">
+                Contraseña generada: <span className="font-semibold">{generatedPassword}</span>
               </p>
             )}
           </div>
@@ -628,7 +662,7 @@ export default function AddAdministradorModal({
             <button
               type="submit"
               disabled={submitting || !(nombreValid && apellidoValid && canProceedToPassword && telefonoValid && cargoValid && passwordValid)}
-              className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {submitting ? (
                 <>

@@ -3,10 +3,11 @@ import { prisma } from '../../../../lib/prisma';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const recordatorioId = parseInt(params.id);
+    const { id } = await params;
+    const recordatorioId = parseInt(id);
 
     if (isNaN(recordatorioId)) {
       return NextResponse.json(
@@ -72,10 +73,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const recordatorioId = parseInt(params.id);
+    const { id } = await params;
+    const recordatorioId = parseInt(id);
 
     if (isNaN(recordatorioId)) {
       return NextResponse.json(

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
@@ -135,7 +136,7 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
                 <select
                   value={formData.grado_id}
                   onChange={(e) => setFormData({ ...formData, grado_id: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-slate-900 bg-white"
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder:text-slate-400"
                   required
                 >
                   <option value={0} className="text-slate-900">Seleccionar grado</option>

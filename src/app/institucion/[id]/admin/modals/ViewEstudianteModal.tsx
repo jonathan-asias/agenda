@@ -11,6 +11,8 @@ interface Estudiante {
   grado: { nombre: string; nivel: string };
   curso: { nombre: string; jornada: string | null };
   activo: boolean;
+  grado_id?: number | null;
+  curso_id?: number | null;
 }
 
 interface ViewEstudianteModalProps {

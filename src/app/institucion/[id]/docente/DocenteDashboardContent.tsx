@@ -7,6 +7,8 @@ import Swal from 'sweetalert2';
 import AddRecordatorioModal from './AddRecordatorioModal';
 import ViewRecordatorioModal from './ViewRecordatorioModal';
 import EditRecordatorioModal from './EditRecordatorioModal';
+import Footer from '../Footer';
+import Header from '../Header';
 
 interface Asignacion {
   id: number;
@@ -73,7 +75,7 @@ interface Recordatorio {
     id: number;
     nombre: string;
   };
-  estudiantes: Array<{
+  estudiantes?: Array<{
     estudiante: {
       id: number;
       nombres: string;
@@ -87,7 +89,6 @@ export default function DocenteDashboardContent() {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const [docente, setDocente] = useState<Docente | null>(null);
-  const [institucionId, setInstitucionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRecordatorioModal, setShowRecordatorioModal] = useState(false);
   const [recordatorios, setRecordatorios] = useState<Recordatorio[]>([]);
@@ -96,6 +97,15 @@ export default function DocenteDashboardContent() {
   const [selectedRecordatorio, setSelectedRecordatorio] = useState<Recordatorio | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [recordatorioToEdit, setRecordatorioToEdit] = useState<Recordatorio | null>(null);
+  const [filtros, setFiltros] = useState({
+    area: '',
+    materia: '',
+    tipo: '',
+    fecha: '',
+    cantidadEstudiantes: ''
+  });
+  const [paginaActual, setPaginaActual] = useState(1);
+  const recordatoriosPorPagina = 8;
 
   useEffect(() => {
     const fetchDocenteData = async () => {
@@ -106,12 +116,7 @@ export default function DocenteDashboardContent() {
         if (response.ok) {
           const data = await response.json();
           setDocente(data.docente);
-          setInstitucionId(data.docente?.institucion?.id || null);
-          
-          // Cargar recordatorios una sola vez al inicio (no se recargan automáticamente después)
-          if (data.docente?.id) {
-            fetchRecordatorios(data.docente.id);
-          }
+          // No cargar recordatorios automáticamente - solo cuando el usuario haga clic en "Actualizar"
         }
       } catch (error) {
         console.error('Error fetching docente data:', error);
@@ -248,6 +253,91 @@ export default function DocenteDashboardContent() {
     }
   };
 
+  // Extraer opciones únicas para los filtros
+  const opcionesFiltros = {
+    areas: Array.from(new Set(recordatorios.map(r => r.area.id))).map(id => {
+      const recordatorio = recordatorios.find(r => r.area.id === id);
+      return { id: recordatorio!.area.id, nombre: recordatorio!.area.nombre };
+    }),
+    materias: Array.from(new Set(recordatorios.map(r => r.materia.id))).map(id => {
+      const recordatorio = recordatorios.find(r => r.materia.id === id);
+      return { id: recordatorio!.materia.id, nombre: recordatorio!.materia.nombre };
+    }),
+    tipos: ['tarea', 'examen', 'evento', 'otro']
+  };
+
+  // Filtrar recordatorios
+  const recordatoriosFiltrados = recordatorios.filter(recordatorio => {
+    // Filtro por área
+    if (filtros.area && recordatorio.area.id.toString() !== filtros.area) {
+      return false;
+    }
+    
+    // Filtro por materia
+    if (filtros.materia && recordatorio.materia.id.toString() !== filtros.materia) {
+      return false;
+    }
+    
+    // Filtro por tipo
+    if (filtros.tipo && recordatorio.tipo !== filtros.tipo) {
+      return false;
+    }
+    
+    // Filtro por fecha
+    if (filtros.fecha) {
+      const fechaRecordatorio = new Date(recordatorio.fecha);
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const esPasado = fechaRecordatorio < hoy;
+      const esHoy = fechaRecordatorio.toDateString() === hoy.toDateString();
+      const esFuturo = fechaRecordatorio > hoy;
+      
+      switch (filtros.fecha) {
+        case 'pasado':
+          if (!esPasado) return false;
+          break;
+        case 'hoy':
+          if (!esHoy) return false;
+          break;
+        case 'futuro':
+          if (!esFuturo) return false;
+          break;
+      }
+    }
+    
+    // Filtro por cantidad de estudiantes
+    if (filtros.cantidadEstudiantes && recordatorio.estudiantes) {
+      const cantidad = recordatorio.estudiantes.length;
+      switch (filtros.cantidadEstudiantes) {
+        case '1-5':
+          if (cantidad < 1 || cantidad > 5) return false;
+          break;
+        case '6-10':
+          if (cantidad < 6 || cantidad > 10) return false;
+          break;
+        case '11-20':
+          if (cantidad < 11 || cantidad > 20) return false;
+          break;
+        case '21+':
+          if (cantidad < 21) return false;
+          break;
+      }
+    }
+    
+    return true;
+  });
+
+  // Calcular paginación
+  const totalPaginas = Math.ceil(recordatoriosFiltrados.length / recordatoriosPorPagina);
+  const indiceInicio = (paginaActual - 1) * recordatoriosPorPagina;
+  const indiceFin = indiceInicio + recordatoriosPorPagina;
+  const recordatoriosPaginados = recordatoriosFiltrados.slice(indiceInicio, indiceFin);
+
+  // Resetear a la primera página cuando cambien los filtros
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [filtros.area, filtros.materia, filtros.tipo, filtros.fecha, filtros.cantidadEstudiantes]);
+
   const handleLogout = async () => {
     // Mostrar diálogo informativo antes de cerrar sesión
     const result = await Swal.fire({
@@ -314,7 +404,7 @@ export default function DocenteDashboardContent() {
 
   if (loading || !docente) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando información del docente...</p>
@@ -324,39 +414,15 @@ export default function DocenteDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                Panel de Docente
-              </h1>
-              <p className="text-slate-600">
-                {docente.institucion.nombre}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-slate-900">
-                  {docente.nombres} {docente.apellidos}
-                </p>
-                <p className="text-sm text-slate-600">{docente.email}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <>
+      <Header 
+        title="Panel de Docente" 
+        subtitle={docente.institucion.nombre}
+      />
+      <div className="min-h-screen bg-blue-50 flex flex-col">
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         <div className="space-y-8">
           {/* Bienvenida con información del docente */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
@@ -453,7 +519,7 @@ export default function DocenteDashboardContent() {
                 <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Recordatorios
+                Recordatorios {recordatorios.length > 0 && `(${recordatoriosFiltrados.length} de ${recordatorios.length})`}
               </h3>
               <div className="flex items-center gap-3">
                 <button
@@ -481,6 +547,124 @@ export default function DocenteDashboardContent() {
                 </button>
               </div>
             </div>
+
+            {/* Filtros */}
+            {recordatorios.length > 0 && (
+              <div className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {/* Filtro por Área */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">
+                      Filtrar por Área
+                    </label>
+                    <select
+                      value={filtros.area}
+                      onChange={(e) => {
+                        setFiltros(prev => ({ ...prev, area: e.target.value, materia: '' }));
+                      }}
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    >
+                      <option value="">Todas las áreas</option>
+                      {opcionesFiltros.areas.map((area) => (
+                        <option key={area.id} value={area.id}>
+                          {area.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Filtro por Materia */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">
+                      Filtrar por Materia
+                    </label>
+                    <select
+                      value={filtros.materia}
+                      onChange={(e) => setFiltros(prev => ({ ...prev, materia: e.target.value }))}
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      disabled={!filtros.area}
+                    >
+                      <option value="">Todas las materias</option>
+                      {opcionesFiltros.materias
+                        .filter(m => !filtros.area || recordatorios.find(r => r.materia.id === m.id && r.area.id.toString() === filtros.area))
+                        .map((materia) => (
+                          <option key={materia.id} value={materia.id}>
+                            {materia.nombre}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {/* Filtro por Tipo */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">
+                      Filtrar por Tipo
+                    </label>
+                    <select
+                      value={filtros.tipo}
+                      onChange={(e) => setFiltros(prev => ({ ...prev, tipo: e.target.value }))}
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    >
+                      <option value="">Todos los tipos</option>
+                      <option value="tarea">Tarea</option>
+                      <option value="examen">Examen</option>
+                      <option value="evento">Evento</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </div>
+
+                  {/* Filtro por Fecha */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">
+                      Filtrar por Fecha
+                    </label>
+                    <select
+                      value={filtros.fecha}
+                      onChange={(e) => setFiltros(prev => ({ ...prev, fecha: e.target.value }))}
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    >
+                      <option value="">Todas las fechas</option>
+                      <option value="pasado">Pasados</option>
+                      <option value="hoy">Hoy</option>
+                      <option value="futuro">Futuros</option>
+                    </select>
+                  </div>
+
+                  {/* Filtro por Cantidad de Estudiantes */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">
+                      Cantidad de Estudiantes
+                    </label>
+                    <select
+                      value={filtros.cantidadEstudiantes}
+                      onChange={(e) => setFiltros(prev => ({ ...prev, cantidadEstudiantes: e.target.value }))}
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    >
+                      <option value="">Todas las cantidades</option>
+                      <option value="1-5">1 - 5 estudiantes</option>
+                      <option value="6-10">6 - 10 estudiantes</option>
+                      <option value="11-20">11 - 20 estudiantes</option>
+                      <option value="21+">21+ estudiantes</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Botón para limpiar filtros */}
+                {(filtros.area || filtros.materia || filtros.tipo || filtros.fecha || filtros.cantidadEstudiantes) && (
+                  <div className="mt-4">
+                    <button
+                      onClick={() => setFiltros({ area: '', materia: '', tipo: '', fecha: '', cantidadEstudiantes: '' })}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Limpiar filtros
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             
             {/* Lista de recordatorios */}
             {loadingRecordatorios ? (
@@ -489,8 +673,10 @@ export default function DocenteDashboardContent() {
                 <p className="text-slate-600">Cargando recordatorios...</p>
               </div>
             ) : recordatorios.length > 0 ? (
-              <div className="space-y-4">
-                {recordatorios.map((recordatorio) => {
+              recordatoriosFiltrados.length > 0 ? (
+                <>
+                <div className="space-y-4">
+                  {recordatoriosPaginados.map((recordatorio) => {
                   const fechaRecordatorio = new Date(recordatorio.fecha);
                   const hoy = new Date();
                   hoy.setHours(0, 0, 0, 0);
@@ -623,8 +809,86 @@ export default function DocenteDashboardContent() {
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                  })}
+                </div>
+
+                {/* Controles de Paginación */}
+                {totalPaginas > 1 && (
+                  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="text-sm text-slate-600">
+                      Mostrando {indiceInicio + 1} - {Math.min(indiceFin, recordatoriosFiltrados.length)} de {recordatoriosFiltrados.length} recordatorios
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}
+                        disabled={paginaActual === 1}
+                        className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      
+                      {/* Números de página */}
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((numero) => {
+                          // Mostrar solo algunas páginas alrededor de la actual
+                          if (
+                            numero === 1 ||
+                            numero === totalPaginas ||
+                            (numero >= paginaActual - 1 && numero <= paginaActual + 1)
+                          ) {
+                            return (
+                              <button
+                                key={numero}
+                                onClick={() => setPaginaActual(numero)}
+                                className={`px-3 py-2 min-w-[2.5rem] rounded-lg transition-colors ${
+                                  paginaActual === numero
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                {numero}
+                              </button>
+                            );
+                          } else if (
+                            numero === paginaActual - 2 ||
+                            numero === paginaActual + 2
+                          ) {
+                            return (
+                              <span key={numero} className="px-2 text-slate-500">
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
+
+                      <button
+                        onClick={() => setPaginaActual(prev => Math.min(totalPaginas, prev + 1))}
+                        disabled={paginaActual === totalPaginas}
+                        className="px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                  </div>
+                  <p className="text-slate-600">No se encontraron recordatorios con los filtros seleccionados</p>
+                  <p className="text-sm text-slate-500 mt-2">Intenta ajustar los filtros para ver más resultados</p>
+                </div>
+              )
             ) : (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -709,7 +973,9 @@ export default function DocenteDashboardContent() {
         }}
         recordatorio={recordatorioToEdit}
       />
-    </div>
+      <Footer />
+      </div>
+    </>
   );
 }
 

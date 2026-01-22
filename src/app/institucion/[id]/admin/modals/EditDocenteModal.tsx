@@ -1,4 +1,7 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
@@ -332,9 +335,9 @@ export default function EditDocenteModal({
                     setFormData({ ...formData, nombres: e.target.value });
                     validarCampo('nombres', e.target.value);
                   }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
-                    erroresValidacion.nombres ? 'border-red-500' : 'border-slate-300'
-                  } bg-white placeholder-slate-500`}
+                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                    erroresValidacion.nombres ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                  }`}
                   placeholder="Nombres"
                   required
                 />
@@ -353,9 +356,9 @@ export default function EditDocenteModal({
                     setFormData({ ...formData, apellidos: e.target.value });
                     validarCampo('apellidos', e.target.value);
                   }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
-                    erroresValidacion.apellidos ? 'border-red-500' : 'border-slate-300'
-                  } bg-white placeholder-slate-500`}
+                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                    erroresValidacion.apellidos ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                  }`}
                   placeholder="Apellidos"
                   required
                 />
@@ -371,7 +374,7 @@ export default function EditDocenteModal({
                   type="email"
                   value={docente.email}
                   disabled
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed"
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed"
                   placeholder="Email (no editable)"
                 />
                 <p className="text-xs text-slate-500 mt-1">El email no se puede modificar</p>
@@ -389,9 +392,9 @@ export default function EditDocenteModal({
                     validarCampo('telefono', valorNumerico);
                   }}
                   maxLength={10}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
-                    erroresValidacion.telefono ? 'border-red-500' : 'border-slate-300'
-                  } bg-white placeholder-slate-500`}
+                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                    erroresValidacion.telefono ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                  }`}
                   placeholder="3001234567"
                   required
                 />

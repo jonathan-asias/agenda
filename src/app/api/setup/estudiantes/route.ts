@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+type EstudianteInput = {
+  nombres: string;
+  apellidos: string;
+  codigo_estudiantil: string;
+  nombre_acudiente: string;
+  correo_acudiente?: string | null;
+  telefono_acudiente: string;
+  grado_id: number;
+  curso_id: number;
+};
+
 export async function POST(request: NextRequest) {
   try {
     console.log('=== INICIANDO CREACIÓN DE ESTUDIANTES ===');
     
-    const body = await request.json();
+    const body = await request.json() as {
+      institucionId: number;
+      estudiantes: EstudianteInput[];
+    };
     console.log('Datos recibidos:', JSON.stringify(body, null, 2));
     
     const { institucionId, estudiantes } = body;
@@ -43,8 +57,26 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const estudiantesCreados = [];
-    const errores = [];
+    type EstudianteCreadoResumen = {
+      id: number;
+      nombres: string;
+      apellidos: string;
+      codigo_estudiantil: string;
+      nombre_acudiente: string;
+      correo_acudiente: string | null;
+      telefono_acudiente: string;
+      grado_id: number;
+      curso_id: number;
+    };
+
+    type ErrorRegistro = {
+      estudiante: string;
+      error: string;
+      stack?: string;
+    };
+
+    const estudiantesCreados: EstudianteCreadoResumen[] = [];
+    const errores: ErrorRegistro[] = [];
     
     // Crear cada estudiante
     console.log('Iniciando bucle de creación de estudiantes...');
