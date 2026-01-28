@@ -6,7 +6,7 @@ import AdminAuthGuard from '../AdminAuthGuard';
 import Header from '../../Header';
 import Footer from '../../Footer';
 import AddDocenteModal from '../modals/AddDocenteModal';
-import Skeleton from '../../../../components/ui/Skeleton';
+import Skeleton from '../../../../../components/ui/Skeleton';
 
 interface DocenteAsignacion {
   id: number;

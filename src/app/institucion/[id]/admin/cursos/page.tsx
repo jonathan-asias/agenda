@@ -6,7 +6,7 @@ import AdminAuthGuard from '../AdminAuthGuard';
 import Header from '../../Header';
 import Footer from '../../Footer';
 import AddCursoModal from '../modals/AddCursoModal';
-import Skeleton from '../../../../components/ui/Skeleton';
+import Skeleton from '../../../../../components/ui/Skeleton';
 
 interface CursoResumen {
   id: number;
