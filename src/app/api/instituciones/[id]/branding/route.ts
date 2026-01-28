@@ -66,12 +66,14 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       logoUrl: logoSigned.data?.signedUrl ?? null,
       bannerUrl: bannerSigned.data?.signedUrl ?? null,
       color_primario: institucion.color_primario,
       color_secundario: institucion.color_secundario
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    return response;
   } catch (error) {
     console.error('Error al obtener branding:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

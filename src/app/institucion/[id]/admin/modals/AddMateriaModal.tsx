@@ -31,18 +31,59 @@ const areasPredeterminadas = [
 export default function AddMateriaModal({ isOpen, onClose, institucionId, onSuccess }: AddMateriaModalProps) {
   const [formData, setFormData] = useState({
     nombre: '',
-    area_id: '0'
+    area_id: '0',
+    area_nombre: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [areasDisponibles, setAreasDisponibles] = useState<any[]>([]);
+  const [materiasExistentes, setMateriasExistentes] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (isOpen) {
       // Resetear formulario cuando se abre
-      setFormData({ nombre: '', area_id: '0' });
+      setFormData({ nombre: '', area_id: '0', area_nombre: '' });
       setError('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const cargarMateriasExistentes = async () => {
+      try {
+        const [areasResponse, materiasResponse] = await Promise.all([
+          fetch(`/api/setup/areas/${institucionId}`),
+          fetch(`/api/setup/materias/${institucionId}`)
+        ]);
+        if (!areasResponse.ok || !materiasResponse.ok) return;
+
+        const areasData = await areasResponse.json();
+        const materiasData = await materiasResponse.json();
+        const areas = areasData?.areas || [];
+        const materias = materiasData?.materias || [];
+
+        setAreasDisponibles(areas);
+
+        const materiasPorAreaNombre: Record<string, string[]> = {};
+        const normalizar = (texto: string) => texto.trim().toLowerCase();
+        materias.forEach((materia: any) => {
+          const area = areas.find((a: any) => a.id === materia.area_id);
+          const areaNombre = area?.nombre ? normalizar(area.nombre) : '';
+          if (!areaNombre) return;
+          if (!materiasPorAreaNombre[areaNombre]) {
+            materiasPorAreaNombre[areaNombre] = [];
+          }
+          materiasPorAreaNombre[areaNombre].push(materia.nombre);
+        });
+        setMateriasExistentes(materiasPorAreaNombre);
+      } catch (fetchError) {
+        console.error('Error cargando materias existentes:', fetchError);
+      }
+    };
+
+    if (isOpen && institucionId) {
+      cargarMateriasExistentes();
+    }
+  }, [isOpen, institucionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +91,11 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
     setError('');
 
     try {
+      if (formData.area_id === '0') {
+        setError('Selecciona un área registrada antes de crear la materia');
+        setLoading(false);
+        return;
+      }
       const response = await fetch('/api/setup/materias', {
         method: 'POST',
         headers: {
@@ -57,7 +103,10 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
         },
         body: JSON.stringify({
           institucionId,
-          materias: [formData]
+          materias: [{
+            nombre: formData.nombre,
+            area_id: formData.area_id
+          }]
         }),
       });
 
@@ -92,7 +141,7 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4">
         <form onSubmit={handleSubmit}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -120,23 +169,74 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
                   Área *
                 </label>
                 <select
-                  value={formData.area_id}
-                  onChange={(e) => setFormData({ ...formData, area_id: e.target.value })}
+                  value={formData.area_nombre}
+                  onChange={(e) => {
+                    const areaNombre = e.target.value;
+                    const normalizar = (texto: string) => texto.trim().toLowerCase();
+                    const areaEncontrada = areasDisponibles.find(
+                      (area) => normalizar(area.nombre) === normalizar(areaNombre)
+                    );
+                    setFormData({
+                      ...formData,
+                      area_nombre: areaNombre,
+                      area_id: areaEncontrada ? String(areaEncontrada.id) : '0'
+                    });
+                  }}
                   className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 placeholder:text-slate-400"
                   required
                 >
-                  <option value="0" className="text-slate-900">Seleccionar área</option>
+                  <option value="" className="text-slate-900">Seleccionar área</option>
                   {areasPredeterminadas.map((area) => (
-                    <option key={area.id} value={area.id} className="text-slate-900">
+                    <option key={area.id} value={area.nombre} className="text-slate-900">
                       {area.nombre} {area.es_opcional ? '(Opcional)' : ''}
                     </option>
                   ))}
                 </select>
               </div>
 
+              {formData.area_nombre && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
+                    Materias existentes en esta área
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(materiasExistentes[formData.area_nombre.trim().toLowerCase()] || []).length > 0 ? (
+                      materiasExistentes[formData.area_nombre.trim().toLowerCase()].map((materia) => (
+                        <span
+                          key={materia}
+                          className="px-2.5 py-1 text-xs rounded-full bg-white border border-slate-200 text-slate-700"
+                        >
+                          {materia}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-500">Sin materias registradas.</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
                   Nombre de la Materia *
+                  <span className="relative group ml-2">
+                    <button
+                      type="button"
+                      aria-label="Información para nombrar materias"
+                      className="text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
+                      </svg>
+                    </button>
+                    <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <div className="font-semibold text-slate-700">Ejemplo:</div>
+                      <div>Álgebra, Cálculo, Matemáticas básicas, Geometría</div>
+                      <div className="mt-2 text-[11px] text-orange-600">
+                        Ten en cuenta las políticas del instituto: usa nombres claros, sin abreviaturas y con la nomenclatura oficial.
+                      </div>
+                    </div>
+                  </span>
                 </label>
                 <input
                   type="text"

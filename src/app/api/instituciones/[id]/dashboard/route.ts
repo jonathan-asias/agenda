@@ -205,7 +205,46 @@ export async function GET(
     }
 
     try {
-      docentes = await docentesQuery;
+      docentes = await prisma.docentes.findMany({
+        where: { institucion_id: institucionId, activo: true },
+        include: {
+          sede: {
+            select: {
+              nombre: true
+            }
+          },
+          docenteAsignaciones: {
+            include: {
+              grado: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  nivel: true
+                }
+              },
+              curso: {
+                select: {
+                  id: true,
+                  nombre: true
+                }
+              },
+              materia: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  area: {
+                    select: {
+                      id: true,
+                      nombre: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        orderBy: { nombres: 'asc' }
+      });
       console.log('Docentes encontrados:', docentes.length);
       console.log('Detalles de docentes con asignaciones:', docentes.map(d => ({
         id: d.id,

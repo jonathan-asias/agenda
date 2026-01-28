@@ -40,18 +40,48 @@ const gradosPredeterminados = [
 export default function AddCursoModal({ isOpen, onClose, institucionId, onSuccess }: AddCursoModalProps) {
   const [formData, setFormData] = useState({
     nombre: '',
-    grado_id: 0
+    grado_id: 0,
+    grado_nombre: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [gradosDisponibles, setGradosDisponibles] = useState<any[]>([]);
+  const [cursosExistentes, setCursosExistentes] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (isOpen) {
       // Resetear formulario cuando se abre
-      setFormData({ nombre: '', grado_id: 0 });
+      setFormData({ nombre: '', grado_id: 0, grado_nombre: '' });
       setError('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const cargarCursosExistentes = async () => {
+      try {
+        const response = await fetch(`/api/setup/grados/${institucionId}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        const grados = data?.grados || [];
+        setGradosDisponibles(grados);
+
+        const cursosPorGradoNombre: Record<string, string[]> = {};
+        const normalizar = (texto: string) => texto.trim().toLowerCase();
+        grados.forEach((grado: any) => {
+          const gradoNombre = normalizar(grado.nombre || '');
+          if (!gradoNombre) return;
+          cursosPorGradoNombre[gradoNombre] = (grado.cursos || []).map((curso: any) => curso.nombre);
+        });
+        setCursosExistentes(cursosPorGradoNombre);
+      } catch (fetchError) {
+        console.error('Error cargando cursos existentes:', fetchError);
+      }
+    };
+
+    if (isOpen && institucionId) {
+      cargarCursosExistentes();
+    }
+  }, [isOpen, institucionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +89,11 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
     setError('');
 
     try {
+      if (formData.grado_id === 0) {
+        setError('Selecciona un grado registrado antes de crear el curso');
+        setLoading(false);
+        return;
+      }
       const response = await fetch('/api/setup/grados-cursos', {
         method: 'POST',
         headers: {
@@ -106,7 +141,7 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4">
         <form onSubmit={handleSubmit}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -134,23 +169,74 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
                   Grado *
                 </label>
                 <select
-                  value={formData.grado_id}
-                  onChange={(e) => setFormData({ ...formData, grado_id: parseInt(e.target.value) })}
+                  value={formData.grado_nombre}
+                  onChange={(e) => {
+                    const gradoNombre = e.target.value;
+                    const normalizar = (texto: string) => texto.trim().toLowerCase();
+                    const gradoEncontrado = gradosDisponibles.find(
+                      (grado) => normalizar(grado.nombre) === normalizar(gradoNombre)
+                    );
+                    setFormData({
+                      ...formData,
+                      grado_nombre: gradoNombre,
+                      grado_id: gradoEncontrado ? Number(gradoEncontrado.id) : 0
+                    });
+                  }}
                   className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder:text-slate-400"
                   required
                 >
-                  <option value={0} className="text-slate-900">Seleccionar grado</option>
+                  <option value="" className="text-slate-900">Seleccionar grado</option>
                   {gradosPredeterminados.map((grado) => (
-                    <option key={grado.id} value={grado.id} className="text-slate-900">
+                    <option key={grado.id} value={grado.nombre} className="text-slate-900">
                       {grado.nombre} - {grado.nivel}
                     </option>
                   ))}
                 </select>
               </div>
 
+              {formData.grado_nombre && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
+                    Cursos existentes en este grado
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(cursosExistentes[formData.grado_nombre.trim().toLowerCase()] || []).length > 0 ? (
+                      cursosExistentes[formData.grado_nombre.trim().toLowerCase()].map((curso) => (
+                        <span
+                          key={curso}
+                          className="px-2.5 py-1 text-xs rounded-full bg-white border border-slate-200 text-slate-700"
+                        >
+                          {curso}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-500">Sin cursos registrados.</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
                   Nombre del Curso *
+                  <span className="relative group ml-2">
+                    <button
+                      type="button"
+                      aria-label="Información para nombrar cursos"
+                      className="text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
+                      </svg>
+                    </button>
+                    <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <div className="font-semibold text-slate-700">Ejemplo:</div>
+                      <div>6° A, 6° B, 7° A, 11° B</div>
+                      <div className="mt-2 text-[11px] text-orange-600">
+                        Ten en cuenta las políticas del instituto: usa el formato oficial y evita abreviaturas no autorizadas.
+                      </div>
+                    </div>
+                  </span>
                 </label>
                 <input
                   type="text"

@@ -6,6 +6,7 @@ import AdminAuthGuard from '../AdminAuthGuard';
 import Header from '../../Header';
 import Footer from '../../Footer';
 import AddDocenteModal from '../modals/AddDocenteModal';
+import Skeleton from '../../../../components/ui/Skeleton';
 
 interface DocenteAsignacion {
   id: number;
@@ -92,7 +93,26 @@ export default function AdminDocentesPage() {
               </button>
             </div>
 
-            {loading && <div className="text-slate-600">Cargando docentes...</div>}
+            {loading && (
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="border border-slate-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-48" />
+                      </div>
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-28" />
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-6 w-24" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {error && !loading && <div className="text-red-600">{error}</div>}
             {!loading && !error && docentes.length === 0 && (
               <div className="text-slate-600">No hay docentes registrados.</div>

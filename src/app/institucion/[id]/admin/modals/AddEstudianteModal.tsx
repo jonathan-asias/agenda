@@ -317,7 +317,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4">
         <form onSubmit={handleSubmit}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">

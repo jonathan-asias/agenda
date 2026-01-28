@@ -93,6 +93,8 @@ export default function DashboardSections({
   estudiantes,
   institucionId
 }: DashboardSectionsProps) {
+  const [docentesState, setDocentesState] = useState<Docente[]>(docentes);
+  const [estudiantesState, setEstudiantesState] = useState<Estudiante[]>(estudiantes);
   // Estados para el modal de visualización
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedDocente, setSelectedDocente] = useState<Docente | null>(null);
@@ -133,6 +135,42 @@ export default function DashboardSections({
   });
   const [docentesFiltrados, setDocentesFiltrados] = useState<Docente[]>([]);
 
+  useEffect(() => {
+    setDocentesState(docentes);
+  }, [docentes]);
+
+  useEffect(() => {
+    setEstudiantesState(estudiantes);
+  }, [estudiantes]);
+
+  const refetchDocentes = async () => {
+    try {
+      const response = await fetch(`/api/instituciones/${institucionId}/dashboard`);
+      if (!response.ok) {
+        console.error('Error recargando docentes');
+        return;
+      }
+      const data = await response.json();
+      setDocentesState(data?.datos?.docentes || []);
+    } catch (error) {
+      console.error('Error recargando docentes:', error);
+    }
+  };
+
+  const refetchEstudiantes = async () => {
+    try {
+      const response = await fetch(`/api/instituciones/${institucionId}/dashboard`);
+      if (!response.ok) {
+        console.error('Error recargando estudiantes');
+        return;
+      }
+      const data = await response.json();
+      setEstudiantesState(data?.datos?.estudiantes || []);
+    } catch (error) {
+      console.error('Error recargando estudiantes:', error);
+    }
+  };
+
   const handleViewDocente = (docente: Docente) => {
     setSelectedDocente(docente);
     setShowViewModal(true);
@@ -153,9 +191,8 @@ export default function DashboardSections({
     setEditingDocente(null);
   };
 
-  const handleEditSuccess = () => {
-    // Recargar la página para actualizar los datos
-    window.location.reload();
+  const handleEditSuccess = async () => {
+    await refetchDocentes();
   };
 
   const handleDeleteDocente = (docente: Docente) => {
@@ -168,9 +205,8 @@ export default function DashboardSections({
     setDeletingDocente(null);
   };
 
-  const handleDeleteSuccess = () => {
-    // Recargar la página para actualizar los datos
-    window.location.reload();
+  const handleDeleteSuccess = async () => {
+    await refetchDocentes();
   };
 
   // Funciones para manejar modales de estudiantes
@@ -194,9 +230,8 @@ export default function DashboardSections({
     setEditingEstudiante(null);
   };
 
-  const handleEditEstudianteSuccess = () => {
-    // Recargar la página para actualizar los datos
-    window.location.reload();
+  const handleEditEstudianteSuccess = async () => {
+    await refetchEstudiantes();
   };
 
   const handleDeleteEstudiante = (estudiante: Estudiante) => {
@@ -209,20 +244,19 @@ export default function DashboardSections({
     setDeletingEstudiante(null);
   };
 
-  const handleDeleteEstudianteSuccess = () => {
-    // Recargar la página para actualizar los datos
-    window.location.reload();
+  const handleDeleteEstudianteSuccess = async () => {
+    await refetchEstudiantes();
   };
 
   // Función para aplicar filtros a estudiantes
   const aplicarFiltrosEstudiantes = useCallback(() => {
-    let estudiantesFiltrados = [...estudiantes];
+    let estudiantesFiltrados = [...estudiantesState];
 
     // Debug: Mostrar información de estudiantes y filtros
     console.log('🔍 Debug Filtros Estudiantes:');
     console.log('Filtros aplicados:', filtrosEstudiantes);
-    console.log('Total estudiantes:', estudiantes.length);
-    console.log('Primer estudiante:', estudiantes[0]);
+    console.log('Total estudiantes:', estudiantesState.length);
+    console.log('Primer estudiante:', estudiantesState[0]);
 
     // Filtro por grado
     if (filtrosEstudiantes.grado) {
@@ -281,7 +315,7 @@ export default function DashboardSections({
     console.log('📊 Resultado final:', estudiantesFiltrados.length, 'estudiantes filtrados');
     console.log('Estudiantes filtrados:', estudiantesFiltrados);
     setEstudiantesFiltrados(estudiantesFiltrados);
-  }, [estudiantes, filtrosEstudiantes]);
+  }, [estudiantesState, filtrosEstudiantes]);
 
   // Función para limpiar filtros
   const limpiarFiltrosEstudiantes = () => {
@@ -297,12 +331,12 @@ export default function DashboardSections({
 
   // Función para aplicar filtros a docentes
   const aplicarFiltrosDocentes = useCallback(() => {
-    let docentesFiltrados = [...docentes];
+    let docentesFiltrados = [...docentesState];
 
     // Debug: Mostrar información de docentes y filtros
     console.log('🔍 Debug Filtros Docentes:');
     console.log('Filtros aplicados:', filtrosDocentes);
-    console.log('Total docentes:', docentes.length);
+    console.log('Total docentes:', docentesState.length);
 
     // Filtro por grado
     if (filtrosDocentes.grado) {
@@ -349,7 +383,7 @@ export default function DashboardSections({
 
     console.log('📊 Resultado final:', docentesFiltrados.length, 'docentes filtrados');
     setDocentesFiltrados(docentesFiltrados);
-  }, [docentes, filtrosDocentes]);
+  }, [docentesState, filtrosDocentes]);
 
   // Función para limpiar filtros de docentes
   const limpiarFiltrosDocentes = () => {
@@ -402,7 +436,7 @@ export default function DashboardSections({
               Áreas ({areas.length})
             </h3>
           </div>
-          <div className="p-6">
+          <div className="p-6 h-96 overflow-y-auto">
             {areas.length === 0 ? (
               <p className="text-slate-500 text-center py-4">No hay áreas configuradas</p>
             ) : (
@@ -447,7 +481,7 @@ export default function DashboardSections({
               )}
             </h3>
           </div>
-          <div className="p-6">
+          <div className="p-6 h-96 overflow-y-auto">
             {materias.length === 0 ? (
               <p className="text-slate-500 text-center py-4">No hay materias configuradas</p>
             ) : (
@@ -460,7 +494,7 @@ export default function DashboardSections({
                     </p>
                   </div>
                 )}
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3">
                 {materias.map((materia) => (
                   <div key={materia.id} className="p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -496,7 +530,7 @@ export default function DashboardSections({
               Grados ({grados.length})
             </h3>
           </div>
-          <div className="p-6">
+          <div className="p-6 h-96 overflow-y-auto">
             {grados.length === 0 ? (
               <p className="text-slate-500 text-center py-4">No hay grados configurados</p>
             ) : (
@@ -528,11 +562,11 @@ export default function DashboardSections({
               Cursos ({cursos.length})
             </h3>
           </div>
-          <div className="p-6">
+          <div className="p-6 h-96 overflow-y-auto">
             {cursos.length === 0 ? (
               <p className="text-slate-500 text-center py-4">No hay cursos configurados</p>
             ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-3">
                 {cursos.map((curso) => (
                   <div key={curso.id} className="p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -540,7 +574,7 @@ export default function DashboardSections({
                       <span className="text-sm text-slate-600">{curso.grado?.nombre || 'Sin grado'}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm text-slate-600">
-                      <span>{curso.jornada || 'Sin jornada'}</span>
+                      <span>{curso.jornada || 'Jornada única'}</span>
                       <span>{curso._count?.estudiantes || 0} estudiante{(curso._count?.estudiantes || 0) !== 1 ? 's' : ''}</span>
                     </div>
                   </div>
@@ -558,7 +592,7 @@ export default function DashboardSections({
             <svg className="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            Docentes ({docentes.length})
+            Docentes ({docentesState.length})
           </h3>
         </div>
         
@@ -659,8 +693,8 @@ export default function DashboardSections({
             </button>
           </div>
         </div>
-        <div className="p-6">
-          {docentes.length === 0 ? (
+        <div className="p-6 h-96 overflow-y-auto">
+          {docentesState.length === 0 ? (
             <p className="text-slate-500 text-center py-4">No hay docentes registrados</p>
           ) : (
             <>
@@ -683,7 +717,7 @@ export default function DashboardSections({
                 </div>
               ) : (
                 <>
-                  {docentes.some(d => !d.docenteAsignaciones || d.docenteAsignaciones.length === 0) && (
+                  {docentesState.some(d => !d.docenteAsignaciones || d.docenteAsignaciones.length === 0) && (
                     <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                       <p className="text-amber-800 text-sm">
                         <span className="font-medium">⚠️ Nota:</span> Algunos docentes no tienen asignaciones. 
@@ -691,8 +725,8 @@ export default function DashboardSections({
                       </p>
                     </div>
                   )}
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {(docentesFiltrados.length > 0 ? docentesFiltrados : docentes).map((docente) => (
+                  <div className="space-y-4">
+                    {(docentesFiltrados.length > 0 ? docentesFiltrados : docentesState).map((docente) => (
                 <div key={docente.id} className="p-4 bg-slate-50 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -767,7 +801,7 @@ export default function DashboardSections({
             <svg className="w-5 h-5 mr-2 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
             </svg>
-            Estudiantes ({estudiantes.length})
+            Estudiantes ({estudiantesState.length})
           </h3>
         </div>
         
@@ -861,8 +895,8 @@ export default function DashboardSections({
           </div>
         </div>
 
-        <div className="p-6">
-          {estudiantes.length === 0 ? (
+        <div className="p-6 h-96 overflow-y-auto">
+          {estudiantesState.length === 0 ? (
             <p className="text-slate-500 text-center py-4">No hay estudiantes registrados</p>
           ) : (
             <>
@@ -884,8 +918,8 @@ export default function DashboardSections({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {(estudiantesFiltrados.length > 0 ? estudiantesFiltrados : estudiantes).map((estudiante) => (
+                <div className="space-y-4">
+                  {(estudiantesFiltrados.length > 0 ? estudiantesFiltrados : estudiantesState).map((estudiante) => (
                 <div key={estudiante.id} className="p-4 bg-slate-50 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
                     <div>

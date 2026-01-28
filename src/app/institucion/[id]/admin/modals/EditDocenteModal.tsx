@@ -14,9 +14,9 @@ interface Docente {
   telefono: string;
   sede: { nombre: string } | null;
   docenteAsignaciones: {
-    grado: { nombre: string; nivel: string };
-    curso: { nombre: string };
-    materia: { nombre: string };
+    grado: { id: number; nombre: string; nivel: string };
+    curso: { id: number; nombre: string };
+    materia: { id: number; nombre: string; area?: { id: number; nombre: string } };
   }[];
 }
 
@@ -80,15 +80,56 @@ export default function EditDocenteModal({
         telefono: docente.telefono
       });
 
-      // Procesar asignaciones existentes
-      const gradosExistentes = [...new Set(docente.docenteAsignaciones.map(a => a.grado.nombre))];
-      const areasExistentes = [...new Set(docente.docenteAsignaciones.map(a => a.materia.nombre))];
-      
-      // TODO: Mapear nombres a IDs cuando se carguen los datos de la institución
       setGradosSeleccionados([]);
+      setCursosPorGrado({});
       setAreasSeleccionadas([]);
-      
-      cargarDatosInstitucion();
+      setMateriasPorArea({});
+
+      const loadAndMapAssignments = async () => {
+        await cargarDatosInstitucion();
+
+        if (docente.docenteAsignaciones && docente.docenteAsignaciones.length > 0) {
+          const gradosIds = [...new Set(docente.docenteAsignaciones.map(a => a.grado.id))];
+          setGradosSeleccionados(gradosIds);
+
+          const cursosMap: { [gradoId: number]: number[] } = {};
+          docente.docenteAsignaciones.forEach(asignacion => {
+            const gradoId = asignacion.grado.id;
+            const cursoId = asignacion.curso.id;
+            if (!cursosMap[gradoId]) {
+              cursosMap[gradoId] = [];
+            }
+            if (!cursosMap[gradoId].includes(cursoId)) {
+              cursosMap[gradoId].push(cursoId);
+            }
+          });
+          setCursosPorGrado(cursosMap);
+
+          const areasIds = [...new Set(
+            docente.docenteAsignaciones
+              .map(a => a.materia.area?.id)
+              .filter((id): id is number => id !== undefined)
+          )];
+          setAreasSeleccionadas(areasIds);
+
+          const materiasMap: { [areaId: number]: number[] } = {};
+          docente.docenteAsignaciones.forEach(asignacion => {
+            const areaId = asignacion.materia.area?.id;
+            const materiaId = asignacion.materia.id;
+            if (areaId) {
+              if (!materiasMap[areaId]) {
+                materiasMap[areaId] = [];
+              }
+              if (!materiasMap[areaId].includes(materiaId)) {
+                materiasMap[areaId].push(materiaId);
+              }
+            }
+          });
+          setMateriasPorArea(materiasMap);
+        }
+      };
+
+      loadAndMapAssignments();
     }
   }, [isOpen, docente]);
 

@@ -89,25 +89,6 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [verificandoEmail, setVerificandoEmail] = useState(false);
-  const [emailVerificado, setEmailVerificado] = useState(false);
-  
-  // Estados para validación secuencial
-  const [erroresValidacion, setErroresValidacion] = useState<{[key: string]: string}>({});
-  const [camposHabilitados, setCamposHabilitados] = useState<{[key: string]: boolean}>({
-    nombres: true,
-    apellidos: false,
-    telefono: false,
-    email: false,
-    password: false
-  });
-  const [camposValidados, setCamposValidados] = useState<{[key: string]: boolean}>({
-    nombres: false,
-    apellidos: false,
-    telefono: false,
-    email: false,
-    password: false
-  });
 
   const generarPassword = () => {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
@@ -116,8 +97,6 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
       password += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
     }
     setFormData({ ...formData, password });
-    // Validar automáticamente la contraseña generada
-    validarCampo('password', password);
   };
 
   // Función para validar email
@@ -166,155 +145,6 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
     } finally {
       setVerificandoEmail(false);
     }
-  };
-
-  // Función para verificar manualmente el email
-  const verificarEmailManual = async () => {
-    if (!formData.email.trim() || !validarEmail(formData.email.trim())) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Email Inválido',
-        text: 'Por favor ingresa un email válido primero',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#f59e0b',
-        timer: 3000,
-        timerProgressBar: true
-      });
-      return;
-    }
-
-    setVerificandoEmail(true);
-    setEmailVerificado(false);
-    
-    try {
-      const emailExiste = await verificarEmailExistente(formData.email.trim());
-      
-      if (emailExiste) {
-        setError('Este email ya está registrado en el sistema');
-        setEmailVerificado(false);
-        await Swal.fire({
-          icon: 'error',
-          title: 'Email No Disponible',
-          text: 'Este email ya está registrado. Por favor usa otro email.',
-          confirmButtonText: 'Entendido',
-          confirmButtonColor: '#ef4444',
-          timer: 4000,
-          timerProgressBar: true
-        });
-      } else {
-        setError('');
-        setEmailVerificado(true);
-        await Swal.fire({
-          icon: 'success',
-          title: 'Email Disponible',
-          text: 'El email está disponible. Puedes continuar.',
-          confirmButtonText: 'Continuar',
-          confirmButtonColor: '#10b981',
-          timer: 3000,
-          timerProgressBar: true
-        });
-      }
-    } catch (error) {
-      setError('Error verificando el email');
-      setEmailVerificado(false);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error de Verificación',
-        text: 'Hubo un error verificando el email. Inténtalo de nuevo.',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#ef4444',
-        timer: 4000,
-        timerProgressBar: true
-      });
-    } finally {
-      setVerificandoEmail(false);
-    }
-  };
-
-  // Función para validar campos secuencialmente
-  const validarCampo = async (campo: string, valor: string) => {
-    const errores = { ...erroresValidacion };
-    const habilitados = { ...camposHabilitados };
-    const validados = { ...camposValidados };
-    
-    switch (campo) {
-      case 'nombres':
-        if (valor.trim() && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
-          errores[campo] = 'Solo se permiten letras y espacios';
-          validados[campo] = false;
-        } else if (valor.trim() && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
-          delete errores[campo];
-          validados[campo] = true;
-          habilitados.apellidos = true;
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-        }
-        break;
-      case 'apellidos':
-        if (valor.trim() && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
-          errores[campo] = 'Solo se permiten letras y espacios';
-          validados[campo] = false;
-        } else if (valor.trim() && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
-          delete errores[campo];
-          validados[campo] = true;
-          habilitados.telefono = true;
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-        }
-        break;
-      case 'telefono':
-        if (valor.trim() && !validarTelefonoColombiano(valor.trim())) {
-          errores[campo] = 'Número de celular colombiano inválido';
-          validados[campo] = false;
-        } else if (valor.trim() && validarTelefonoColombiano(valor.trim())) {
-          delete errores[campo];
-          validados[campo] = true;
-          habilitados.email = true;
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-        }
-        break;
-      case 'email':
-        if (valor.trim() && !validarEmail(valor.trim())) {
-          errores[campo] = 'Formato de email inválido';
-          validados[campo] = false;
-          setEmailVerificado(false);
-        } else if (valor.trim() && validarEmail(valor.trim())) {
-          delete errores[campo];
-          validados[campo] = true;
-          // No resetear emailVerificado si ya estaba verificado
-          // setEmailVerificado(false);
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-          setEmailVerificado(false);
-        }
-        break;
-      case 'password':
-        if (valor.trim() && valor.length < 8) {
-          errores[campo] = 'La contraseña debe tener al menos 8 caracteres';
-          validados[campo] = false;
-        } else if (valor.trim() && valor.length >= 8) {
-          delete errores[campo];
-          validados[campo] = true;
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-        }
-        break;
-    }
-    
-    setErroresValidacion(errores);
-    setCamposHabilitados(habilitados);
-    setCamposValidados(validados);
-  };
-
-  // Función para determinar si el campo de contraseña debe estar habilitado
-  const campoPasswordHabilitado = () => {
-    return camposValidados.email && !erroresValidacion.email && !verificandoEmail && emailVerificado;
   };
 
   const cargarDatosInstitucion = async () => {
@@ -434,25 +264,6 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
         password: ''
       });
       setError('');
-      setEmailVerificado(false);
-      setVerificandoEmail(false);
-      
-      // Resetear validación secuencial
-      setErroresValidacion({});
-      setCamposHabilitados({
-        nombres: true,
-        apellidos: false,
-        telefono: false,
-        email: false,
-        password: false
-      });
-      setCamposValidados({
-        nombres: false,
-        apellidos: false,
-        telefono: false,
-        email: false,
-        password: false
-      });
       
       // Resetear asignaciones
       setGradosSeleccionados([]);
@@ -472,38 +283,27 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
     setLoading(true);
     setError('');
 
-    // Debug: Mostrar estado de validación
-    console.log('Estado de validación:', {
-      camposValidados,
-      erroresValidacion,
-      emailVerificado,
-      formData
-    });
-
-    // Validar que todos los campos estén completos y válidos
-    if (!camposValidados.nombres || !camposValidados.apellidos || !camposValidados.telefono || !camposValidados.email || !camposValidados.password) {
-      const camposFaltantes = [];
-      if (!camposValidados.nombres) camposFaltantes.push('nombres');
-      if (!camposValidados.apellidos) camposFaltantes.push('apellidos');
-      if (!camposValidados.telefono) camposFaltantes.push('telefono');
-      if (!camposValidados.email) camposFaltantes.push('email');
-      if (!camposValidados.password) camposFaltantes.push('password');
-      
-      setError(`Por favor completa correctamente: ${camposFaltantes.join(', ')}`);
+    // Validaciones básicas
+    if (!formData.nombres.trim() || !formData.apellidos.trim() || !formData.telefono.trim() || !formData.email.trim() || !formData.password.trim()) {
+      setError('Por favor completa todos los campos obligatorios');
       setLoading(false);
       return;
     }
 
-    // Validar que el email esté verificado
-    if (!emailVerificado) {
-      setError('Debes verificar la disponibilidad del email antes de continuar');
+    if (!validarEmail(formData.email.trim())) {
+      setError('Por favor ingresa un email válido');
       setLoading(false);
       return;
     }
 
-    // Validar que no haya errores de validación
-    if (Object.keys(erroresValidacion).length > 0) {
-      setError('Por favor corrige los errores antes de continuar');
+    if (!validarTelefonoColombiano(formData.telefono.trim())) {
+      setError('Por favor ingresa un número de celular colombiano válido');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
       setLoading(false);
       return;
     }
@@ -575,7 +375,7 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -606,28 +406,11 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                   <input
                     type="text"
                     value={formData.nombres}
-                    onChange={(e) => {
-                      setFormData({ ...formData, nombres: e.target.value });
-                      validarCampo('nombres', e.target.value);
-                    }}
-                    disabled={!camposHabilitados.nombres}
-                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      erroresValidacion.nombres ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
-                    } ${!camposHabilitados.nombres ? 'bg-slate-100' : ''}`}
+                    onChange={(e) => setFormData({ ...formData, nombres: e.target.value })}
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
                     placeholder="Nombres"
                     required
                   />
-                  {erroresValidacion.nombres && (
-                    <p className="text-red-500 text-xs mt-1">{erroresValidacion.nombres}</p>
-                  )}
-                  {camposValidados.nombres && !erroresValidacion.nombres && (
-                    <p className="text-green-600 text-xs mt-1 flex items-center">
-                      <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Nombres válidos
-                    </p>
-                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -636,111 +419,12 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                   <input
                     type="text"
                     value={formData.apellidos}
-                    onChange={(e) => {
-                      setFormData({ ...formData, apellidos: e.target.value });
-                      validarCampo('apellidos', e.target.value);
-                    }}
-                    disabled={!camposHabilitados.apellidos}
-                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 ${
-                      erroresValidacion.apellidos ? 'border-red-500' : 'border-slate-300'
-                    } ${!camposHabilitados.apellidos ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'} placeholder-slate-500`}
+                    onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
                     placeholder="Apellidos"
                     required
                   />
-                  {erroresValidacion.apellidos && (
-                    <p className="text-red-500 text-xs mt-1">{erroresValidacion.apellidos}</p>
-                  )}
-                  {camposValidados.apellidos && !erroresValidacion.apellidos && (
-                    <p className="text-green-600 text-xs mt-1 flex items-center">
-                      <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Apellidos válidos
-                    </p>
-                  )}
                 </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-slate-700">
-                    Email *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={verificarEmailManual}
-                    disabled={!camposValidados.email || verificandoEmail}
-                    className={`px-3 py-1 rounded-lg font-medium text-xs transition-colors ${
-                      camposValidados.email && !verificandoEmail
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                        : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                    }`}
-                  >
-                    {verificandoEmail ? (
-                      <div className="flex items-center">
-                        <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Verificando...
-                      </div>
-                    ) : (
-                      'Verificar'
-                    )}
-                  </button>
-                </div>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => {
-                    setFormData({ ...formData, email: e.target.value });
-                    validarCampo('email', e.target.value);
-                    // Resetear verificación cuando cambia el email
-                    if (emailVerificado) {
-                      setEmailVerificado(false);
-                    }
-                    if (error.includes('email')) {
-                      setError('');
-                    }
-                  }}
-                  disabled={!camposHabilitados.email}
-                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    erroresValidacion.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
-                  } ${!camposHabilitados.email ? 'bg-slate-100' : ''}`}
-                  placeholder="correo@ejemplo.com"
-                  required
-                />
-                {erroresValidacion.email && (
-                  <p className="text-red-500 text-xs mt-1">{erroresValidacion.email}</p>
-                )}
-                {error && error.includes('email') && (
-                  <p className="text-red-500 text-xs mt-1">{error}</p>
-                )}
-                {verificandoEmail && (
-                  <p className="text-blue-600 text-xs mt-1 flex items-center">
-                    <svg className="w-3 h-3 mr-1 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Verificando disponibilidad del email...
-                  </p>
-                )}
-                {emailVerificado && !error && !verificandoEmail && (
-                  <p className="text-green-600 text-xs mt-1 flex items-center">
-                    <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Email disponible
-                  </p>
-                )}
-                {camposValidados.email && !emailVerificado && !erroresValidacion.email && !error && !verificandoEmail && (
-                  <p className="text-amber-600 text-xs mt-1 flex items-center">
-                    <svg className="w-3 h-3 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    Email válido. Haz clic en &quot;Verificar&quot; para comprobar disponibilidad
-                  </p>
-                )}
               </div>
 
               <div>
@@ -751,36 +435,53 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                   type="tel"
                   value={formData.telefono}
                   onChange={(e) => {
-                    // Solo permitir números
                     const valorNumerico = e.target.value.replace(/[^\d]/g, '');
                     setFormData({ ...formData, telefono: valorNumerico });
-                    validarCampo('telefono', valorNumerico);
                   }}
-                  disabled={!camposHabilitados.telefono}
-                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    erroresValidacion.telefono ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
-                  } ${!camposHabilitados.telefono ? 'bg-slate-100' : ''}`}
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
                   placeholder="3001234567"
                   maxLength={12}
                   required
                 />
-                {erroresValidacion.telefono && (
-                  <p className="text-red-500 text-xs mt-1">{erroresValidacion.telefono}</p>
-                )}
-                {camposValidados.telefono && !erroresValidacion.telefono && (
-                  <p className="text-green-600 text-xs mt-1 flex items-center">
-                    <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Teléfono válido
-                  </p>
-                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
+                  placeholder="correo@ejemplo.com"
+                  required
+                />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-slate-700 flex items-center">
                     Contraseña *
+                    <span className="relative group ml-2">
+                      <button
+                        type="button"
+                        aria-label="Requisitos de contraseña"
+                        className="text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
+                        </svg>
+                      </button>
+                      <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        <div className="font-semibold text-slate-700">Requisitos:</div>
+                        <div>Mínimo 8 caracteres</div>
+                        <div>Incluye letras y números</div>
+                        <div className="mt-2 text-[11px] text-orange-600">
+                          Sigue las políticas del instituto para contraseñas seguras.
+                        </div>
+                      </div>
+                    </span>
                   </label>
                   <button
                     type="button"
@@ -797,14 +498,8 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                   <input
                     type={mostrarPassword ? "text" : "password"}
                     value={formData.password}
-                    onChange={(e) => {
-                      setFormData({ ...formData, password: e.target.value });
-                      validarCampo('password', e.target.value);
-                    }}
-                    disabled={!campoPasswordHabilitado()}
-                    className={`w-full px-4 py-2.5 pr-10 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      erroresValidacion.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
-                    } ${!campoPasswordHabilitado() ? 'bg-slate-100' : ''}`}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-4 py-2.5 pr-10 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
                     placeholder="Mínimo 8 caracteres"
                     required
                     minLength={8}
@@ -825,66 +520,6 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                       </svg>
                     )}
                   </button>
-                </div>
-                {erroresValidacion.password && (
-                  <p className="text-red-500 text-xs mt-1">{erroresValidacion.password}</p>
-                )}
-                {camposValidados.password && !erroresValidacion.password && (
-                  <p className="text-green-600 text-xs mt-1 flex items-center">
-                    <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Contraseña válida
-                  </p>
-                )}
-              </div>
-
-              {/* Indicador de progreso de validación */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-slate-700 mb-3">Progreso de validación:</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Nombres:</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      camposValidados.nombres ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {camposValidados.nombres ? '✓ Válido' : '✗ Pendiente'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Apellidos:</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      camposValidados.apellidos ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {camposValidados.apellidos ? '✓ Válido' : '✗ Pendiente'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Teléfono:</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      camposValidados.telefono ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {camposValidados.telefono ? '✓ Válido' : '✗ Pendiente'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Email:</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      camposValidados.email && emailVerificado ? 'bg-green-100 text-green-700' : 
-                      camposValidados.email ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {camposValidados.email && emailVerificado ? '✓ Verificado' : 
-                       camposValidados.email ? '⚠ Válido, verificar' : '✗ Pendiente'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Contraseña:</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      camposValidados.password ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {camposValidados.password ? '✓ Válido' : '✗ Pendiente'}
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -1018,7 +653,7 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
               </button>
               <button
                 type="submit"
-                disabled={loading || !emailVerificado || !camposValidados.nombres || !camposValidados.apellidos || !camposValidados.telefono || !camposValidados.email || !camposValidados.password}
+                disabled={loading}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-indigo-400 transition-colors flex items-center"
               >
                 {loading ? (

@@ -6,6 +6,7 @@ import AdminAuthGuard from '../AdminAuthGuard';
 import Header from '../../Header';
 import Footer from '../../Footer';
 import AddCursoModal from '../modals/AddCursoModal';
+import Skeleton from '../../../../components/ui/Skeleton';
 
 interface CursoResumen {
   id: number;
@@ -84,7 +85,17 @@ export default function AdminCursosPage() {
               </button>
             </div>
 
-            {loading && <div className="text-slate-600">Cargando cursos...</div>}
+            {loading && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="border border-slate-200 rounded-lg p-4 space-y-3">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-40" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                ))}
+              </div>
+            )}
             {error && !loading && <div className="text-red-600">{error}</div>}
             {!loading && !error && cursos.length === 0 && (
               <div className="text-slate-600">No hay cursos registrados.</div>

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import AdminAuthGuard from '../AdminAuthGuard';
 import Header from '../../Header';
 import Footer from '../../Footer';
+import Skeleton from '../../../../components/ui/Skeleton';
 
 interface AreaResumen {
   id: number;
@@ -50,7 +51,20 @@ export default function AdminAreasPage() {
             <h2 className="text-lg font-semibold text-slate-900 mb-2">Gestión de áreas</h2>
             <p className="text-slate-600 mb-4">Listado de áreas con sus materias.</p>
 
-            {loading && <div className="text-slate-600">Cargando áreas...</div>}
+            {loading && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="border border-slate-200 rounded-lg p-4 space-y-3">
+                    <Skeleton className="h-4 w-48" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-6 w-24" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {error && !loading && <div className="text-red-600">{error}</div>}
             {!loading && !error && areas.length === 0 && (
               <div className="text-slate-600">No hay áreas registradas.</div>

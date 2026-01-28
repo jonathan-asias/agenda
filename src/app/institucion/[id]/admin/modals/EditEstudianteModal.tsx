@@ -65,8 +65,8 @@ export default function EditEstudianteModal({
         nombre_acudiente: estudiante.nombre_acudiente,
         correo_acudiente: estudiante.correo_acudiente || '',
         telefono_acudiente: estudiante.telefono_acudiente,
-        grado_id: estudiante.grado_id || 0, // Se cargará desde la base de datos
-        curso_id: estudiante.curso_id || 0,  // Se cargará desde la base de datos
+        grado_id: estudiante.grado_id || 0,
+        curso_id: estudiante.curso_id || 0,
         activo: estudiante.activo
       });
     }
@@ -90,11 +90,44 @@ export default function EditEstudianteModal({
     }
   }, [isOpen, cargarGrados]);
 
+  useEffect(() => {
+    if (!estudiante || grados.length === 0) {
+      return;
+    }
+
+    let gradoId = formData.grado_id;
+    let cursoId = formData.curso_id;
+
+    if (!gradoId && estudiante.grado?.nombre) {
+      const gradoMatch = grados.find(g => g.nombre === estudiante.grado.nombre);
+      gradoId = gradoMatch?.id || 0;
+    }
+
+    const gradoSeleccionado = grados.find(g => g.id === gradoId);
+    const cursos = gradoSeleccionado?.cursos || [];
+    setCursosDisponibles(cursos);
+
+    if (!cursoId && estudiante.curso?.nombre) {
+      const cursoMatch = cursos.find(c => c.nombre === estudiante.curso.nombre);
+      cursoId = cursoMatch?.id || 0;
+    }
+
+    if (gradoId !== formData.grado_id || cursoId !== formData.curso_id) {
+      setFormData(prev => ({
+        ...prev,
+        grado_id: gradoId,
+        curso_id: cursoId
+      }));
+    }
+  }, [grados, estudiante]);
+
   const handleGradoChange = (gradoId: number) => {
     setFormData(prev => ({ ...prev, grado_id: gradoId, curso_id: 0 }));
     const gradoSeleccionado = grados.find(g => g.id === gradoId);
     if (gradoSeleccionado) {
       setCursosDisponibles(gradoSeleccionado.cursos);
+    } else {
+      setCursosDisponibles([]);
     }
   };
 

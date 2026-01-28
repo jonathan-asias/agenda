@@ -19,6 +19,19 @@ interface BrandingData {
   colorSecundario?: string | null;
 }
 
+const getCachedBranding = (institucionId?: string) => {
+  if (!institucionId || typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const cached = localStorage.getItem(`branding:${institucionId}`);
+    return cached ? (JSON.parse(cached) as BrandingData) : null;
+  } catch (error) {
+    console.error('Error leyendo branding del cache:', error);
+    return null;
+  }
+};
+
 export default function Header({ title, subtitle, showNavigation = true, showBranding = true }: HeaderProps) {
   const params = useParams();
   const router = useRouter();
@@ -26,8 +39,9 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
   const { signOut, user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userType, setUserType] = useState<'institucion' | 'admin' | 'docente' | null>(null);
-  const [branding, setBranding] = useState<BrandingData | null>(null);
   const institucionId = params?.id as string;
+  const [branding, setBranding] = useState<BrandingData | null>(() => getCachedBranding(institucionId));
+  const [brandingChecked, setBrandingChecked] = useState(Boolean(getCachedBranding(institucionId)));
 
   // Detectar el tipo de usuario basándose en la ruta actual
   useEffect(() => {
@@ -49,22 +63,36 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
     const fetchBranding = async () => {
       if (!showBranding || !institucionId) {
         setBranding(null);
+        setBrandingChecked(true);
         return;
       }
 
       try {
+        const cached = getCachedBranding(institucionId);
+        if (cached) {
+          setBranding(cached);
+          setBrandingChecked(true);
+        }
         const response = await fetch(`/api/instituciones/${institucionId}/branding`);
         if (response.ok) {
           const data = await response.json();
-          setBranding({
+          const brandingData = {
             logoUrl: data.logoUrl,
             bannerUrl: data.bannerUrl,
             colorPrimario: data.color_primario,
             colorSecundario: data.color_secundario
-          });
+          };
+          setBranding(brandingData);
+          try {
+            localStorage.setItem(`branding:${institucionId}`, JSON.stringify(brandingData));
+          } catch (error) {
+            console.error('Error guardando branding en cache:', error);
+          }
         }
       } catch (error) {
         console.error('Error al cargar branding:', error);
+      } finally {
+        setBrandingChecked(true);
       }
     };
 
@@ -214,7 +242,11 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
                       src={branding.logoUrl}
                       alt="Logo institución"
                       className="w-full h-full object-contain"
+                      loading="eager"
+                      fetchPriority="high"
                     />
+                  ) : showBranding && !brandingChecked ? (
+                    <div className="w-full h-full animate-pulse bg-slate-200" />
                   ) : (
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -318,16 +350,22 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
           </div>
         </div>
       </header>
-      {showBranding && branding?.bannerUrl && (
+      {showBranding && (
         <div
           className="w-full flex justify-center"
           style={{ backgroundColor: branding?.colorPrimario || '#2563eb' }}
         >
-          <img
-            src={branding.bannerUrl}
-            alt="Banner institución"
-            className="w-auto h-auto block"
-          />
+          {branding?.bannerUrl ? (
+            <img
+              src={branding.bannerUrl}
+              alt="Banner institución"
+              className="w-auto h-auto block"
+              loading="eager"
+              fetchPriority="high"
+            />
+          ) : !brandingChecked ? (
+            <div className="w-full max-w-7xl h-20 animate-pulse bg-white/30" />
+          ) : null}
         </div>
       )}
     </>

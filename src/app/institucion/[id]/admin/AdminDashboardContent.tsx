@@ -465,15 +465,16 @@ export default function AdminDashboardContent() {
                 </div>
 
                 {/* Lista de recordatorios */}
-                {loadingRecordatorios ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-slate-600">Cargando recordatorios...</p>
-                  </div>
-                ) : recordatorios.length > 0 ? (
-                  recordatoriosFiltrados.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {recordatoriosFiltrados.map((recordatorio) => {
+                <div className="h-96 overflow-y-auto">
+                  {loadingRecordatorios ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-slate-600">Cargando recordatorios...</p>
+                    </div>
+                  ) : recordatorios.length > 0 ? (
+                    recordatoriosFiltrados.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {recordatoriosFiltrados.map((recordatorio) => {
                       const fechaRecordatorio = new Date(recordatorio.fecha);
                       const hoy = new Date();
                       hoy.setHours(0, 0, 0, 0);
@@ -618,10 +619,10 @@ export default function AdminDashboardContent() {
                             Ver detalles completos
                           </button>
                         </div>
-                      );
-                    })}
-                  </div>
-                  ) : (
+                        );
+                      })}
+                    </div>
+                    ) : (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -631,18 +632,19 @@ export default function AdminDashboardContent() {
                       <p className="text-slate-600">No se encontraron recordatorios con los filtros seleccionados</p>
                       <p className="text-sm text-slate-500 mt-2">Intenta ajustar los filtros para ver más resultados</p>
                     </div>
-                  )
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                    )
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-slate-600">No hay recordatorios creados aún</p>
+                      <p className="text-sm text-slate-500 mt-2">Los docentes aún no han creado recordatorios</p>
                     </div>
-                    <p className="text-slate-600">No hay recordatorios creados aún</p>
-                    <p className="text-sm text-slate-500 mt-2">Los docentes aún no han creado recordatorios</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </>
           )}

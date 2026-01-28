@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import AdminAuthGuard from '../AdminAuthGuard';
 import Header from '../../Header';
 import Footer from '../../Footer';
+import Skeleton from '../../../../components/ui/Skeleton';
 
 interface CursoResumen {
   id: number;
@@ -59,7 +60,19 @@ export default function AdminGradosPage() {
             <p className="text-slate-600 mb-4">Listado de grados y sus cursos asociados.</p>
 
             {loading && (
-              <div className="text-slate-600">Cargando grados...</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="border border-slate-200 rounded-lg p-4 space-y-3">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-40" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-14" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
             {error && !loading && (
               <div className="text-red-600">{error}</div>
