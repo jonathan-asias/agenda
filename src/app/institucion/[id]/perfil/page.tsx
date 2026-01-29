@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../../../contexts/AuthContext';
 import { getSupabaseClient, isSupabaseConfigured } from '../../../../lib/supabase';
 import InstitucionAuthGuard from '../InstitucionAuthGuard';
 import Swal from 'sweetalert2';
@@ -47,8 +46,6 @@ interface PerfilFormData {
 
 export default function PerfilPage() {
   const params = useParams();
-  const router = useRouter();
-  const { signOut } = useAuth();
   const [institucion, setInstitucion] = useState<Institucion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -71,7 +68,7 @@ export default function PerfilPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
 
-  const fetchInstitucion = async () => {
+  const fetchInstitucion = useCallback(async () => {
     try {
       const response = await fetch(`/api/instituciones/${params.id}`);
       if (response.ok) {
@@ -92,9 +89,9 @@ export default function PerfilPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
-  const fetchBranding = async () => {
+  const fetchBranding = useCallback(async () => {
     try {
       const response = await fetch(`/api/instituciones/${params.id}/branding`);
       if (response.ok) {
@@ -109,14 +106,14 @@ export default function PerfilPage() {
     } catch (error) {
       console.error('Error al cargar branding:', error);
     }
-  };
+  }, [params.id]);
 
   useEffect(() => {
     if (params.id) {
       fetchInstitucion();
       fetchBranding();
     }
-  }, [params.id]);
+  }, [params.id, fetchBranding, fetchInstitucion]);
 
   const obtainSupabaseClient = () => {
     if (!isSupabaseConfigured()) {
@@ -243,70 +240,6 @@ export default function PerfilPage() {
       );
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    // Mostrar diálogo informativo antes de cerrar sesión
-    const result = await Swal.fire({
-      title: '¿Cerrar sesión?',
-      html: `
-        <div style="text-align: left; margin-top: 1rem;">
-          <p style="margin-bottom: 1rem; color: #334155;">Estás a punto de cerrar sesión de tu cuenta.</p>
-          <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
-            <p style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem; font-size: 0.875rem;">ℹ️ Información importante:</p>
-            <ul style="color: #1e3a8a; font-size: 0.875rem; padding-left: 1.5rem; margin: 0; line-height: 1.8;">
-              <li>Tu sesión será finalizada de forma segura</li>
-              <li>Deberás iniciar sesión nuevamente para acceder</li>
-              <li>Tus datos y configuraciones se mantendrán guardados</li>
-            </ul>
-          </div>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: 'Sí, cerrar sesión',
-      cancelButtonText: 'Cancelar',
-      reverseButtons: true,
-      focusCancel: true,
-      customClass: {
-        popup: 'rounded-2xl',
-        confirmButton: 'rounded-lg',
-        cancelButton: 'rounded-lg'
-      }
-    });
-
-    // Si el usuario confirma, proceder con el cierre de sesión
-    if (result.isConfirmed) {
-      try {
-        await signOut();
-        // Mostrar mensaje de éxito antes de redirigir
-        await Swal.fire({
-          title: 'Sesión cerrada',
-          text: 'Has cerrado sesión exitosamente. ¡Hasta pronto!',
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'rounded-2xl'
-          }
-        });
-        router.push('/');
-      } catch (error) {
-        console.error('Error al cerrar sesión:', error);
-        await Swal.fire({
-          title: 'Error',
-          text: 'Hubo un problema al cerrar sesión. Por favor, intenta nuevamente.',
-          icon: 'error',
-          confirmButtonColor: '#dc2626',
-          customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'rounded-lg'
-          }
-        });
-      }
     }
   };
 

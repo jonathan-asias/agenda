@@ -40,7 +40,6 @@ export default function AddAdministradorModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
   const [emailValidating, setEmailValidating] = useState(false);
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
   const [canProceedToPassword, setCanProceedToPassword] = useState(false);

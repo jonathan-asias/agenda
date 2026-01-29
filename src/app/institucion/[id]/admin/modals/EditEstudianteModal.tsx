@@ -119,7 +119,7 @@ export default function EditEstudianteModal({
         curso_id: cursoId
       }));
     }
-  }, [grados, estudiante]);
+  }, [grados, estudiante, formData.curso_id, formData.grado_id]);
 
   const handleGradoChange = (gradoId: number) => {
     setFormData(prev => ({ ...prev, grado_id: gradoId, curso_id: 0 }));

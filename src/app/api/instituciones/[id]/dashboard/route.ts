@@ -85,38 +85,7 @@ export async function GET(
     type MateriasWithRelations = Awaited<typeof materiasQuery>;
     type GradosWithRelations = Awaited<ReturnType<typeof prisma.grados.findMany>>;
     type CursosWithRelations = Awaited<ReturnType<typeof prisma.cursos.findMany>>;
-    const docentesQuery = prisma.docentes.findMany({
-      where: { institucion_id: institucionId, activo: true },
-      include: {
-        sede: {
-          select: {
-            nombre: true
-          }
-        },
-        docenteAsignaciones: {
-          include: {
-            grado: {
-              select: {
-                nombre: true,
-                nivel: true
-              }
-            },
-            curso: {
-              select: {
-                nombre: true
-              }
-            },
-            materia: {
-              select: {
-                nombre: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { nombres: 'asc' }
-    });
-    type DocentesWithRelations = Awaited<typeof docentesQuery>;
+    type DocentesWithRelations = Awaited<ReturnType<typeof prisma.docentes.findMany>>;
     type EstudiantesWithRelations = Awaited<ReturnType<typeof prisma.estudiantes.findMany>>;
 
     // Obtener datos detallados de forma individual

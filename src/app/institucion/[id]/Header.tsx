@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -235,15 +236,17 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
                 className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
               >
                 <div
-                  className="w-20 h-20 rounded-lg flex items-center justify-center overflow-hidden bg-transparent"
+                  className="w-20 h-20 rounded-lg flex items-center justify-center overflow-hidden bg-transparent relative"
                 >
                   {showBranding && branding?.logoUrl ? (
-                    <img
+                    <Image
                       src={branding.logoUrl}
                       alt="Logo institución"
-                      className="w-full h-full object-contain"
-                      loading="eager"
-                      fetchPriority="high"
+                      fill
+                      sizes="80px"
+                      className="object-contain"
+                      priority
+                      unoptimized
                     />
                   ) : showBranding && !brandingChecked ? (
                     <div className="w-full h-full animate-pulse bg-slate-200" />
@@ -356,12 +359,15 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
           style={{ backgroundColor: branding?.colorPrimario || '#2563eb' }}
         >
           {branding?.bannerUrl ? (
-            <img
+            <Image
               src={branding.bannerUrl}
               alt="Banner institución"
+              width={1600}
+              height={400}
+              sizes="100vw"
               className="w-auto h-auto block"
-              loading="eager"
-              fetchPriority="high"
+              priority
+              unoptimized
             />
           ) : !brandingChecked ? (
             <div className="w-full max-w-7xl h-20 animate-pulse bg-white/30" />

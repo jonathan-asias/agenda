@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import Swal from 'sweetalert2';
 import AddRecordatorioModal from './AddRecordatorioModal';
 import ViewRecordatorioModal from './ViewRecordatorioModal';
@@ -86,8 +85,7 @@ interface Recordatorio {
 }
 
 export default function DocenteDashboardContent() {
-  const { user, signOut } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const [docente, setDocente] = useState<Docente | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRecordatorioModal, setShowRecordatorioModal] = useState(false);
@@ -337,70 +335,6 @@ export default function DocenteDashboardContent() {
   useEffect(() => {
     setPaginaActual(1);
   }, [filtros.area, filtros.materia, filtros.tipo, filtros.fecha, filtros.cantidadEstudiantes]);
-
-  const handleLogout = async () => {
-    // Mostrar diálogo informativo antes de cerrar sesión
-    const result = await Swal.fire({
-      title: '¿Cerrar sesión?',
-      html: `
-        <div style="text-align: left; margin-top: 1rem;">
-          <p style="margin-bottom: 1rem; color: #334155;">Estás a punto de cerrar sesión de tu cuenta.</p>
-          <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
-            <p style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem; font-size: 0.875rem;">ℹ️ Información importante:</p>
-            <ul style="color: #1e3a8a; font-size: 0.875rem; padding-left: 1.5rem; margin: 0; line-height: 1.8;">
-              <li>Tu sesión será finalizada de forma segura</li>
-              <li>Deberás iniciar sesión nuevamente para acceder</li>
-              <li>Tus datos y configuraciones se mantendrán guardados</li>
-            </ul>
-          </div>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: 'Sí, cerrar sesión',
-      cancelButtonText: 'Cancelar',
-      reverseButtons: true,
-      focusCancel: true,
-      customClass: {
-        popup: 'rounded-2xl',
-        confirmButton: 'rounded-lg',
-        cancelButton: 'rounded-lg'
-      }
-    });
-
-    // Si el usuario confirma, proceder con el cierre de sesión
-    if (result.isConfirmed) {
-      try {
-        await signOut();
-        // Mostrar mensaje de éxito antes de redirigir
-        await Swal.fire({
-          title: 'Sesión cerrada',
-          text: 'Has cerrado sesión exitosamente. ¡Hasta pronto!',
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'rounded-2xl'
-          }
-        });
-        router.push('/login');
-      } catch (error) {
-        console.error('Error al cerrar sesión:', error);
-        await Swal.fire({
-          title: 'Error',
-          text: 'Hubo un problema al cerrar sesión. Por favor, intenta nuevamente.',
-          icon: 'error',
-          confirmButtonColor: '#dc2626',
-          customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'rounded-lg'
-          }
-        });
-      }
-    }
-  };
 
   if (loading || !docente) {
     return (

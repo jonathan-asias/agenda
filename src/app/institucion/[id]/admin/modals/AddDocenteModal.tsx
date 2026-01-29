@@ -123,30 +123,6 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
     return false;
   };
 
-  // Función para verificar si el email ya existe en Supabase Auth
-  const verificarEmailExistente = async (email: string) => {
-    if (!email.trim() || !validarEmail(email.trim())) {
-      return false;
-    }
-
-    setVerificandoEmail(true);
-    try {
-      const response = await fetch('/api/auth/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() })
-      });
-      
-      const data = await response.json();
-      return data.exists || false;
-    } catch (error) {
-      console.error('Error verificando email:', error);
-      return false;
-    } finally {
-      setVerificandoEmail(false);
-    }
-  };
-
   const cargarDatosInstitucion = async () => {
     setLoadingData(true);
     try {

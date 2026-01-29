@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../../contexts/AuthContext';
 import InstitucionAuthGuard from './InstitucionAuthGuard';
 import AddAdministradorModal from './AddAdministradorModal';
 import Footer from './Footer';
@@ -46,8 +45,6 @@ interface Administrador {
 
 export default function InstitucionPage() {
   const params = useParams();
-  const router = useRouter();
-  const { signOut } = useAuth();
   const [institucion, setInstitucion] = useState<Institucion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -67,7 +64,7 @@ export default function InstitucionPage() {
   const [isUpdatingAdmin, setIsUpdatingAdmin] = useState(false);
   const primaryColor = institucion?.color_primario || '#2563eb';
 
-  const fetchInstitucion = async () => {
+  const fetchInstitucion = useCallback(async () => {
     try {
       const response = await fetch(`/api/instituciones/${params.id}`);
       if (response.ok) {
@@ -82,13 +79,13 @@ export default function InstitucionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
   useEffect(() => {
     if (params.id) {
       fetchInstitucion();
     }
-  }, [params.id]);
+  }, [params.id, fetchInstitucion]);
 
   const handleViewAdmin = (admin: Administrador) => {
     setSelectedAdmin(admin);
@@ -188,19 +185,6 @@ export default function InstitucionPage() {
         title: 'Error',
         text: 'No se pudo eliminar el administrador'
       });
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      const confirmed = window.confirm('¿Deseas cerrar sesión?');
-      if (!confirmed) {
-        return;
-      }
-      await signOut();
-      router.push('/');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
     }
   };
 

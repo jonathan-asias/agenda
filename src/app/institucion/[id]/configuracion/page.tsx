@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Swal from 'sweetalert2';
 import InstitucionAuthGuard from '../InstitucionAuthGuard';
-import { useAuth } from '../../../../contexts/AuthContext';
 import Footer from '../Footer';
 import Header from '../Header';
 
@@ -30,8 +28,6 @@ type NotificationSettings = {
 
 export default function ConfiguracionPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
-  const { signOut } = useAuth();
   const [institucion, setInstitucion] = useState<Institucion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,21 +78,6 @@ export default function ConfiguracionPage() {
       text: 'Tus configuraciones de notificación se han actualizado.',
       confirmButtonColor: '#2563eb',
     });
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      router.push('/login');
-    } catch (err) {
-      console.error('Error cerrando sesión:', err);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error al cerrar sesión',
-        text: 'Intenta nuevamente en unos momentos.',
-        confirmButtonColor: '#ef4444',
-      });
-    }
   };
 
   return (
