@@ -111,7 +111,7 @@ export async function GET(
     let materias: MateriasWithRelations = [];
     let grados: GradosWithRelations = [];
     let cursos: CursosWithRelations = [];
-    let docentes: DocentesWithRelations = [];
+    let docentes: DocentesWithRelations[] = [];
     let estudiantes: EstudiantesWithRelations = [];
 
     try {
