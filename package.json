@@ -16,7 +16,7 @@
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.2",
     "jsonwebtoken": "^9.0.2",
-    "next": "15.5.3",
+    "next": "^16.1.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "sweetalert2": "^11.26.3"
@@ -29,7 +29,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.3",
+    "eslint-config-next": "^16.1.6",
     "prisma": "^6.16.2",
     "tailwindcss": "^4",
     "tsx": "^4.20.5",
