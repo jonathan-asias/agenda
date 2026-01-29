@@ -11,6 +11,17 @@ interface AddMateriaModalProps {
   onSuccess: () => void;
 }
 
+interface AreaApi {
+  id: number;
+  nombre: string;
+}
+
+interface MateriaApi {
+  id: number;
+  nombre: string;
+  area_id: number;
+}
+
 // Áreas predeterminadas del sistema (mismas que en SetupWizard)
 const areasPredeterminadas = [
   { id: 1, nombre: 'Ciencias naturales y educación ambiental', es_opcional: false, orden: 1 },
@@ -36,7 +47,7 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [areasDisponibles, setAreasDisponibles] = useState<any[]>([]);
+  const [areasDisponibles, setAreasDisponibles] = useState<AreaApi[]>([]);
   const [materiasExistentes, setMateriasExistentes] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
@@ -58,15 +69,15 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
 
         const areasData = await areasResponse.json();
         const materiasData = await materiasResponse.json();
-        const areas = areasData?.areas || [];
-        const materias = materiasData?.materias || [];
+        const areas: AreaApi[] = areasData?.areas || [];
+        const materias: MateriaApi[] = materiasData?.materias || [];
 
         setAreasDisponibles(areas);
 
         const materiasPorAreaNombre: Record<string, string[]> = {};
         const normalizar = (texto: string) => texto.trim().toLowerCase();
-        materias.forEach((materia: any) => {
-          const area = areas.find((a: any) => a.id === materia.area_id);
+        materias.forEach((materia) => {
+          const area = areas.find((a) => a.id === materia.area_id);
           const areaNombre = area?.nombre ? normalizar(area.nombre) : '';
           if (!areaNombre) return;
           if (!materiasPorAreaNombre[areaNombre]) {

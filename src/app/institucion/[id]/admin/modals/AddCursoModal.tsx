@@ -11,6 +11,16 @@ interface AddCursoModalProps {
   onSuccess: () => void;
 }
 
+interface CursoApi {
+  nombre: string;
+}
+
+interface GradoApi {
+  id: number;
+  nombre: string;
+  cursos?: CursoApi[];
+}
+
 // Grados predeterminados del sistema (mismos que en SetupWizard)
 const gradosPredeterminados = [
   // Educación Inicial
@@ -45,7 +55,7 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [gradosDisponibles, setGradosDisponibles] = useState<any[]>([]);
+  const [gradosDisponibles, setGradosDisponibles] = useState<GradoApi[]>([]);
   const [cursosExistentes, setCursosExistentes] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
@@ -62,15 +72,15 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
         const response = await fetch(`/api/setup/grados/${institucionId}`);
         if (!response.ok) return;
         const data = await response.json();
-        const grados = data?.grados || [];
+        const grados: GradoApi[] = data?.grados || [];
         setGradosDisponibles(grados);
 
         const cursosPorGradoNombre: Record<string, string[]> = {};
         const normalizar = (texto: string) => texto.trim().toLowerCase();
-        grados.forEach((grado: any) => {
+        grados.forEach((grado) => {
           const gradoNombre = normalizar(grado.nombre || '');
           if (!gradoNombre) return;
-          cursosPorGradoNombre[gradoNombre] = (grado.cursos || []).map((curso: any) => curso.nombre);
+          cursosPorGradoNombre[gradoNombre] = (grado.cursos || []).map((curso) => curso.nombre);
         });
         setCursosExistentes(cursosPorGradoNombre);
       } catch (fetchError) {

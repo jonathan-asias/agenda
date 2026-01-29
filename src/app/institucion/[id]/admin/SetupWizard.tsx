@@ -2393,7 +2393,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </div>
                 <div className="px-6 py-4 text-sm text-slate-600">
                   <p className="text-slate-800 font-medium">
-                    ¿Eliminar al estudiante "{estudianteParaEliminar.nombre}"?
+                    ¿Eliminar al estudiante &quot;{estudianteParaEliminar.nombre}&quot;?
                   </p>
                   <p className="mt-2">Esta acción lo removerá de la lista actual.</p>
                 </div>
@@ -2445,7 +2445,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </div>
                 <div className="px-6 py-4 text-sm text-slate-600">
                   <p className="text-slate-800 font-medium">
-                    ¿Eliminar el curso "{cursoParaEliminar.nombre}"?
+                    ¿Eliminar el curso &quot;{cursoParaEliminar.nombre}&quot;?
                   </p>
                   <p className="mt-2">
                     Ten en cuenta que se eliminará toda la información relacionada: estudiantes,
