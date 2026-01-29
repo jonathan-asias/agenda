@@ -5,8 +5,11 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const connectionString = process.env.DATABASE_URL;
-const adapter = connectionString ? new PrismaPg({ connectionString }) : undefined;
+const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL or DIRECT_URL must be set for Prisma adapter.');
+}
+const adapter = new PrismaPg({ connectionString });
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 
