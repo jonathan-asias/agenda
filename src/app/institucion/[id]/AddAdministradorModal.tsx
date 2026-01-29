@@ -224,7 +224,6 @@ export default function AddAdministradorModal({
     const generated = password.join('');
     setFormData(prev => ({ ...prev, password: generated }));
     setGeneratedPassword(generated);
-    setPasswordError('');
     setPasswordValid(true);
   };
 
@@ -328,7 +327,6 @@ export default function AddAdministradorModal({
     setEmailAvailable(null);
     setCanProceedToPassword(false);
     setEmailError('');
-    setPasswordError('');
     setShowPassword(false);
     setError('');
     
