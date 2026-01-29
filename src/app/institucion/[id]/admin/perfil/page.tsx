@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import AdminAuthGuard from '../AdminAuthGuard';
-import Swal from 'sweetalert2';
 import Footer from '../../Footer';
 import Header from '../../Header';
 

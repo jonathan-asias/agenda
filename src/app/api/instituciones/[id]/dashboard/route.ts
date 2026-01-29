@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../lib/prisma';
 
 export async function GET(
@@ -85,7 +86,24 @@ export async function GET(
     type MateriasWithRelations = Awaited<typeof materiasQuery>;
     type GradosWithRelations = Awaited<ReturnType<typeof prisma.grados.findMany>>;
     type CursosWithRelations = Awaited<ReturnType<typeof prisma.cursos.findMany>>;
-    type DocentesWithRelations = Awaited<ReturnType<typeof prisma.docentes.findMany>>;
+    type DocentesWithRelations = Prisma.DocentesGetPayload<{
+      include: {
+        sede: { select: { nombre: true } };
+        docenteAsignaciones: {
+          include: {
+            grado: { select: { id: true; nombre: true; nivel: true } };
+            curso: { select: { id: true; nombre: true } };
+            materia: {
+              select: {
+                id: true;
+                nombre: true;
+                area: { select: { id: true; nombre: true } };
+              };
+            };
+          };
+        };
+      };
+    }>;
     type EstudiantesWithRelations = Awaited<ReturnType<typeof prisma.estudiantes.findMany>>;
 
     // Obtener datos detallados de forma individual

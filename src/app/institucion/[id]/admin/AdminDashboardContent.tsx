@@ -3,12 +3,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import SetupWizard from './SetupWizard';
 import DashboardStats from './DashboardStats';
 import DashboardSections from './DashboardSections';
 import AddItemModal from './AddItemModal';
-import Swal from 'sweetalert2';
 import Footer from '../Footer';
 import Header from '../Header';
 
@@ -53,7 +51,6 @@ interface DashboardData {
 
 export default function AdminDashboardContent() {
   const { user } = useAuth();
-  const router = useRouter();
   const [administrador, setAdministrador] = useState<Administrador | null>(null);
   const [institucionId, setInstitucionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
