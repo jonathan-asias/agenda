@@ -127,7 +127,6 @@ export default function AddAdministradorModal({
     if (name === 'password') {
       const isValid = validatePassword(value);
       setPasswordValid(isValid);
-      setPasswordError('');
     }
   };
 
