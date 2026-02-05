@@ -76,8 +76,17 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      console.error('NEXT_PUBLIC_APP_URL no está configurada. No se puede generar el enlace de recuperación.');
+      return NextResponse.json(
+        { error: 'La URL pública de la aplicación no está configurada. Contacta al administrador.' },
+        { status: 500 }
+      );
+    }
+
     // Crear enlace de recuperación
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/resetear-contrasena/${resetToken}`;
+    const resetLink = `${appUrl}/resetear-contrasena/${resetToken}`;
 
     // Enviar email usando Supabase Auth
     try {

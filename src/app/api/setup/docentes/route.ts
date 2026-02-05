@@ -26,6 +26,15 @@ export async function POST(request: NextRequest) {
     console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configurada' : 'NO CONFIGURADA');
     console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Configurada' : 'NO CONFIGURADA');
 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!baseUrl) {
+      console.error('NEXT_PUBLIC_BASE_URL no está configurada. No se pueden enviar correos de confirmación.');
+      return NextResponse.json(
+        { success: false, error: 'La URL pública de la aplicación no está configurada. Contacta al administrador.' },
+        { status: 500 }
+      );
+    }
+
     if (!isSupabaseAdminConfigured()) {
       console.error('Supabase admin no está configurado. No se pueden crear docentes.');
       return NextResponse.json(
@@ -341,7 +350,7 @@ export async function POST(request: NextRequest) {
             type: 'signup',
             email: docente.email.toLowerCase().trim(),
             options: {
-              emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
+              emailRedirectTo: `${baseUrl}/login`
             }
           });
 
@@ -356,7 +365,7 @@ export async function POST(request: NextRequest) {
               email: docente.email.toLowerCase().trim(),
               password: docente.password,
               options: {
-                redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
+                  redirectTo: `${baseUrl}/login`
               }
             });
 

@@ -67,6 +67,15 @@ export async function POST(
       );
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!baseUrl) {
+      console.error('NEXT_PUBLIC_BASE_URL no está configurada. No se pueden enviar correos de confirmación.');
+      return NextResponse.json(
+        { error: 'La URL pública de la aplicación no está configurada. Contacta al administrador.' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { nombre, apellido, correo, telefono, cargo, password, sede_id } = body;
 
@@ -241,7 +250,7 @@ export async function POST(
                 type: 'signup',
                 email: correo.toLowerCase().trim(),
                 options: {
-                  emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
+                  emailRedirectTo: `${baseUrl}/login`
                 }
               });
 
@@ -256,7 +265,7 @@ export async function POST(
                   email: correo.toLowerCase().trim(),
                   password: password,
                   options: {
-                    redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
+                    redirectTo: `${baseUrl}/login`
                   }
                 });
 

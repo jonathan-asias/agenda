@@ -1,13 +1,15 @@
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
+const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
-  throw new Error('DATABASE_URL or DIRECT_URL must be set for Prisma adapter.');
+  throw new Error(
+    'DATABASE_URL no está configurada. Define la variable de entorno en producción para inicializar Prisma.'
+  );
 }
 const adapter = new PrismaPg({ connectionString });
 

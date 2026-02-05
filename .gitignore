@@ -16,10 +16,12 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.docker
 
 # Prisma
 prisma/migrations/
 .env
+src/generated/prisma/
 
 # IDE
 .vscode/
