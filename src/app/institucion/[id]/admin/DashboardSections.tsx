@@ -442,21 +442,21 @@ export default function DashboardSections({
             ) : (
               <div className="space-y-3">
                 {areas.map((area) => (
-                  <div key={area.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center">
-                      <span className="font-medium text-slate-900">{area.nombre}</span>
+                  <div key={area.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-slate-50 rounded-lg">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <span className="font-medium text-slate-900 min-w-0 break-words">{area.nombre}</span>
                       {area.es_opcional && (
-                        <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                        <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
                           Opcional
                         </span>
                       )}
                       {!area.activa && (
-                        <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
                           Inactiva
                         </span>
                       )}
                     </div>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-slate-600 sm:text-right">
                       {area.materias.length} materia{area.materias.length !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -497,9 +497,9 @@ export default function DashboardSections({
                 <div className="space-y-3">
                 {materias.map((materia) => (
                   <div key={materia.id} className="p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-slate-900">{materia.nombre}</span>
-                      <span className="text-sm text-slate-600">{materia.area?.nombre || 'Sin área'}</span>
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2 mb-2">
+                      <span className="font-medium text-slate-900 min-w-0 break-words">{materia.nombre}</span>
+                      <span className="text-sm text-slate-600 sm:text-right">{materia.area?.nombre || 'Sin área'}</span>
                     </div>
                     <div className="text-sm text-slate-600">
                       <span className="font-medium">Grados:</span> {materia._count?.materiaGrados || 0}
@@ -537,11 +537,11 @@ export default function DashboardSections({
               <div className="space-y-3">
                 {grados.map((grado) => (
                   <div key={grado.id} className="p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-slate-900">{grado.nombre}</span>
-                      <span className="text-sm text-slate-600">{grado.nivel}</span>
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2 mb-2">
+                      <span className="font-medium text-slate-900 min-w-0 break-words">{grado.nombre}</span>
+                      <span className="text-sm text-slate-600 sm:text-right">{grado.nivel}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-slate-600">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-600">
                       <span>{grado.cursos?.length || 0} curso{(grado.cursos?.length || 0) !== 1 ? 's' : ''}</span>
                       <span>{grado._count?.estudiantes || 0} estudiante{(grado._count?.estudiantes || 0) !== 1 ? 's' : ''}</span>
                     </div>
@@ -569,11 +569,11 @@ export default function DashboardSections({
               <div className="space-y-3">
                 {cursos.map((curso) => (
                   <div key={curso.id} className="p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-slate-900">{curso.nombre}</span>
-                      <span className="text-sm text-slate-600">{curso.grado?.nombre || 'Sin grado'}</span>
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2 mb-2">
+                      <span className="font-medium text-slate-900 min-w-0 break-words">{curso.nombre}</span>
+                      <span className="text-sm text-slate-600 sm:text-right">{curso.grado?.nombre || 'Sin grado'}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-slate-600">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-600">
                       <span>{curso.jornada || 'Jornada única'}</span>
                       <span>{curso._count?.estudiantes || 0} estudiante{(curso._count?.estudiantes || 0) !== 1 ? 's' : ''}</span>
                     </div>
@@ -728,16 +728,16 @@ export default function DashboardSections({
                   <div className="space-y-4">
                     {(docentesFiltrados.length > 0 ? docentesFiltrados : docentesState).map((docente) => (
                 <div key={docente.id} className="p-4 bg-slate-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 className="font-medium text-slate-900">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
+                    <div className="min-w-0">
+                      <h4 className="font-medium text-slate-900 break-words">
                         {docente.nombres} {docente.apellidos}
                       </h4>
-                      <p className="text-sm text-slate-600">{docente.email}</p>
+                      <p className="text-sm text-slate-600 break-words">{docente.email}</p>
                     </div>
-                    <div className="text-right text-sm text-slate-600">
+                    <div className="text-left sm:text-right text-sm text-slate-600">
                       <p>{docente.telefono}</p>
-                      {docente.sede && <p>{docente.sede.nombre}</p>}
+                      {docente.sede && <p className="break-words">{docente.sede.nombre}</p>}
                     </div>
                   </div>
                   <div className="text-sm text-slate-600 mb-3">
@@ -754,7 +754,7 @@ export default function DashboardSections({
                   </div>
                   
                   {/* Botones de acción */}
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
                     <button
                       onClick={() => handleViewDocente(docente)}
                       className="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors flex items-center gap-1"
@@ -921,21 +921,21 @@ export default function DashboardSections({
                 <div className="space-y-4">
                   {(estudiantesFiltrados.length > 0 ? estudiantesFiltrados : estudiantesState).map((estudiante) => (
                 <div key={estudiante.id} className="p-4 bg-slate-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 className="font-medium text-slate-900">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-3">
+                    <div className="min-w-0">
+                      <h4 className="font-medium text-slate-900 break-words">
                         {estudiante.nombres} {estudiante.apellidos}
                       </h4>
-                      <p className="text-sm text-slate-600">Código: {estudiante.codigo_estudiantil}</p>
+                      <p className="text-sm text-slate-600 break-words">Código: {estudiante.codigo_estudiantil}</p>
                     </div>
-                    <div className="text-right text-sm text-slate-600">
-                      <p>{estudiante.grado?.nombre || 'Sin grado'} - {estudiante.curso?.nombre || 'Sin curso'}</p>
-                      {estudiante.curso?.jornada && <p>{estudiante.curso.jornada}</p>}
+                    <div className="text-left sm:text-right text-sm text-slate-600">
+                      <p className="break-words">{estudiante.grado?.nombre || 'Sin grado'} - {estudiante.curso?.nombre || 'Sin curso'}</p>
+                      {estudiante.curso?.jornada && <p className="break-words">{estudiante.curso.jornada}</p>}
                     </div>
                   </div>
                   
                   {/* Botones de acción */}
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
                     <button
                       onClick={() => handleViewEstudiante(estudiante)}
                       className="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors flex items-center gap-1"

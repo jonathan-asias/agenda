@@ -106,6 +106,23 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
     }
   }, [isOpen, institucionId]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const body = document.body;
+    const count = Number(body.dataset.modalCount || '0');
+    body.dataset.modalCount = String(count + 1);
+    body.classList.add('modal-open');
+    return () => {
+      const next = Math.max(Number(body.dataset.modalCount || '1') - 1, 0);
+      if (next === 0) {
+        body.classList.remove('modal-open');
+        delete body.dataset.modalCount;
+      } else {
+        body.dataset.modalCount = String(next);
+      }
+    };
+  }, [isOpen]);
+
   // Función para validar email
   const validarEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -316,8 +333,8 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -340,7 +357,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
             )}
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Nombres *
@@ -434,7 +451,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Grado *
@@ -523,7 +540,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Teléfono *

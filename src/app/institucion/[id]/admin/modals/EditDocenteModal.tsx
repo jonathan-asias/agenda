@@ -483,7 +483,7 @@ export default function EditDocenteModal({
                       {gradosSeleccionados.includes(grado.id) && (
                         <div className="ml-7 space-y-2 mt-3">
                           <p className="text-xs text-slate-600 mb-2">Selecciona los cursos:</p>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {grado.cursos.map((curso) => (
                               <label key={curso.id} className="flex items-center space-x-2 cursor-pointer">
                                 <input

@@ -253,6 +253,23 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
     }
   }, [isOpen, institucionId]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const body = document.body;
+    const count = Number(body.dataset.modalCount || '0');
+    body.dataset.modalCount = String(count + 1);
+    body.classList.add('modal-open');
+    return () => {
+      const next = Math.max(Number(body.dataset.modalCount || '1') - 1, 0);
+      if (next === 0) {
+        body.classList.remove('modal-open');
+        delete body.dataset.modalCount;
+      } else {
+        body.dataset.modalCount = String(next);
+      }
+    };
+  }, [isOpen]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -374,7 +391,7 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
             )}
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Nombres *
@@ -534,7 +551,7 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                       {gradosSeleccionados.includes(grado.id) && (
                         <div className="ml-7 space-y-2">
                           <p className="text-xs text-slate-600 mb-2">Selecciona los cursos:</p>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {cursosInstitucion[grado.id]?.map((curso) => (
                               <label key={curso.id} className="flex items-center space-x-2 cursor-pointer">
                                 <input

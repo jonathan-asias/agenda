@@ -1287,7 +1287,7 @@ export default function RegistroInstitucion() {
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold text-slate-800">Jornadas de la Institución</h4>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
                     <input
                       type="checkbox"
@@ -1380,7 +1380,7 @@ export default function RegistroInstitucion() {
                       <label className="block text-sm font-medium text-slate-700 mb-3">
                         Jornadas de la Sede *
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <label className="flex items-center p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200">
                           <input
                             type="checkbox"
@@ -1560,9 +1560,9 @@ export default function RegistroInstitucion() {
           </div>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col gap-6 lg:flex-row">
           {/* Vertical Progress Bar */}
-          <div className="w-72 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+          <div className="w-full lg:w-72 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-slate-800 mb-2">Progreso</h3>
               <div className="text-xs text-slate-500 bg-slate-100 rounded-full px-3 py-1 inline-block">
@@ -1596,16 +1596,16 @@ export default function RegistroInstitucion() {
                       }`} />
                     )}
                   </div>
-                  <div className="flex-1 pt-2">
+                  <div className="flex-1 pt-2 min-w-0">
                     <div className={`text-sm font-medium transition-colors duration-200 ${
                       currentStep >= step.id ? 'text-slate-800' : 'text-slate-500'
                     }`}>
-                      {step.name}
+                      <span className="break-words">{step.name}</span>
                     </div>
                     <div className={`text-xs mt-1 transition-colors duration-200 ${
                       currentStep >= step.id ? 'text-slate-600' : 'text-slate-400'
                     }`}>
-                      {step.description}
+                      <span className="break-words">{step.description}</span>
                     </div>
                   </div>
                 </div>
@@ -1647,23 +1647,23 @@ export default function RegistroInstitucion() {
               </div>
 
               {/* Navigation */}
-              <div className="mt-6 flex justify-between">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button
                   type="button"
                   onClick={prevStep}
                   disabled={currentStep === 1}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   ← Anterior
                 </button>
                 
-                <div className="flex space-x-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full sm:w-auto">
                   {currentStep < steps.length ? (
                     <button
                       type="button"
                       onClick={nextStep}
                       disabled={!validateStep(currentStep)}
-                      className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       Siguiente →
                     </button>
@@ -1671,7 +1671,7 @@ export default function RegistroInstitucion() {
                     <button
                       type="submit"
                       disabled={!validateStep(currentStep) || isSubmitting}
-                      className="px-6 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {isSubmitting ? 'Registrando...' : '✓ Registrar Institución'}
                     </button>

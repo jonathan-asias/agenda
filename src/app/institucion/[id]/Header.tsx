@@ -364,8 +364,8 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
               alt="Banner institución"
               width={1600}
               height={400}
-              sizes="100vw"
-              className="w-auto h-auto block"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              className="max-w-full h-auto block"
               priority
               unoptimized
             />

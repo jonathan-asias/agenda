@@ -407,7 +407,7 @@ export default function DocenteDashboardContent() {
                             {asignacion.materia.nombre}
                           </p>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
                             <label className="block text-xs font-medium text-slate-600 mb-1">Grado</label>
                             <p className="text-xs text-slate-800">
@@ -448,14 +448,14 @@ export default function DocenteDashboardContent() {
 
           {/* Recordatorios */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
               <h3 className="text-lg font-semibold text-slate-800 flex items-center">
                 <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Recordatorios {recordatorios.length > 0 && `(${recordatoriosFiltrados.length} de ${recordatorios.length})`}
               </h3>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full sm:w-auto">
                 <button
                   onClick={() => {
                     if (docente?.id) {
@@ -463,7 +463,7 @@ export default function DocenteDashboardContent() {
                     }
                   }}
                   disabled={loadingRecordatorios || !docente?.id}
-                  className="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className={`w-4 h-4 mr-2 ${loadingRecordatorios ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -472,7 +472,7 @@ export default function DocenteDashboardContent() {
                 </button>
                 <button
                   onClick={() => setShowRecordatorioModal(true)}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -776,7 +776,7 @@ export default function DocenteDashboardContent() {
                               <button
                                 key={numero}
                                 onClick={() => setPaginaActual(numero)}
-                                className={`px-3 py-2 min-w-[2.5rem] rounded-lg transition-colors ${
+                                className={`px-3 py-2 min-w-[2.25rem] sm:min-w-[2.5rem] rounded-lg transition-colors ${
                                   paginaActual === numero
                                     ? 'bg-blue-600 text-white'
                                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'

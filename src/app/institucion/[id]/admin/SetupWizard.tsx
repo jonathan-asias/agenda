@@ -2070,6 +2070,22 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
   const headerTextColor = getContrastingTextColor(brandingColors.secondary);
 
+  useEffect(() => {
+    const body = document.body;
+    const count = Number(body.dataset.modalCount || '0');
+    body.dataset.modalCount = String(count + 1);
+    body.classList.add('modal-open');
+    return () => {
+      const next = Math.max(Number(body.dataset.modalCount || '1') - 1, 0);
+      if (next === 0) {
+        body.classList.remove('modal-open');
+        delete body.dataset.modalCount;
+      } else {
+        body.dataset.modalCount = String(next);
+      }
+    };
+  }, []);
+
   // Actualizar estado de secciones cuando cambien los datos
   useEffect(() => {
     actualizarEstadoSecciones();
@@ -2489,24 +2505,25 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             </div>
           )}
         {/* Header */}
-        <div className="px-6 py-4" style={{ backgroundColor: brandingColors.secondary, color: headerTextColor }}>
-          <div className="flex justify-between items-center">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 relative" style={{ backgroundColor: brandingColors.secondary, color: headerTextColor }}>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Configuración Inicial</h2>
-              <p className="text-sm mt-1" style={{ color: headerTextColor }}>
+              <h2 className="text-xl sm:text-2xl font-bold">Configuración Inicial</h2>
+              <p className="text-xs sm:text-sm mt-1" style={{ color: headerTextColor }}>
                 Paso {currentStep} de 5
               </p>
             </div>
-            <button
-              onClick={onClose}
-              className="hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors"
-              style={{ color: headerTextColor }}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors"
+            style={{ color: headerTextColor }}
+            aria-label="Cerrar"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
 
           {/* Progress Bar */}
           <div className="mt-4 bg-white bg-opacity-20 rounded-full h-2">
@@ -2518,8 +2535,8 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         </div>
 
         {/* Step Indicators */}
-        <div className="border-b border-slate-200 px-6 py-4">
-          <div className="flex justify-between">
+        <div className="border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex gap-4 sm:gap-0 sm:justify-between overflow-x-auto sm:overflow-visible pb-1">
             {[
               { num: 1, label: 'Grados y Cursos' },
               { num: 2, label: 'Áreas y Materias' },
@@ -2529,9 +2546,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             ].map((step) => (
               <div
                 key={step.num}
-                className={`flex items-center ${step.num < 5 ? 'flex-1' : ''}`}
+                className={`flex items-center flex-shrink-0 sm:flex-shrink ${step.num < 5 ? 'sm:flex-1' : ''}`}
               >
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center min-w-[110px] sm:min-w-0">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                       currentStep >= step.num
@@ -2542,7 +2559,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     {step.num}
                   </div>
                   <span
-                    className={`text-xs mt-1 font-medium ${
+                    className={`text-[10px] sm:text-xs mt-1 font-medium text-center ${
                       currentStep >= step.num ? 'text-blue-600' : 'text-slate-400'
                     }`}
                   >
@@ -2551,7 +2568,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </div>
                 {step.num < 5 && (
                   <div
-                    className={`flex-1 h-0.5 mx-2 mt-[-20px] ${
+                    className={`hidden sm:block flex-1 h-0.5 mx-2 mt-[-20px] ${
                       currentStep > step.num ? 'bg-blue-600' : 'bg-slate-200'
                     }`}
                   />
@@ -2562,7 +2579,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {currentStep === 1 && (
             <div>
               <div className="mb-6">
@@ -2591,8 +2608,8 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         
                         return (
                           <div key={grado.id} className="bg-white rounded-lg p-4 border border-slate-200">
-                            <div className="flex justify-between items-center mb-3">
-                              <div className="flex items-center">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
+                              <div className="flex flex-wrap items-center gap-2 min-w-0">
                                 <span className="font-semibold text-slate-900 text-lg">
                                   {grado.nombre}
                                 </span>
@@ -2616,13 +2633,13 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                     </div>
                                   </div>
                                 </div>
-                                <span className="ml-3 text-sm text-slate-500">
+                                <span className="text-sm text-slate-500">
                                   ({cursosDelGrado.length} curso{cursosDelGrado.length !== 1 ? 's' : ''})
                                 </span>
                               </div>
                               <button
                                 onClick={() => agregarCurso(grado.id)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center"
+                                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
                               >
                                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -2687,7 +2704,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
               {/* Botón de guardar */}
               <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h4 className="font-semibold text-blue-900">Guardar configuración</h4>
                     <p className="text-sm text-blue-700">
@@ -2697,7 +2714,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                   <button
                     onClick={() => setMostrarResumen(true)}
                     disabled={saving || cursos.length === 0}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center"
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center"
                   >
                     {saving ? (
                       <>
@@ -2731,9 +2748,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
                 <div className="bg-green-600 text-white px-6 py-4">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold">📋 Resumen - Grados y Cursos</h2>
+                      <h2 className="text-xl sm:text-2xl font-bold break-words">📋 Resumen - Grados y Cursos</h2>
                       <p className="text-green-100 text-sm mt-1">
                         Revisa los datos antes de guardar
                       </p>
@@ -2816,7 +2833,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
                   {/* Estadísticas */}
                   <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
                       <div>
                         <div className="text-2xl font-bold text-green-600">
                           {gradosPredeterminados.filter(grado => 
@@ -2835,17 +2852,17 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
                 {/* Botones de acción */}
                 <div className="border-t border-slate-200 px-6 py-4 bg-slate-50">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <button
                       onClick={() => setMostrarResumen(false)}
-                      className="px-6 py-2 rounded-lg font-medium transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
+                      className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleSaveGradosYCursos}
                       disabled={saving}
-                      className="px-6 py-2 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 flex items-center"
+                      className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center"
                     >
                       {saving ? (
                         <>
@@ -2875,9 +2892,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
                 <div className="bg-purple-600 text-white px-6 py-4">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold">📚 Resumen - Áreas y Materias</h2>
+                      <h2 className="text-xl sm:text-2xl font-bold break-words">📚 Resumen - Áreas y Materias</h2>
                       <p className="text-purple-100 text-sm mt-1">
                         Revisa las áreas, materias y asignaciones antes de guardar
                       </p>
@@ -2905,10 +2922,10 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         {areasActivas.map((areaId) => {
                           const area = areasPredeterminadas.find(a => a.id === areaId);
                           return (
-                            <div key={areaId} className="flex items-center space-x-3">
+                            <div key={areaId} className="flex items-start gap-2 min-w-0">
                               <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
-                              <div>
-                                <span className="font-medium text-slate-900">{area?.nombre}</span>
+                              <div className="min-w-0">
+                                <span className="font-medium text-slate-900 break-words">{area?.nombre}</span>
                                 {area?.es_opcional && (
                                   <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded ml-2">
                                     Opcional
@@ -2989,7 +3006,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
                   {/* Estadísticas */}
                   <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
                       <div>
                         <div className="text-2xl font-bold text-purple-600">{areasActivas.length}</div>
                         <div className="text-sm text-slate-600">Áreas</div>
@@ -3012,17 +3029,17 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
                 {/* Botones de acción */}
                 <div className="border-t border-slate-200 px-6 py-4 bg-slate-50">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <button
                       onClick={() => setMostrarResumenAreas(false)}
-                      className="px-6 py-2 rounded-lg font-medium transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
+                      className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={handleSaveAreasYMaterias}
                       disabled={saving}
-                      className="px-6 py-2 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 flex items-center"
+                      className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center"
                     >
                       {saving ? (
                         <>
@@ -3138,19 +3155,19 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     {areasPredeterminadas.map((area) => (
                       <div
                         key={area.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                        className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border transition-colors ${
                           areasActivas.includes(area.id)
                             ? 'bg-blue-50 border-blue-200'
                             : 'bg-white border-slate-200'
                         }`}
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center">
-                            <span className="font-medium text-slate-900">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-slate-900 break-words">
                               {area.nombre}
                             </span>
                             {area.es_opcional && (
-                              <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded shrink-0">
                                 Opcional
                               </span>
                             )}
@@ -3166,7 +3183,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                               setAreasActivas([...areasActivas, area.id]);
                             }
                           }}
-                          className={`ml-3 w-12 h-6 rounded-full transition-colors ${
+                          className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
                             areasActivas.includes(area.id)
                               ? 'bg-blue-600'
                               : 'bg-slate-300'
@@ -3199,9 +3216,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                       
                       return (
                         <div key={areaId} className="bg-white rounded-lg p-4 border border-slate-200">
-                          <div className="flex justify-between items-center mb-3">
-                            <div className="flex items-center">
-                              <h5 className="font-semibold text-slate-900">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+                            <div className="flex flex-wrap items-center gap-2 min-w-0">
+                              <h5 className="font-semibold text-slate-900 break-words">
                                 {area?.nombre}
                               </h5>
                               <div className="relative group ml-2">
@@ -3299,8 +3316,8 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     <div className="space-y-4">
                       {gradosCargados.map((grado) => (
                         <div key={grado.id} className="bg-white rounded-lg p-4 border border-slate-200">
-                          <div className="flex justify-between items-center mb-3">
-                            <h5 className="font-semibold text-slate-900">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+                            <h5 className="font-semibold text-slate-900 break-words">
                               {grado.nombre}
                             </h5>
                             <span className="text-sm text-slate-500">
@@ -3360,7 +3377,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               {/* Botón de guardar */}
               {areasActivas.length > 0 && (
                 <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h4 className="font-semibold text-blue-900">Guardar configuración</h4>
                       <p className="text-sm text-blue-700">
@@ -3370,7 +3387,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     <button
                       onClick={() => setMostrarResumenAreas(true)}
                       disabled={saving || materias.length === 0}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center"
+                      className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -3419,13 +3436,13 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                             : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <div className="flex items-center">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xl mr-3">
                           {seccionesCompletadas.datos ? '✅' : seccionActiva === 'datos' ? '📋' : '⏳'}
                         </span>
                         <span className="font-medium">Datos Personales</span>
                         {seccionesCompletadas.datos && (
-                          <span className="ml-2 text-sm text-green-600">Completo</span>
+                          <span className="text-sm text-green-600">Completo</span>
                         )}
                       </div>
                       <svg 
@@ -3542,7 +3559,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Email *
                     </label>
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                       <input
                         type="email"
                         value={docenteActual.email}
@@ -3560,7 +3577,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         type="button"
                         onClick={verificarEmailManual}
                         disabled={!camposValidados.email || verificandoEmail}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                        className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                           camposValidados.email && !verificandoEmail
                             ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
                             : 'bg-gray-400 text-gray-200 cursor-not-allowed'
@@ -3615,7 +3632,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Contraseña *
                   </label>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <input
                       type={mostrarPassword ? "text" : "password"}
                       value={docenteActual.password}
@@ -3633,7 +3650,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                       type="button"
                       onClick={() => setMostrarPassword(!mostrarPassword)}
                       disabled={!botonesPasswordHabilitados()}
-                      className={`px-3 py-2 border rounded-lg transition-colors ${
+                      className={`w-full sm:w-auto px-3 py-2 border rounded-lg transition-colors flex items-center justify-center text-slate-700 ${
                         botonesPasswordHabilitados()
                           ? 'border-slate-300 hover:bg-slate-50 cursor-pointer'
                           : 'border-slate-200 bg-gray-100 cursor-not-allowed opacity-50'
@@ -3654,7 +3671,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                       type="button"
                       onClick={generarPassword}
                       disabled={!botonesPasswordHabilitados()}
-                      className={`px-3 py-2 rounded-lg transition-colors flex items-center ${
+                      className={`w-full sm:w-auto px-3 py-2 rounded-lg transition-colors flex items-center justify-center ${
                         botonesPasswordHabilitados()
                           ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
                           : 'bg-gray-400 text-gray-200 cursor-not-allowed'
@@ -3708,19 +3725,19 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                               : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <div className="flex items-center">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xl mr-3">
                           {!seccionesHabilitadas.grados ? '🔒' : seccionesCompletadas.grados ? '✅' : seccionActiva === 'grados' ? '📚' : '⏳'}
                         </span>
                         <span className="font-medium">Grados y Cursos</span>
                         {seccionesCompletadas.grados && (
-                          <span className="ml-2 text-sm text-green-600">Completo</span>
+                          <span className="text-sm text-green-600">Completo</span>
                         )}
                         {!seccionesHabilitadas.grados && (
-                          <span className="ml-2 text-sm text-gray-500">Completa datos personales primero</span>
+                          <span className="text-sm text-gray-500">Completa datos personales primero</span>
                         )}
                         {seccionesHabilitadas.grados && !seccionesCompletadas.grados && gradosSeleccionados.length > 0 && (
-                          <span className="ml-2 text-sm text-yellow-600">Selecciona al menos un curso por grado</span>
+                          <span className="text-sm text-yellow-600">Selecciona al menos un curso por grado</span>
                         )}
                       </div>
                       <svg 
@@ -3757,8 +3774,8 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                             {grado.cursos.map((curso: any) => {
                               const isSelected = asignacionesGradoCurso.some(a => a.gradoId === grado.id && a.cursoId === curso.id);
                               return (
-                                <div key={curso.id} className="flex items-center justify-between p-2 border border-green-100 rounded">
-                                  <label className="flex items-center">
+                                <div key={curso.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-2 border border-green-100 rounded">
+                                  <label className="flex items-center min-w-0">
                                     <input
                                       type="checkbox"
                                       checked={isSelected}
@@ -3771,12 +3788,12 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                       }}
                                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-green-300 rounded mr-3"
                                     />
-                                    <span className="text-sm text-green-800">
+                                    <span className="text-sm text-green-800 break-words">
                                       {curso.nombre}
                                     </span>
                                   </label>
                                   {isSelected && (
-                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded self-start sm:self-auto">
                                       Seleccionado
                                     </span>
                                   )}
@@ -3832,16 +3849,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                               : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <div className="flex items-center">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xl mr-3">
                           {!seccionesHabilitadas.materias ? '🔒' : seccionesCompletadas.materias ? '✅' : seccionActiva === 'materias' ? '🔬' : '⏳'}
                         </span>
                         <span className="font-medium">Áreas y Materias</span>
                         {seccionesCompletadas.materias && (
-                          <span className="ml-2 text-sm text-green-600">Completo</span>
+                          <span className="text-sm text-green-600">Completo</span>
                         )}
                         {!seccionesHabilitadas.materias && (
-                          <span className="ml-2 text-sm text-gray-500">Completa grados y cursos primero</span>
+                          <span className="text-sm text-gray-500">Completa grados y cursos primero</span>
                         )}
                       </div>
                       <svg 
@@ -3982,17 +3999,17 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             )}
 
             {/* Botones de acción */}
-            <div className="flex justify-between items-center mt-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4">
               <button
                 onClick={limpiarFormularioDocente}
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors text-left sm:text-center"
               >
                 Limpiar formulario
               </button>
               <button
                 onClick={handleAgregarDocente}
                 disabled={Object.keys(erroresValidacion).length > 0}
-                className={`px-6 py-2 rounded-lg transition-colors flex items-center ${
+                className={`w-full sm:w-auto px-6 py-2 rounded-lg transition-colors flex items-center justify-center ${
                   Object.keys(erroresValidacion).length > 0
                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700'
@@ -4021,27 +4038,27 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 const totalMaterias = asignaciones.asignaciones.reduce((sum, a) => sum + a.materiasSeleccionadas.length, 0);
                 
                 return (
-                  <div key={docente.id} className="bg-slate-50 rounded-lg border border-slate-200">
+                  <div key={docente.id} className="bg-slate-50 rounded-lg border border-slate-200 relative">
                     {/* Información básica del docente */}
-                    <div className="flex items-center justify-between p-4">
-                      <div className="flex-1">
-                        <h5 className="font-medium text-slate-900">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 pr-12">
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-medium text-slate-900 break-words">
                           {docente.nombres} {docente.apellidos}
                         </h5>
-                        <p className="text-sm text-slate-600">{docente.email}</p>
+                        <p className="text-sm text-slate-600 break-words">{docente.email}</p>
                         {totalAsignaciones > 0 && (
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs text-slate-500 mt-1 break-words">
                             {totalAsignaciones} asignacion{totalAsignaciones !== 1 ? 'es' : ''} • {totalMaterias} materia{totalMaterias !== 1 ? 's' : ''}
                           </p>
                         )}
                       </div>
                       
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-wrap items-center gap-2 justify-start sm:justify-end w-full sm:w-auto">
                         {/* Botón Ver Asignaciones */}
                         {totalAsignaciones > 0 && (
                           <button
                             onClick={() => toggleAsignaciones(docente.id)}
-                            className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1 rounded transition-colors"
+                            className="w-full sm:w-auto flex items-center justify-center space-x-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1 rounded transition-colors"
                           >
                             <span>{isExpanded ? 'Ocultar' : 'Ver'} asignaciones</span>
                             <svg 
@@ -4055,21 +4072,21 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                           </button>
                         )}
                         
-                        {/* Estado y botón eliminar */}
+                        {/* Estado */}
                         <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
                           Activo
                         </span>
-                        <button 
-                          onClick={() => eliminarDocente(docente.id)}
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50 rounded p-1 transition-colors"
-                          title="Eliminar docente"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
                       </div>
                     </div>
+                    <button 
+                      onClick={() => eliminarDocente(docente.id)}
+                      className="absolute top-3 right-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded p-1 transition-colors"
+                      title="Eliminar docente"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                     
                     {/* Asignaciones expandibles */}
                     {isExpanded && (
@@ -4122,7 +4139,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         {/* Botón para continuar */}
         {docentes.length > 0 && (
           <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="font-semibold text-green-900">Listo para continuar</h4>
                 <p className="text-sm text-green-700">
@@ -4132,7 +4149,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               <button
                 onClick={mostrarConfirmacion}
                 disabled={saving}
-                className={`px-6 py-2 rounded-lg transition-colors flex items-center ${
+                className={`w-full sm:w-auto px-6 py-2 rounded-lg transition-colors flex items-center justify-center ${
                   saving
                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700'
@@ -4446,17 +4463,17 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </div>
 
                 {/* Botones */}
-                <div className="flex justify-between items-center mt-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-6">
                   <button
                     onClick={limpiarFormularioEstudiante}
-                    className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                    className="w-full sm:w-auto px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors text-left sm:text-center"
                   >
                     Limpiar formulario
                   </button>
                   <button
                     onClick={handleAgregarEstudiante}
                     disabled={Object.keys(erroresValidacionEstudiante).length > 0}
-                    className={`px-6 py-2 rounded-lg transition-colors flex items-center ${
+                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition-colors flex items-center justify-center ${
                       Object.keys(erroresValidacionEstudiante).length > 0
                         ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                         : 'bg-green-600 text-white hover:bg-green-700'
@@ -4478,33 +4495,35 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                   </h4>
                   <div className="space-y-3">
                     {estudiantes.map((estudiante) => (
-                      <div key={estudiante.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                        <div className="flex-1">
+                      <div key={estudiante.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-slate-50 rounded-lg">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-3">
-                            <div>
-                              <p className="font-medium text-slate-900">
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900 break-words">
                                 {estudiante.nombres} {estudiante.apellidos}
                               </p>
-                              <p className="text-sm text-slate-600">
+                              <p className="text-sm text-slate-600 break-words">
                                 Código: {estudiante.codigo_estudiantil} | 
                                 Acudiente: {estudiante.nombre_acudiente} | 
                                 Tel: {estudiante.telefono_acudiente}
                               </p>
-                              <p className="text-sm text-slate-500">
+                              <p className="text-sm text-slate-500 break-words">
                                 Grado: {gradosDisponibles.find(g => g.id === estudiante.grado_id)?.nombre || 'N/A'} | 
                                 Curso: {todosLosCursos.find(c => c.id === estudiante.curso_id)?.nombre || 'N/A'}
                               </p>
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => eliminarEstudiante(estudiante.id)}
-                          className="text-red-600 hover:text-red-800 transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        <div className="flex justify-start sm:justify-end">
+                          <button
+                            onClick={() => eliminarEstudiante(estudiante.id)}
+                            className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -4725,7 +4744,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   onClick={() => setCurrentStep(4)}
-                  className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center justify-center"
+                  className="w-full sm:w-auto px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center justify-center text-sm sm:text-base"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -4745,7 +4764,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     });
                     onClose();
                   }}
-                  className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-lg font-medium"
+                  className="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-base sm:text-lg font-medium"
                 >
                   <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -4758,12 +4777,12 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 px-6 py-4 bg-slate-50">
-          <div className="flex justify-between items-center">
+        <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 bg-slate-50">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
             <button
               onClick={handleBack}
               disabled={currentStep === 1}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              className={`w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors ${
                 currentStep === 1
                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
@@ -4772,14 +4791,14 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               Anterior
             </button>
 
-            <div className="text-sm text-slate-600">
+            <div className="text-sm text-slate-600 text-center">
               Paso {currentStep} de 5
             </div>
 
             <button
               onClick={handleNext}
               disabled={currentStep === 5}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              className={`w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors ${
                 currentStep === 5
                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -5036,7 +5055,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                   
                   {/* Resumen de la tabla */}
                   <div className="bg-slate-50 px-4 py-3 border-t border-slate-200">
-                    <div className="flex justify-between items-center text-sm text-slate-600">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-600">
                       <span>
                         Total: {docentes.length} docente{docentes.length !== 1 ? 's' : ''} con asignaciones
                       </span>

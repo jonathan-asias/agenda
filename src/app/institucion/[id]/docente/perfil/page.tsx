@@ -239,7 +239,7 @@ export default function DocentePerfilPage() {
                           {asignacion.materia.nombre}
                         </p>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs font-medium text-slate-600 mb-1">Grado</label>
                           <p className="text-xs text-slate-800">

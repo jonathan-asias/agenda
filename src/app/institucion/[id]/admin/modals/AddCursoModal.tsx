@@ -67,6 +67,23 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const body = document.body;
+    const count = Number(body.dataset.modalCount || '0');
+    body.dataset.modalCount = String(count + 1);
+    body.classList.add('modal-open');
+    return () => {
+      const next = Math.max(Number(body.dataset.modalCount || '1') - 1, 0);
+      if (next === 0) {
+        body.classList.remove('modal-open');
+        delete body.dataset.modalCount;
+      } else {
+        body.dataset.modalCount = String(next);
+      }
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     const cargarCursosExistentes = async () => {
       try {
         const response = await fetch(`/api/setup/grados/${institucionId}`);
