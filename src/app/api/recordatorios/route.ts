@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
       descripcion,
       fecha,
       tipo,
+      modoEnvio,
       docenteId,
       gradoId,
       cursoId,
@@ -76,6 +77,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Modo de envío: array a string comma-separated (ej. ["sms","email"] -> "sms,email")
+    const modoEnviosValidos = ['sms', 'whatsapp', 'email'];
+    let modoEnvioStr: string | null = null;
+    if (Array.isArray(modoEnvio) && modoEnvio.length > 0) {
+      const filtrados = modoEnvio.filter((m: string) => modoEnviosValidos.includes(String(m).toLowerCase()));
+      if (filtrados.length > 0) {
+        modoEnvioStr = filtrados.map((m: string) => String(m).toLowerCase()).join(',');
+      }
+    }
+
     // Convertir la fecha a DateTime
     const fechaDateTime = new Date(fecha);
 
@@ -88,6 +99,7 @@ export async function POST(request: NextRequest) {
           descripcion: descripcion.trim(),
           fecha: fechaDateTime,
           tipo: tipo,
+          modo_envio: modoEnvioStr,
           docente_id: parseInt(docenteId),
           grado_id: parseInt(gradoId),
           curso_id: parseInt(cursoId),

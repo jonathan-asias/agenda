@@ -64,6 +64,13 @@ export default function AddRecordatorioModal({
   const [cargandoEstudiantes, setCargandoEstudiantes] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [modoEnvio, setModoEnvio] = useState<string[]>([]);
+
+  const opcionesModoEnvio = [
+    { value: 'sms', label: 'SMS' },
+    { value: 'whatsapp', label: 'WhatsApp' },
+    { value: 'email', label: 'Email' }
+  ];
 
   const tiposRecordatorio = [
     { value: 'tarea', label: 'Tarea' },
@@ -289,6 +296,12 @@ export default function AddRecordatorioModal({
       return;
     }
 
+    if (modoEnvio.length === 0) {
+      setError('Selecciona al menos un método de envío (SMS, WhatsApp o Email)');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/recordatorios', {
         method: 'POST',
@@ -300,6 +313,7 @@ export default function AddRecordatorioModal({
           descripcion: formData.descripcion.trim(),
           fecha: formData.fecha,
           tipo: formData.tipo,
+          modoEnvio: modoEnvio,
           docenteId: docenteId,
           gradoId: parseInt(formData.gradoId),
           cursoId: parseInt(formData.cursoId),
@@ -338,9 +352,17 @@ export default function AddRecordatorioModal({
       areaId: '',
       materiaId: ''
     });
+    setModoEnvio([]);
     setEstudiantes([]);
     setEstudiantesSeleccionados([]);
     setError('');
+  };
+
+  const toggleModoEnvio = (value: string) => {
+    setModoEnvio(prev =>
+      prev.includes(value) ? prev.filter(m => m !== value) : [...prev, value]
+    );
+    if (error) setError('');
   };
 
   const handleClose = () => {
@@ -465,6 +487,32 @@ export default function AddRecordatorioModal({
             <p className="text-xs text-slate-500">
               Selecciona la fecha para la cual es el recordatorio
             </p>
+          </div>
+
+          {/* Modo de envío del recordatorio */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-700">
+              Método de envío del recordatorio <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-slate-500 mb-2">
+              Elige cómo quieres que se envíe el recordatorio a los estudiantes (puedes seleccionar uno o varios).
+            </p>
+            <div className="flex flex-wrap gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+              {opcionesModoEnvio.map((opcion) => (
+                <label
+                  key={opcion.value}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={modoEnvio.includes(opcion.value)}
+                    onChange={() => toggleModoEnvio(opcion.value)}
+                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                  <span className="text-slate-800 font-medium">{opcion.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Área */}

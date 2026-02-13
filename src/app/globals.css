@@ -245,3 +245,40 @@ svg {
   max-width: 100%;
   height: auto;
 }
+
+/* Cursor tipo mano en elementos interactivos (hover) */
+button,
+a,
+select,
+summary,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+/* Selector de país (react-phone-number-input): icono y texto negro */
+.PhoneInputCountry {
+  color: black;
+}
+
+.PhoneInputCountrySelect,
+.PhoneInputCountrySelect option {
+  color: #000;
+}
+
+.PhoneInputCountrySelect option {
+  background-color: #fff;
+}
+
+/* Icono/flecha del indicativo de país: negro y visible */
+.PhoneInputCountrySelectArrow {
+  border-color: #000 !important;
+  opacity: 1 !important;
+}
+
+.PhoneInputCountrySelect:focus + .PhoneInputCountryIcon + .PhoneInputCountrySelectArrow {
+  border-color: #000 !important;
+  opacity: 1 !important;
+}

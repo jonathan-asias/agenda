@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { getSupabaseClient, isSupabaseConfigured } from '../../../../../lib/supabase';
+import { APP_URL } from '@/lib/env';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -76,17 +77,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!appUrl) {
-      console.error('NEXT_PUBLIC_APP_URL no está configurada. No se puede generar el enlace de recuperación.');
-      return NextResponse.json(
-        { error: 'La URL pública de la aplicación no está configurada. Contacta al administrador.' },
-        { status: 500 }
-      );
-    }
-
-    // Crear enlace de recuperación
-    const resetLink = `${appUrl}/resetear-contrasena/${resetToken}`;
+    // Crear enlace de recuperación (APP_URL validada en @/lib/env)
+    const resetLink = `${APP_URL}/resetear-contrasena/${resetToken}`;
 
     // Enviar email usando Supabase Auth
     try {

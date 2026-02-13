@@ -5,13 +5,22 @@
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
+import es from 'react-phone-number-input/locale/es.json';
+import 'react-phone-number-input/style.css';
+
+const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
+  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
+);
+
+const isPhoneValidDocente = (phone: string) => !!phone && isValidPhoneNumber(phone);
 
 interface SetupWizardProps {
   institucionId: number;
   onClose: () => void;
 }
 
-type WizardStep = 1 | 2 | 3 | 4 | 5;
+type WizardStep = 0 | 1 | 2 | 3 | 4 | 5;
 
 interface Curso {
   id: string;
@@ -81,7 +90,7 @@ interface AsignacionDocente {
 }
 
 export default function SetupWizard({ institucionId, onClose }: SetupWizardProps) {
-  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  const [currentStep, setCurrentStep] = useState<WizardStep>(0);
   const [brandingColors, setBrandingColors] = useState({
     primary: '#2563eb',
     secondary: '#0f172a'
@@ -1101,10 +1110,10 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         }
         break;
       case 'telefono':
-        if (valor.trim() && !validarTelefonoColombiano(valor.trim())) {
-          errores[campo] = 'Número de celular colombiano inválido';
+        if (valor && typeof valor === 'string' && valor.trim() && !isPhoneValidDocente(valor.trim())) {
+          errores[campo] = 'Ingrese un número de teléfono válido con indicativo de país';
           validados[campo] = false;
-        } else if (valor.trim() && validarTelefonoColombiano(valor.trim())) {
+        } else if (valor && typeof valor === 'string' && valor.trim() && isPhoneValidDocente(valor.trim())) {
           delete errores[campo];
           validados[campo] = true;
           habilitados.email = true;
@@ -1135,18 +1144,21 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
           setCamposHabilitados(prev => ({ ...prev, password: false }));
         }
         break;
-      case 'password':
-        if (valor && valor.length < 8) {
-          errores[campo] = 'Mínimo 8 caracteres';
-          validados[campo] = false;
-        } else if (valor && valor.length >= 8) {
-          delete errores[campo];
-          validados[campo] = true;
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
+      case 'password': {
+          const reqs = getPasswordRequirementsDocente(String(valor || ''));
+          const allOk = Object.values(reqs).every(Boolean);
+          if (valor && !allOk) {
+            errores[campo] = 'La contraseña debe cumplir todos los requisitos';
+            validados[campo] = false;
+          } else if (valor && allOk) {
+            delete errores[campo];
+            validados[campo] = true;
+          } else {
+            delete errores[campo];
+            validados[campo] = false;
+          }
+          break;
         }
-        break;
     }
     
     setErroresValidacion(errores);
@@ -1177,6 +1189,14 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     
     return false;
   };
+
+  const getPasswordRequirementsDocente = (password: string) => ({
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    symbol: /[@$!%*?&]/.test(password),
+  });
 
   // Función para validar campos de estudiantes
   const validarCampoEstudiante = async (campo: string, valor: string | number) => {
@@ -1251,10 +1271,10 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         }
         break;
       case 'telefono_acudiente':
-        if (valor && typeof valor === 'string' && !validarTelefonoColombiano(valor.trim())) {
-          errores[campo] = 'Número de celular colombiano inválido';
+        if (valor && typeof valor === 'string' && valor.trim() && !isPhoneValidDocente(valor.trim())) {
+          errores[campo] = 'Ingrese un número de teléfono válido con indicativo de país';
           validados[campo] = false;
-        } else if (valor && typeof valor === 'string' && validarTelefonoColombiano(valor.trim())) {
+        } else if (valor && typeof valor === 'string' && valor.trim() && isPhoneValidDocente(valor.trim())) {
           delete errores[campo];
           validados[campo] = true;
           habilitados.grado_id = true;
@@ -1333,21 +1353,22 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     }
 
     // Validar teléfono celular colombiano
-    if (!validarTelefonoColombiano(docenteActual.telefono.trim())) {
+    if (!isPhoneValidDocente(docenteActual.telefono)) {
       setModalDocenteAccion({
         tipo: 'error',
         titulo: 'Teléfono inválido',
-        mensaje: 'Por favor ingresa un número de celular colombiano válido (10 dígitos empezando por 3).'
+        mensaje: 'Por favor ingresa un número de teléfono válido con indicativo de país.'
       });
       return;
     }
 
-    // Validar contraseña (mínimo 8 caracteres)
-    if (docenteActual.password.length < 8) {
+    const passwordReqs = getPasswordRequirementsDocente(docenteActual.password);
+    const passwordOk = Object.values(passwordReqs).every(Boolean);
+    if (!passwordOk) {
       setModalDocenteAccion({
         tipo: 'error',
         titulo: 'Contraseña inválida',
-        mensaje: 'La contraseña debe tener al menos 8 caracteres.'
+        mensaje: 'La contraseña debe cumplir todos los requisitos: al menos 8 caracteres, mayúscula, minúscula, número y símbolo.'
       });
       return;
     }
@@ -1450,11 +1471,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     }
 
     // Validar teléfono del acudiente
-    if (!validarTelefonoColombiano(estudianteActual.telefono_acudiente.trim())) {
+    if (!isPhoneValidDocente(estudianteActual.telefono_acudiente)) {
       setModalEstudianteAccion({
         tipo: 'error',
         titulo: 'Teléfono inválido',
-        mensaje: 'Por favor ingresa un número de celular colombiano válido para el acudiente.'
+        mensaje: 'Por favor ingresa un número de teléfono válido con indicativo de país para el acudiente.'
       });
       return;
     }
@@ -2056,20 +2077,6 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     cargarBranding();
   }, [institucionId]);
 
-  const getContrastingTextColor = (hexColor: string) => {
-    const hex = hexColor.replace('#', '');
-    if (hex.length !== 6) return '#ffffff';
-    const r = parseInt(hex.slice(0, 2), 16) / 255;
-    const g = parseInt(hex.slice(2, 4), 16) / 255;
-    const b = parseInt(hex.slice(4, 6), 16) / 255;
-    const toLinear = (value: number) =>
-      value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
-    const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-    return luminance > 0.6 ? '#0f172a' : '#ffffff';
-  };
-
-  const headerTextColor = getContrastingTextColor(brandingColors.secondary);
-
   useEffect(() => {
     const body = document.body;
     const count = Number(body.dataset.modalCount || '0');
@@ -2105,7 +2112,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep((currentStep - 1) as WizardStep);
     }
   };
@@ -2504,20 +2511,19 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               </div>
             </div>
           )}
-        {/* Header */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 relative" style={{ backgroundColor: brandingColors.secondary, color: headerTextColor }}>
+        {/* Header: color fijo (no usa branding de la institución) */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 relative bg-slate-700 text-white">
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold">Configuración Inicial</h2>
-              <p className="text-xs sm:text-sm mt-1" style={{ color: headerTextColor }}>
-                Paso {currentStep} de 5
+              <p className="text-xs sm:text-sm mt-1 text-white/90">
+                {currentStep === 0 ? 'Introducción' : `Paso ${currentStep} de 5`}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors"
-            style={{ color: headerTextColor }}
+            className="absolute top-3 right-3 text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
             aria-label="Cerrar"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2538,6 +2544,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         <div className="border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex gap-4 sm:gap-0 sm:justify-between overflow-x-auto sm:overflow-visible pb-1">
             {[
+              { num: 0, label: 'Introducción' },
               { num: 1, label: 'Grados y Cursos' },
               { num: 2, label: 'Áreas y Materias' },
               { num: 3, label: 'Docentes' },
@@ -2580,6 +2587,47 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {currentStep === 0 && (
+            <div className="max-w-2xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">
+                  Configuración inicial de la institución
+                </h3>
+                <p className="text-slate-600 text-lg leading-relaxed">
+                  Este asistente te guía paso a paso para dejar lista la estructura de tu institución: grados, cursos, áreas, materias, docentes y estudiantes.
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-6 space-y-4">
+                <h4 className="font-semibold text-slate-900 flex items-center">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full mr-2" />
+                  Objetivo
+                </h4>
+                <p className="text-slate-700 leading-relaxed">
+                  Configurar de forma ordenada los datos que la plataforma necesita para que los docentes puedan crear recordatorios y los estudiantes ver la información correcta. Al finalizar tendrás definidos grados y cursos, áreas y materias, docentes con sus asignaciones y estudiantes por curso.
+                </p>
+                <h4 className="font-semibold text-slate-900 flex items-center pt-2">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full mr-2" />
+                  Cómo usar esta configuración
+                </h4>
+                <ul className="text-slate-700 leading-relaxed space-y-2 list-disc list-inside">
+                  <li>Completa cada paso en orden; podrás volver atrás si necesitas cambiar algo.</li>
+                  <li>En <strong>Grados y Cursos</strong> defines la estructura académica (ej. 5° A, 5° B).</li>
+                  <li>En <strong>Áreas y Materias</strong> defines las asignaturas y las vinculas a grados.</li>
+                  <li>En <strong>Docentes</strong> das de alta a los profesores y los asignas a grados, cursos y materias.</li>
+                  <li>En <strong>Estudiantes</strong> registras alumnos y los asignas a un grado y curso.</li>
+                  <li>En <strong>Resumen</strong> revisas todo antes de finalizar.</li>
+                </ul>
+                <p className="text-slate-600 text-sm pt-2">
+                  Usa los botones <strong>Anterior</strong> y <strong>Siguiente</strong> para moverte entre pasos. Al terminar el último paso podrás cerrar el asistente y seguir usando el panel de administración.
+                </p>
+              </div>
+            </div>
+          )}
           {currentStep === 1 && (
             <div>
               <div className="mb-6">
@@ -3521,23 +3569,37 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                   
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Teléfono Celular *
+                      Teléfono Celular * (con indicativo de país)
                     </label>
-                    <input
-                      type="tel"
-                      value={docenteActual.telefono}
-                      onChange={(e) => {
-                        // Filtrar solo números
-                        const valorNumerico = e.target.value.replace(/[^0-9]/g, '');
-                        setDocenteActual(prev => ({ ...prev, telefono: valorNumerico }));
-                        validarCampo('telefono', valorNumerico);
+                    <PhoneInput
+                      international
+                      defaultCountry="CO"
+                      countries={COUNTRY_OPTIONS_ORDER}
+                      labels={es}
+                      placeholder="Ej: 300 123 4567"
+                      value={docenteActual.telefono || undefined}
+                      onChange={(value) => {
+                        const val = value || '';
+                        setDocenteActual(prev => ({ ...prev, telefono: val }));
+                        validarCampo('telefono', val);
                       }}
                       disabled={!camposHabilitados.telefono}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacion.telefono ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitados.telefono ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="3001234567"
-                      maxLength={12}
+                      className={`w-full ${!camposHabilitados.telefono ? 'PhoneInput--disabled' : ''} ${
+                        docenteActual.telefono && !isPhoneValidDocente(docenteActual.telefono) ? 'PhoneInput--error' : ''
+                      }`}
+                      numberInputProps={{
+                        className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
+                          !camposHabilitados.telefono
+                            ? 'border-slate-200 bg-gray-100 cursor-not-allowed'
+                            : docenteActual.telefono && !isPhoneValidDocente(docenteActual.telefono)
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : camposValidados.telefono
+                            ? 'border-green-500 focus:ring-green-500 focus:border-green-500'
+                            : 'border-slate-300'
+                        }`,
+                        disabled: !camposHabilitados.telefono,
+                        'aria-label': 'Teléfono celular',
+                      }}
                     />
                     {erroresValidacion.telefono && (
                       <p className="text-red-500 text-xs mt-1">{erroresValidacion.telefono}</p>
@@ -3550,9 +3612,6 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                         Teléfono válido
                       </p>
                     )}
-                    <p className="text-xs text-slate-500 mt-1">
-                      Formato: 3001234567 (10 dígitos empezando por 3)
-                    </p>
                   </div>
                   
                   <div>
@@ -3633,40 +3692,38 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     Contraseña *
                   </label>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <input
-                      type={mostrarPassword ? "text" : "password"}
-                      value={docenteActual.password}
-                      onChange={(e) => {
-                        setDocenteActual(prev => ({ ...prev, password: e.target.value }));
-                        validarCampo('password', e.target.value);
-                      }}
-                      disabled={!campoPasswordHabilitado()}
-                      className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
-                        erroresValidacion.password ? 'border-red-500' : 'border-slate-300'
-                      } ${!campoPasswordHabilitado() ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="Contraseña de acceso"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setMostrarPassword(!mostrarPassword)}
-                      disabled={!botonesPasswordHabilitados()}
-                      className={`w-full sm:w-auto px-3 py-2 border rounded-lg transition-colors flex items-center justify-center text-slate-700 ${
-                        botonesPasswordHabilitados()
-                          ? 'border-slate-300 hover:bg-slate-50 cursor-pointer'
-                          : 'border-slate-200 bg-gray-100 cursor-not-allowed opacity-50'
-                      }`}
-                    >
-                      {mostrarPassword ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                        </svg>
-                      )}
-                    </button>
+                    <div className="relative flex-1">
+                      <input
+                        type={mostrarPassword ? 'text' : 'password'}
+                        value={docenteActual.password}
+                        onChange={(e) => {
+                          setDocenteActual(prev => ({ ...prev, password: e.target.value }));
+                          validarCampo('password', e.target.value);
+                        }}
+                        disabled={!campoPasswordHabilitado()}
+                        className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
+                          erroresValidacion.password ? 'border-red-500' : 'border-slate-300'
+                        } ${!campoPasswordHabilitado() ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        placeholder="Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setMostrarPassword(!mostrarPassword)}
+                        disabled={!botonesPasswordHabilitados()}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed"
+                      >
+                        {mostrarPassword ? (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878L3 3m6.878 6.878L21 21" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                     <button
                       type="button"
                       onClick={generarPassword}
@@ -3680,23 +3737,39 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                       <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      🎲
+                      🎲 Generar
                     </button>
                   </div>
-                    {erroresValidacion.password && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacion.password}</p>
-                    )}
-                    {camposValidados.password && !erroresValidacion.password && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Contraseña válida
-                      </p>
-                    )}
-                  <p className="text-xs text-slate-500 mt-1">
-                    La contraseña debe tener 8 caracteres con letras, números y símbolos
-                  </p>
+                  {erroresValidacion.password && (
+                    <p className="text-red-500 text-xs mt-1">{erroresValidacion.password}</p>
+                  )}
+                  {camposValidados.password && !erroresValidacion.password && (
+                    <p className="text-green-600 text-xs mt-1 flex items-center">
+                      <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Contraseña válida
+                    </p>
+                  )}
+                  <div className="mt-2 text-xs text-slate-500 space-y-1">
+                    {(() => {
+                      const reqs = getPasswordRequirementsDocente(docenteActual.password);
+                      const item = (ok: boolean, label: string) => (
+                        <p key={label} className={ok ? 'text-green-600' : 'text-slate-500'}>
+                          {ok ? '✓' : '•'} {label}
+                        </p>
+                      );
+                      return (
+                        <>
+                          {item(reqs.length, 'Al menos 8 caracteres')}
+                          {item(reqs.upper, 'Una letra mayúscula')}
+                          {item(reqs.lower, 'Una letra minúscula')}
+                          {item(reqs.number, 'Un número')}
+                          {item(reqs.symbol, 'Un símbolo (@$!%*?&)')}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                         {/* Información de sede */}
@@ -4354,23 +4427,37 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                   {/* Teléfono del Acudiente */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Teléfono del Acudiente *
+                      Teléfono del Acudiente * (con indicativo de país)
                     </label>
-                    <input
-                      type="tel"
-                      value={estudianteActual.telefono_acudiente}
-                      onChange={(e) => {
-                        // Filtrar solo números
-                        const valorNumerico = e.target.value.replace(/[^0-9]/g, '');
-                        setEstudianteActual(prev => ({ ...prev, telefono_acudiente: valorNumerico }));
-                        validarCampoEstudiante('telefono_acudiente', valorNumerico);
+                    <PhoneInput
+                      international
+                      defaultCountry="CO"
+                      countries={COUNTRY_OPTIONS_ORDER}
+                      labels={es}
+                      placeholder="Ej: 300 123 4567"
+                      value={estudianteActual.telefono_acudiente || undefined}
+                      onChange={(value) => {
+                        const val = value || '';
+                        setEstudianteActual(prev => ({ ...prev, telefono_acudiente: val }));
+                        validarCampoEstudiante('telefono_acudiente', val);
                       }}
                       disabled={!camposHabilitadosEstudiante.telefono_acudiente}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacionEstudiante.telefono_acudiente ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitadosEstudiante.telefono_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="3001234567"
-                      maxLength={12}
+                      className={`w-full ${!camposHabilitadosEstudiante.telefono_acudiente ? 'PhoneInput--disabled' : ''} ${
+                        estudianteActual.telefono_acudiente && !isPhoneValidDocente(estudianteActual.telefono_acudiente) ? 'PhoneInput--error' : ''
+                      }`}
+                      numberInputProps={{
+                        className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
+                          !camposHabilitadosEstudiante.telefono_acudiente
+                            ? 'border-slate-200 bg-gray-100 cursor-not-allowed'
+                            : estudianteActual.telefono_acudiente && !isPhoneValidDocente(estudianteActual.telefono_acudiente)
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : camposValidadosEstudiante.telefono_acudiente
+                            ? 'border-green-500 focus:ring-green-500 focus:border-green-500'
+                            : 'border-slate-300'
+                        }`,
+                        disabled: !camposHabilitadosEstudiante.telefono_acudiente,
+                        'aria-label': 'Teléfono del acudiente',
+                      }}
                     />
                     {erroresValidacionEstudiante.telefono_acudiente && (
                       <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.telefono_acudiente}</p>
@@ -4779,20 +4866,19 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         {/* Footer */}
         <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 bg-slate-50">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-            <button
-              onClick={handleBack}
-              disabled={currentStep === 1}
-              className={`w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors ${
-                currentStep === 1
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-              }`}
-            >
-              Anterior
-            </button>
+            {currentStep > 0 ? (
+              <button
+                onClick={handleBack}
+                className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
+              >
+                Anterior
+              </button>
+            ) : (
+              <div className="w-full sm:w-auto sm:min-w-[100px]" aria-hidden="true" />
+            )}
 
             <div className="text-sm text-slate-600 text-center">
-              Paso {currentStep} de 5
+              {currentStep === 0 ? 'Introducción' : `Paso ${currentStep} de 5`}
             </div>
 
             <button

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { APP_URL } from '@/lib/env';
 import {
   getSupabaseAdminClient,
   isSupabaseAdminConfigured,
@@ -64,15 +65,6 @@ export async function POST(
       return NextResponse.json(
         { error: 'ID de institución inválido' },
         { status: 400 }
-      );
-    }
-
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    if (!baseUrl) {
-      console.error('NEXT_PUBLIC_BASE_URL no está configurada. No se pueden enviar correos de confirmación.');
-      return NextResponse.json(
-        { error: 'La URL pública de la aplicación no está configurada. Contacta al administrador.' },
-        { status: 500 }
       );
     }
 
@@ -250,7 +242,7 @@ export async function POST(
                 type: 'signup',
                 email: correo.toLowerCase().trim(),
                 options: {
-                  emailRedirectTo: `${baseUrl}/login`
+                  emailRedirectTo: `${APP_URL}/login`
                 }
               });
 
@@ -265,7 +257,7 @@ export async function POST(
                   email: correo.toLowerCase().trim(),
                   password: password,
                   options: {
-                    redirectTo: `${baseUrl}/login`
+                    redirectTo: `${APP_URL}/login`
                   }
                 });
 

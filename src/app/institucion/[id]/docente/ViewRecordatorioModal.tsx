@@ -6,6 +6,7 @@ interface Recordatorio {
   descripcion: string;
   fecha: string;
   tipo: string;
+  modo_envio?: string | null;
   created_at?: string;
   updated_at?: string;
   grado: {
@@ -130,6 +131,35 @@ export default function ViewRecordatorioModal({
               <p className="text-slate-800 whitespace-pre-wrap">{recordatorio.descripcion}</p>
             </div>
           </div>
+
+          {/* Modo de envío */}
+          {(recordatorio.modo_envio && recordatorio.modo_envio.trim() !== '') && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">
+                Modo de envío
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {recordatorio.modo_envio.split(',').map((modo) => {
+                  const m = modo.trim().toLowerCase();
+                  const labels: Record<string, string> = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'Email' };
+                  const label = labels[m] || m;
+                  const colors: Record<string, string> = {
+                    sms: 'bg-slate-100 text-slate-800 border-slate-200',
+                    whatsapp: 'bg-green-100 text-green-800 border-green-200',
+                    email: 'bg-blue-100 text-blue-800 border-blue-200'
+                  };
+                  return (
+                    <span
+                      key={modo}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${colors[m] || 'bg-slate-100 text-slate-800 border-slate-200'}`}
+                    >
+                      {label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Fecha */}
           <div className="space-y-2">

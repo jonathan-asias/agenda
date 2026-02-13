@@ -3,12 +3,22 @@
 
 import { useState } from 'react';
 import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase';
+import Header from '../../components/landing/Header';
+import Footer from '../../components/landing/Footer';
+import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
+import es from 'react-phone-number-input/locale/es.json';
+import 'react-phone-number-input/style.css';
 
 interface Sede {
   id: string;
   nombre: string;
   jornadas: string[];
 }
+
+// Países ordenados alfabéticamente por nombre (en español)
+const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
+  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
+);
 
 export default function RegistroInstitucion() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -17,7 +27,7 @@ export default function RegistroInstitucion() {
     direccion_principal: '',
     nit: '',
     nombre_contacto: '',
-    telefono_contacto: '',
+    telefono_contacto: '', // E.164: ej. +573001234567
     email: '',
     password: '',
     confirm_password: '',
@@ -42,6 +52,8 @@ export default function RegistroInstitucion() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [fileErrors, setFileErrors] = useState<{ logo?: string; banner?: string }>({});
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalMessage, setSuccessModalMessage] = useState('');
 
   const steps = [
     { id: 1, name: 'Información Básica', description: 'Datos principales de la institución' },
@@ -51,10 +63,20 @@ export default function RegistroInstitucion() {
   ];
 
   const showToastMessage = (message: string, type: 'success' | 'error') => {
+    if (type === 'success') {
+      setSuccessModalMessage(message);
+      setShowSuccessModal(true);
+      return;
+    }
     setToastMessage(message);
-    setToastType(type);
+    setToastType('error');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 5000);
+  };
+
+  const closeSuccessModalAndRedirect = () => {
+    setShowSuccessModal(false);
+    window.location.href = '/login';
   };
 
   const obtainSupabaseClient = () => {
@@ -80,16 +102,15 @@ export default function RegistroInstitucion() {
     return emailRegex.test(email);
   };
 
-  // Validación de NIT (solo números, mínimo 9 dígitos)
+  // Validación de NIT (exactamente 9 dígitos, sin dígito de verificación)
   const isValidNIT = (nit: string): boolean => {
-    const nitRegex = /^\d{9,}$/;
+    const nitRegex = /^\d{9}$/;
     return nitRegex.test(nit);
   };
 
-  // Validación de teléfono (solo números, mínimo 10 dígitos)
-  const isValidPhone = (phone: string): boolean => {
-    const phoneRegex = /^\d{10,}$/;
-    return phoneRegex.test(phone);
+  // Validación de teléfono: E.164 válido (react-phone-number-input)
+  const isPhoneValid = (phone: string): boolean => {
+    return !!phone && isValidPhoneNumber(phone);
   };
 
   // Validación de campos vacíos
@@ -148,30 +169,23 @@ export default function RegistroInstitucion() {
     setIsCheckingEmail(false);
   };
 
+  // Requisitos de contraseña para mostrar lista y marcar en verde al cumplirse
+  const PASSWORD_REQUIREMENTS = [
+    { id: 'length', label: 'Al menos 8 caracteres', check: (p: string) => p.length >= 8 },
+    { id: 'upper', label: 'Al menos una letra mayúscula', check: (p: string) => /[A-Z]/.test(p) },
+    { id: 'lower', label: 'Al menos una letra minúscula', check: (p: string) => /[a-z]/.test(p) },
+    { id: 'number', label: 'Al menos un número', check: (p: string) => /\d/.test(p) },
+    { id: 'special', label: 'Al menos un carácter especial (!@#$%^&*(), etc.)', check: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+  ] as const;
+
   // Validación de contraseña segura
   const validatePassword = (password: string): string[] => {
     const errors: string[] = [];
-    
-    if (password.length < 8) {
-      errors.push('La contraseña debe tener al menos 8 caracteres');
-    }
-    
-    if (!/[A-Z]/.test(password)) {
-      errors.push('La contraseña debe contener al menos una letra mayúscula');
-    }
-    
-    if (!/[a-z]/.test(password)) {
-      errors.push('La contraseña debe contener al menos una letra minúscula');
-    }
-    
-    if (!/\d/.test(password)) {
-      errors.push('La contraseña debe contener al menos un número');
-    }
-    
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      errors.push('La contraseña debe contener al menos un carácter especial');
-    }
-    
+    if (password.length < 8) errors.push('La contraseña debe tener al menos 8 caracteres');
+    if (!/[A-Z]/.test(password)) errors.push('La contraseña debe contener al menos una letra mayúscula');
+    if (!/[a-z]/.test(password)) errors.push('La contraseña debe contener al menos una letra minúscula');
+    if (!/\d/.test(password)) errors.push('La contraseña debe contener al menos un número');
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push('La contraseña debe contener al menos un carácter especial');
     return errors;
   };
 
@@ -370,7 +384,7 @@ export default function RegistroInstitucion() {
       case 2:
         const emailValid = formData.email && isValidEmail(formData.email) && !emailDuplicateError;
         const passwordValid = formData.password && validatePassword(formData.password).length === 0;
-        const phoneValid = formData.telefono_contacto && isValidPhone(formData.telefono_contacto);
+        const phoneValid = formData.telefono_contacto && isPhoneValid(formData.telefono_contacto);
         const passwordMatch = formData.password && formData.confirm_password && formData.password === formData.confirm_password;
         return !!(
           formData.nombre_contacto.trim() && 
@@ -407,10 +421,10 @@ export default function RegistroInstitucion() {
     
     // Restricción para campos numéricos
     let processedValue = value;
-    if (name === 'nit' || name === 'telefono_contacto') {
-      // Solo permitir números
-      processedValue = value.replace(/\D/g, '');
+    if (name === 'nit') {
+      processedValue = value.replace(/\D/g, '').slice(0, 9);
     }
+    // telefono_contacto lo gestiona PhoneInput (valor E.164), no handleInputChange
     
     // Aplicar sanitización de seguridad a todos los campos de texto
     if (type !== 'checkbox' && name !== 'tiene_sedes') {
@@ -603,20 +617,6 @@ export default function RegistroInstitucion() {
     });
   };
 
-  const validateLogoDimensions = (width: number, height: number): string => {
-    if (width !== 710 || height !== 305) {
-      return 'El logo debe tener un tamaño de 710 x 305 px';
-    }
-    return '';
-  };
-
-  const validateBannerDimensions = (width: number, height: number): string => {
-    if (width !== 1177 || height !== 301) {
-      return 'El banner debe tener un tamaño de 1177 x 301 px';
-    }
-    return '';
-  };
-
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     kind: 'logo' | 'banner'
@@ -637,34 +637,6 @@ export default function RegistroInstitucion() {
         ...prev,
         [kind]: 'Solo se permiten archivos PNG o SVG'
       }));
-      if (kind === 'logo') {
-        setLogoFile(null);
-      } else {
-        setBannerFile(null);
-      }
-      return;
-    }
-
-    const dimensions = await getImageDimensions(file);
-    if (!dimensions) {
-      setFileErrors(prev => ({
-        ...prev,
-        [kind]: 'No se pudieron leer las dimensiones. Asegure width/height o viewBox en el SVG'
-      }));
-      if (kind === 'logo') {
-        setLogoFile(null);
-      } else {
-        setBannerFile(null);
-      }
-      return;
-    }
-
-    const dimensionError = kind === 'logo'
-      ? validateLogoDimensions(dimensions.width, dimensions.height)
-      : validateBannerDimensions(dimensions.width, dimensions.height);
-
-    if (dimensionError) {
-      setFileErrors(prev => ({ ...prev, [kind]: dimensionError }));
       if (kind === 'logo') {
         setLogoFile(null);
       } else {
@@ -715,30 +687,9 @@ export default function RegistroInstitucion() {
 
     if (!logoFile) {
       newErrors.logo = 'Debe adjuntar un logo válido';
-    } else {
-      const logoDimensions = await getImageDimensions(logoFile);
-      if (!logoDimensions) {
-        newErrors.logo = 'No se pudieron leer las dimensiones del logo';
-      } else {
-        const logoError = validateLogoDimensions(logoDimensions.width, logoDimensions.height);
-        if (logoError) {
-          newErrors.logo = logoError;
-        }
-      }
     }
-
     if (!bannerFile) {
       newErrors.banner = 'Debe adjuntar un banner válido';
-    } else {
-      const bannerDimensions = await getImageDimensions(bannerFile);
-      if (!bannerDimensions) {
-        newErrors.banner = 'No se pudieron leer las dimensiones del banner';
-      } else {
-        const bannerError = validateBannerDimensions(bannerDimensions.width, bannerDimensions.height);
-        if (bannerError) {
-          newErrors.banner = bannerError;
-        }
-      }
     }
 
     setFileErrors(newErrors);
@@ -767,13 +718,13 @@ export default function RegistroInstitucion() {
 
       // 3. Validar formato de NIT
       if (!isValidNIT(formData.nit)) {
-        showToastMessage('El NIT debe contener al menos 9 dígitos numéricos', 'error');
+        showToastMessage('El NIT debe contener exactamente 9 dígitos numéricos (sin dígito de verificación)', 'error');
         return;
       }
 
-      // 4. Validar formato de teléfono
-      if (!isValidPhone(formData.telefono_contacto)) {
-        showToastMessage('El teléfono debe contener al menos 10 dígitos numéricos', 'error');
+      // 4. Validar formato de teléfono (E.164)
+      if (!formData.telefono_contacto || !isPhoneValid(formData.telefono_contacto)) {
+        showToastMessage('Ingrese un número de teléfono válido con indicativo de país', 'error');
         return;
       }
 
@@ -821,13 +772,14 @@ export default function RegistroInstitucion() {
         return;
       }
 
-      // 10. Sanitizar todos los datos antes del envío
+      // 10. Sanitizar todos los datos antes del envío (telefono_contacto ya en E.164)
       const { confirm_password, ...baseFormData } = formData;
       const sanitizedFormData = {
         ...baseFormData,
         nombre: sanitizeInput(formData.nombre).trim(),
         direccion_principal: sanitizeInput(formData.direccion_principal).trim(),
         nombre_contacto: sanitizeInput(formData.nombre_contacto).trim(),
+        telefono_contacto: formData.telefono_contacto.trim(), // E.164, ej. +573001234567
         email: sanitizeInput(formData.email).trim(),
         password: sanitizeInput(formData.password)
       };
@@ -932,11 +884,6 @@ export default function RegistroInstitucion() {
         setBannerFile(null);
         setFileErrors({});
         setCurrentStep(1);
-        
-        // Redirigir a la página de login después de 3 segundos
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 3000);
       } else {
         const errorData = await response.json();
         showToastMessage(errorData.error || 'Error al registrar la institución', 'error');
@@ -1009,8 +956,11 @@ export default function RegistroInstitucion() {
 
             <div>
               <label htmlFor="nit" className="block text-sm font-medium text-slate-700 mb-2">
-                NIT * (mínimo 9 dígitos)
+                NIT * (9 dígitos)
               </label>
+              <p className="text-xs text-slate-500 mb-2">
+                No incluya el dígito de verificación. Solo los 9 primeros dígitos.
+              </p>
               <input
                 id="nit"
                 name="nit"
@@ -1023,11 +973,12 @@ export default function RegistroInstitucion() {
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
                     : ''
                 }`}
-                placeholder="Ingrese el NIT (solo números)"
-                maxLength={20}
+                placeholder="9 dígitos (sin dígito de verificación)"
+                minLength={9}
+                maxLength={9}
               />
               {formData.nit && !isValidNIT(formData.nit) && (
-                <p className="mt-1 text-xs text-red-600">El NIT debe contener al menos 9 dígitos numéricos</p>
+                <p className="mt-1 text-xs text-red-600">El NIT debe contener exactamente 9 dígitos numéricos (sin dígito de verificación)</p>
               )}
               {securityErrors.nit && (
                 <p className="mt-1 text-xs text-red-600 flex items-center">
@@ -1044,6 +995,17 @@ export default function RegistroInstitucion() {
       case 2:
         return (
           <div className="space-y-5">
+            <div className="rounded-xl p-4 bg-blue-50 border-l-4 border-blue-500 shadow-sm flex gap-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="text-sm text-blue-900 leading-relaxed pt-0.5">
+                El correo electrónico y los datos de contacto que ingrese a continuación serán registrados como superadministrador de la institución.
+              </p>
+            </div>
+
             <div>
               <label htmlFor="nombre_contacto" className="block text-sm font-medium text-slate-700 mb-2">
                 Nombre de Contacto *
@@ -1073,25 +1035,34 @@ export default function RegistroInstitucion() {
 
             <div>
               <label htmlFor="telefono_contacto" className="block text-sm font-medium text-slate-700 mb-2">
-                Teléfono de Contacto * (mínimo 10 dígitos)
+                Teléfono de Contacto *
               </label>
-              <input
+              <PhoneInput
                 id="telefono_contacto"
-                name="telefono_contacto"
-                type="tel"
-                required
-                value={formData.telefono_contacto}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                  (formData.telefono_contacto && !isValidPhone(formData.telefono_contacto)) || securityErrors.telefono_contacto
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                international
+                defaultCountry="CO"
+                countries={COUNTRY_OPTIONS_ORDER}
+                labels={es}
+                placeholder="Ej: 300 123 4567"
+                value={formData.telefono_contacto || undefined}
+                onChange={(value) => setFormData((prev) => ({ ...prev, telefono_contacto: value || '' }))}
+                className={`w-full ${
+                  (formData.telefono_contacto && !isPhoneValid(formData.telefono_contacto)) || securityErrors.telefono_contacto
+                    ? 'PhoneInput--error'
                     : ''
                 }`}
-                placeholder="Ingrese el teléfono (solo números)"
-                maxLength={12}
+                numberInputProps={{
+                  className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
+                    (formData.telefono_contacto && !isPhoneValid(formData.telefono_contacto)) || securityErrors.telefono_contacto
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-slate-300'
+                  }`,
+                  required: true,
+                  'aria-label': 'Número de teléfono'
+                }}
               />
-              {formData.telefono_contacto && !isValidPhone(formData.telefono_contacto) && (
-                <p className="mt-1 text-xs text-red-600">El teléfono debe contener al menos 10 dígitos numéricos</p>
+              {formData.telefono_contacto && !isPhoneValid(formData.telefono_contacto) && (
+                <p className="mt-1 text-xs text-red-600">Ingrese un número de teléfono válido con indicativo de país</p>
               )}
               {securityErrors.telefono_contacto && (
                 <p className="mt-1 text-xs text-red-600 flex items-center">
@@ -1104,19 +1075,12 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-                  Correo Electrónico *
-                </label>
-                <button
-                  type="button"
-                  onClick={handleVerifyEmail}
-                  disabled={!formData.email || !isValidEmail(formData.email) || isCheckingEmail || !!securityErrors.email}
-                  className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCheckingEmail ? 'Verificando...' : 'Verificar correo'}
-                </button>
-              </div>
+              <p className="text-sm text-slate-600 mb-2">
+                Debe dar clic en el botón &quot;Verificar correo&quot; para comprobar que el correo no está en uso en la aplicación y así poder continuar con el campo de contraseña.
+              </p>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                Correo Electrónico *
+              </label>
               <input
                 id="email"
                 name="email"
@@ -1126,12 +1090,22 @@ export default function RegistroInstitucion() {
                 onChange={handleInputChange}
                 className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
                   (formData.email && !isValidEmail(formData.email)) || emailDuplicateError || securityErrors.email
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : ''
                 }`}
                 placeholder="correo@ejemplo.com"
                 maxLength={254}
               />
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={handleVerifyEmail}
+                  disabled={!formData.email || !isValidEmail(formData.email) || isCheckingEmail || !!securityErrors.email}
+                  className="text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isCheckingEmail ? 'Verificando...' : 'Verificar correo'}
+                </button>
+              </div>
               {formData.email && !isValidEmail(formData.email) && (
                 <p className="mt-1 text-xs text-red-600">Por favor ingrese un correo electrónico válido</p>
               )}
@@ -1195,45 +1169,37 @@ export default function RegistroInstitucion() {
                 <button
                   type="button"
                   onClick={generateStrongPassword}
-                  className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100"
+                  disabled={!isEmailVerified}
+                  className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-50"
                 >
                   Generar contraseña automáticamente
                 </button>
               </div>
-              
-              {/* Mostrar errores de contraseña */}
-              {passwordErrors.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {passwordErrors.map((error, index) => (
-                    <p key={index} className="text-xs text-red-600 flex items-center">
-                      <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {error}
-                    </p>
-                  ))}
-                </div>
-              )}
-              
-              {/* Mostrar indicador de fortaleza de contraseña */}
-              {formData.password && passwordErrors.length === 0 && !securityErrors.password && (
-                <p className="mt-1 text-xs text-green-600 flex items-center">
-                  <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Contraseña segura
-                </p>
-              )}
-              
-              {/* Mostrar error de seguridad de contraseña */}
-              {securityErrors.password && (
-                <p className="mt-1 text-xs text-red-600 flex items-center">
-                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {securityErrors.password}
-                </p>
-              )}
+
+              {/* Características de la contraseña: se marcan en verde al cumplirse */}
+              <p className="mt-3 text-xs font-medium text-slate-600 mb-1.5">La contraseña debe cumplir:</p>
+              <ul className="space-y-1.5" aria-live="polite">
+                {PASSWORD_REQUIREMENTS.map(({ id, label, check }) => {
+                  const fulfilled = !!formData.password && check(formData.password);
+                  return (
+                    <li
+                      key={id}
+                      className={`text-xs flex items-center gap-2 transition-colors duration-200 ${
+                        fulfilled ? 'text-green-600' : 'text-slate-500'
+                      }`}
+                    >
+                      {fulfilled ? (
+                        <svg className="w-4 h-4 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <span className="w-4 h-4 flex-shrink-0 rounded-full border-2 border-slate-300 inline-block" aria-hidden />
+                      )}
+                      <span className={fulfilled ? 'font-medium' : ''}>{label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
 
             <div>
@@ -1267,17 +1233,33 @@ export default function RegistroInstitucion() {
       case 3:
         return (
           <div className="space-y-6">
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-              <label className="flex items-center">
+            <div className="rounded-xl p-4 bg-amber-50 border-l-4 border-amber-500 shadow-sm flex gap-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="text-sm text-amber-900 leading-relaxed pt-0.5">
+                En este paso debe indicar si la institución tiene una sola sede o varias. Si tiene una sola sede, seleccione las jornadas que ofrece la institución (única, mañana, tarde o nocturna). Si tiene más de una sede, active el interruptor y agregue cada sede con su nombre y las jornadas de cada una.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+              <label htmlFor="tiene_sedes" className="group flex items-center gap-3 cursor-pointer flex-1 min-w-0">
                 <input
+                  id="tiene_sedes"
                   type="checkbox"
                   name="tiene_sedes"
                   checked={formData.tiene_sedes}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                  className="sr-only"
+                  aria-hidden
                 />
-                <span className="ml-3 text-sm font-medium text-slate-700">
-                  ¿Tiene sedes?
+                <span className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${formData.tiene_sedes ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition duration-200 translate-x-0.5 mt-0.5 ${formData.tiene_sedes ? 'translate-x-5' : ''}`} />
+                </span>
+                <span className="text-sm font-medium text-slate-700">
+                  El instituto tiene más de una sede; active el interruptor para sí y complete los campos de las sedes del instituto.
                 </span>
               </label>
             </div>
@@ -1296,7 +1278,7 @@ export default function RegistroInstitucion() {
                       disabled={formData.jornadas.some(j => j !== 'única')}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                     />
-                    <span className="ml-3 text-sm text-slate-700">Jornada Única</span>
+                    <span className={`ml-3 text-sm text-slate-700 ${formData.jornadas.some(j => j !== 'única') ? 'line-through' : ''}`}>Jornada Única</span>
                   </label>
 
                   <label className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
@@ -1307,7 +1289,7 @@ export default function RegistroInstitucion() {
                       disabled={formData.jornadas.includes('única')}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                     />
-                    <span className="ml-3 text-sm text-slate-700">Jornada Mañana</span>
+                    <span className={`ml-3 text-sm text-slate-700 ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Mañana</span>
                   </label>
 
                   <label className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
@@ -1318,7 +1300,7 @@ export default function RegistroInstitucion() {
                       disabled={formData.jornadas.includes('única')}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                     />
-                    <span className="ml-3 text-sm text-slate-700">Jornada Tarde</span>
+                    <span className={`ml-3 text-sm text-slate-700 ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Tarde</span>
                   </label>
 
                   <label className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
@@ -1329,7 +1311,7 @@ export default function RegistroInstitucion() {
                       disabled={formData.jornadas.includes('única')}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                     />
-                    <span className="ml-3 text-sm text-slate-700">Jornada Nocturna</span>
+                    <span className={`ml-3 text-sm text-slate-700 ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Nocturna</span>
                   </label>
                 </div>
               </div>
@@ -1389,7 +1371,7 @@ export default function RegistroInstitucion() {
                             disabled={sede.jornadas.some(j => j !== 'única')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                           />
-                          <span className="ml-2 text-sm text-slate-700">Jornada Única</span>
+                          <span className={`ml-2 text-sm text-slate-700 ${sede.jornadas.some(j => j !== 'única') ? 'line-through' : ''}`}>Jornada Única</span>
                         </label>
                         
                         <label className="flex items-center p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200">
@@ -1400,7 +1382,7 @@ export default function RegistroInstitucion() {
                             disabled={sede.jornadas.includes('única')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                           />
-                          <span className="ml-2 text-sm text-slate-700">Jornada Mañana</span>
+                          <span className={`ml-2 text-sm text-slate-700 ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Mañana</span>
                         </label>
                         
                         <label className="flex items-center p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200">
@@ -1411,7 +1393,7 @@ export default function RegistroInstitucion() {
                             disabled={sede.jornadas.includes('única')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                           />
-                          <span className="ml-2 text-sm text-slate-700">Jornada Tarde</span>
+                          <span className={`ml-2 text-sm text-slate-700 ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Tarde</span>
                         </label>
                         
                         <label className="flex items-center p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200">
@@ -1422,7 +1404,7 @@ export default function RegistroInstitucion() {
                             disabled={sede.jornadas.includes('única')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                           />
-                          <span className="ml-2 text-sm text-slate-700">Jornada Nocturna</span>
+                          <span className={`ml-2 text-sm text-slate-700 ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Nocturna</span>
                         </label>
                       </div>
                     </div>
@@ -1446,7 +1428,7 @@ export default function RegistroInstitucion() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Logo institucional (710 x 305 px) *
+                Logo institucional *
               </label>
               <input
                 type="file"
@@ -1464,7 +1446,7 @@ export default function RegistroInstitucion() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Banner institucional (1177 x 301 px) *
+                Banner institucional *
               </label>
               <input
                 type="file"
@@ -1478,6 +1460,20 @@ export default function RegistroInstitucion() {
               {fileErrors.banner && (
                 <p className="mt-2 text-xs text-red-600">{fileErrors.banner}</p>
               )}
+            </div>
+
+            <div className="rounded-xl p-4 bg-indigo-50 border-l-4 border-indigo-500 shadow-sm flex gap-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="text-sm text-indigo-900 leading-relaxed pt-0.5">
+                <p className="font-medium mb-1">Colores de la institución</p>
+                <p>
+                  Puede seleccionar el color primario y el color secundario que identifican a su institución. Estos se usarán en la plataforma. Para elegir un color: haga clic en el cuadro de color para abrir el selector y elegir el tono deseado, o escriba el código hexadecimal (por ejemplo: #2563eb) en el campo de texto al lado.
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1536,8 +1532,10 @@ export default function RegistroInstitucion() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-blue-50 flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
@@ -1551,13 +1549,6 @@ export default function RegistroInstitucion() {
           <p className="text-slate-600 mb-3">
             Complete los datos paso a paso
           </p>
-          {/* Security Indicator */}
-          <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-            </svg>
-            Formulario Protegido
-          </div>
         </div>
 
         <div className="flex flex-col gap-6 lg:flex-row">
@@ -1648,15 +1639,17 @@ export default function RegistroInstitucion() {
 
               {/* Navigation */}
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  disabled={currentStep === 1}
-                  className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  ← Anterior
-                </button>
-                
+                {currentStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                  >
+                    ← Anterior
+                  </button>
+                ) : (
+                  <div />
+                )}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full sm:w-auto">
                   {currentStep < steps.length ? (
                     <button
@@ -1682,51 +1675,59 @@ export default function RegistroInstitucion() {
           </div>
         </div>
 
-        {/* Toast Notification */}
+        {/* Modal de registro exitoso */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-white shadow-2xl rounded-2xl max-w-md w-full overflow-hidden border border-green-200">
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="h-6 w-6 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-green-800">¡Registro exitoso!</h3>
+                    <p className="text-sm text-green-700 mt-2">{successModalMessage}</p>
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-800">
+                        📧 Revise su bandeja de entrada y carpeta de spam para confirmar su cuenta antes de iniciar sesión.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={closeSuccessModalAndRedirect}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                  >
+                    Cerrar e ir a iniciar sesión
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Toast Notification (solo errores) */}
         {showToast && (
           <div className="fixed top-4 right-4 z-50 max-w-md w-full">
-            <div className={`w-full bg-white shadow-2xl rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border ${
-              toastType === 'success' 
-                ? 'border-green-200 bg-green-50' 
-                : 'border-red-200 bg-red-50'
-            }`}>
+            <div className="w-full bg-white shadow-2xl rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border border-red-200 bg-red-50">
               <div className="p-6">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
-                    {toastType === 'success' ? (
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                        <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                   </div>
                   <div className="ml-4 flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className={`text-sm font-semibold ${
-                          toastType === 'success' ? 'text-green-800' : 'text-red-800'
-                        }`}>
-                          {toastType === 'success' ? '¡Registro Exitoso!' : 'Error'}
-                        </p>
-                        <p className={`text-sm mt-1 ${
-                          toastType === 'success' ? 'text-green-700' : 'text-red-700'
-                        }`}>
-                          {toastMessage}
-                        </p>
-                        {toastType === 'success' && toastMessage.includes('correo') && (
-                          <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-xs text-blue-800">
-                              📧 Revise su bandeja de entrada y carpeta de spam para confirmar su cuenta.
-                            </p>
-                          </div>
-                        )}
+                        <p className="text-sm font-semibold text-red-800">Error</p>
+                        <p className="text-sm mt-1 text-red-700">{toastMessage}</p>
                       </div>
                       <button
                         className="ml-4 flex-shrink-0 inline-flex text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-full p-1"
@@ -1744,7 +1745,9 @@ export default function RegistroInstitucion() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }

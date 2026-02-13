@@ -234,6 +234,7 @@ model Recordatorios {
   descripcion String                  @db.Text
   fecha       DateTime
   tipo        String                  @db.VarChar(50) // 'tarea', 'examen', 'evento', 'otro'
+  modo_envio  String?                 @db.VarChar(100) // 'sms', 'whatsapp', 'email' (comma-separated)
   docente_id  Int
   grado_id    Int
   curso_id    Int

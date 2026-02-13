@@ -1,6 +1,18 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
+import es from 'react-phone-number-input/locale/es.json';
+import 'react-phone-number-input/style.css';
+
+// Países ordenados alfabéticamente por nombre (en español)
+const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
+  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
+);
+
+const isPhoneValid = (phone: string): boolean => {
+  return !!phone && isValidPhoneNumber(phone);
+};
 
 interface Sede {
   id: number;
@@ -82,15 +94,9 @@ export default function AddAdministradorModal({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    // Filtrar solo números para campos de teléfono
-    let processedValue = value;
-    if (name === 'telefono') {
-      processedValue = value.replace(/[^0-9]/g, '');
-    }
-    
     setFormData(prev => ({
       ...prev,
-      [name]: processedValue
+      [name]: value
     }));
 
     // Validación básica para el correo (sin verificación automática)
@@ -113,10 +119,6 @@ export default function AddAdministradorModal({
     
     if (name === 'apellido') {
       setApellidoValid(validateApellido(value));
-    }
-    
-    if (name === 'telefono') {
-      setTelefonoValid(validateTelefono(value));
     }
     
     if (name === 'cargo') {
@@ -236,8 +238,7 @@ export default function AddAdministradorModal({
   };
 
   const validateTelefono = (telefono: string) => {
-    const digitsOnly = telefono.replace(/\D/g, '');
-    return digitsOnly.length >= 10;
+    return isPhoneValid(telefono);
   };
 
   const validateCargo = (cargo: string) => {
@@ -276,6 +277,11 @@ export default function AddAdministradorModal({
 
     if (!formData.telefono.trim()) {
       setError('El teléfono es requerido');
+      setSubmitting(false);
+      return;
+    }
+    if (!isPhoneValid(formData.telefono)) {
+      setError('Ingrese un número de teléfono válido con indicativo de país');
       setSubmitting(false);
       return;
     }
@@ -443,28 +449,45 @@ export default function AddAdministradorModal({
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">
-                Teléfono celular * (mínimo 10 dígitos)
+                Teléfono celular * (con indicativo de país)
                 {telefonoValid && (
                   <span className="text-green-600 text-xs ml-2">✓</span>
                 )}
               </label>
-              <input
-                type="tel"
-                name="telefono"
-                value={formData.telefono}
-                onChange={handleInputChange}
-                required
+              <PhoneInput
+                international
+                defaultCountry="CO"
+                countries={COUNTRY_OPTIONS_ORDER}
+                labels={es}
+                placeholder="Ej: 300 123 4567"
+                value={formData.telefono || undefined}
+                onChange={(value) => {
+                  const val = value || '';
+                  setFormData((prev) => ({ ...prev, telefono: val }));
+                  setTelefonoValid(isPhoneValid(val));
+                }}
                 disabled={!cargoValid}
-                maxLength={12}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                  !cargoValid
-                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                    : telefonoValid
-                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                className={`w-full ${!cargoValid ? 'PhoneInput--disabled' : ''} ${
+                  formData.telefono && !telefonoValid ? 'PhoneInput--error' : ''
                 }`}
-                placeholder="Ingrese el teléfono (solo números)"
+                numberInputProps={{
+                  className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
+                    !cargoValid
+                      ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                      : formData.telefono && !telefonoValid
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : telefonoValid
+                      ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
+                      : 'border-slate-300'
+                  }`,
+                  required: true,
+                  disabled: !cargoValid,
+                  'aria-label': 'Número de teléfono'
+                }}
               />
+              {formData.telefono && !telefonoValid && (
+                <p className="mt-1 text-xs text-red-600">Ingrese un número de teléfono válido con indicativo de país</p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">Sede *</label>
@@ -570,7 +593,7 @@ export default function AddAdministradorModal({
               <button
                 type="button"
                 onClick={generateStrongPassword}
-                disabled={!cargoValid}
+                disabled={!canProceedToPassword}
                 className="ml-4 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Generar contraseña
@@ -584,9 +607,9 @@ export default function AddAdministradorModal({
                 value={formData.password}
                 onChange={handleInputChange}
                 required
-                disabled={!cargoValid}
+                disabled={!canProceedToPassword}
                 className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                  !cargoValid
+                  !canProceedToPassword
                     ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                     : passwordValid
                     ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
@@ -597,7 +620,7 @@ export default function AddAdministradorModal({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={!cargoValid}
+                disabled={!canProceedToPassword}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors"
               >
                 {showPassword ? (
@@ -612,9 +635,9 @@ export default function AddAdministradorModal({
                 )}
               </button>
             </div>
-            {!cargoValid ? (
+            {!canProceedToPassword ? (
               <p className="text-xs text-slate-400">
-                Completa el cargo para continuar
+                Verifique el correo electrónico para habilitar el campo de contraseña
               </p>
             ) : (
               <div className="text-xs text-slate-500 space-y-1">

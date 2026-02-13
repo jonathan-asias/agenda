@@ -5,6 +5,13 @@
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
+import es from 'react-phone-number-input/locale/es.json';
+import 'react-phone-number-input/style.css';
+
+const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
+  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
+);
 
 interface AddDocenteModalProps {
   isOpen: boolean;
@@ -90,37 +97,92 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
   const [error, setError] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
-  const generarPassword = () => {
-    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-    }
-    setFormData({ ...formData, password });
-  };
+  // Secuencial: verificación de correo y habilitación de contraseña
+  const [emailValidating, setEmailValidating] = useState(false);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [emailError, setEmailError] = useState('');
+  const [canProceedToPassword, setCanProceedToPassword] = useState(false);
 
-  // Función para validar email
   const validarEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // Función para validar teléfono celular colombiano
-  const validarTelefonoColombiano = (telefono: string) => {
-    // Remover espacios y caracteres especiales
-    const telefonoLimpio = telefono.replace(/\s+/g, '').replace(/[^\d]/g, '');
-    
-    // Validar que tenga 10 dígitos y empiece con 3
-    if (telefonoLimpio.length === 10 && telefonoLimpio.startsWith('3')) {
-      return true;
+  const checkEmailAvailability = async (email: string) => {
+    if (!email.trim() || !validarEmail(email)) {
+      setEmailAvailable(null);
+      setCanProceedToPassword(false);
+      return;
     }
-    
-    // También aceptar formato con código de país +57
-    if (telefonoLimpio.length === 12 && telefonoLimpio.startsWith('573')) {
-      return true;
+    setEmailValidating(true);
+    setEmailError('');
+    try {
+      const response = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const available = !data.exists;
+        setEmailAvailable(available);
+        setCanProceedToPassword(available);
+        if (!available) setEmailError('Este correo ya está registrado');
+      } else {
+        setEmailAvailable(false);
+        setCanProceedToPassword(false);
+        setEmailError(data.error || 'Error al verificar el correo');
+      }
+    } catch (err) {
+      setEmailAvailable(false);
+      setCanProceedToPassword(false);
+      setEmailError('Error de conexión');
+    } finally {
+      setEmailValidating(false);
     }
-    
-    return false;
+  };
+
+  const handleVerifyEmail = () => {
+    if (!formData.email.trim()) {
+      setEmailError('El correo es requerido');
+      setCanProceedToPassword(false);
+      return;
+    }
+    if (!validarEmail(formData.email)) {
+      setEmailError('Formato de correo inválido');
+      setCanProceedToPassword(false);
+      return;
+    }
+    checkEmailAvailability(formData.email.trim());
+  };
+
+  const isPhoneValid = (phone: string) => !!phone && isValidPhoneNumber(phone);
+
+  const getPasswordRequirements = (password: string) => ({
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    symbol: /[@$!%*?&]/.test(password),
+  });
+
+  const validatePassword = (password: string) => {
+    const reqs = getPasswordRequirements(password);
+    return Object.values(reqs).every(Boolean);
+  };
+
+  const generarPassword = () => {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghijkmnpqrstuvwxyz';
+    const numbers = '23456789';
+    const symbols = '!@#$%^&*()_+-=[]{};:,.?';
+    const all = upper + lower + numbers + symbols;
+    const pick = (pool: string) => pool[Math.floor(Math.random() * pool.length)];
+    let password = [pick(upper), pick(lower), pick(numbers), pick(symbols)];
+    for (let i = password.length; i < 12; i += 1) password.push(pick(all));
+    password = password.sort(() => Math.random() - 0.5);
+    const generated = password.join('');
+    setFormData((prev) => ({ ...prev, password: generated }));
   };
 
   const cargarDatosInstitucion = async () => {
@@ -240,6 +302,9 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
         password: ''
       });
       setError('');
+      setEmailAvailable(null);
+      setEmailError('');
+      setCanProceedToPassword(false);
       
       // Resetear asignaciones
       setGradosSeleccionados([]);
@@ -289,14 +354,20 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
       return;
     }
 
-    if (!validarTelefonoColombiano(formData.telefono.trim())) {
-      setError('Por favor ingresa un número de celular colombiano válido');
+    if (!isPhoneValid(formData.telefono)) {
+      setError('Por favor ingresa un número de teléfono válido con indicativo de país');
       setLoading(false);
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
+    if (!validatePassword(formData.password)) {
+      setError('La contraseña debe cumplir todos los requisitos (8 caracteres, mayúscula, minúscula, número y símbolo)');
+      setLoading(false);
+      return;
+    }
+
+    if (!canProceedToPassword) {
+      setError('Debe verificar el correo antes de continuar');
       setLoading(false);
       return;
     }
@@ -393,9 +464,7 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Nombres *
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Nombres *</label>
                   <input
                     type="text"
                     value={formData.nombres}
@@ -406,14 +475,15 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Apellidos *
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Apellidos *</label>
                   <input
                     type="text"
                     value={formData.apellidos}
                     onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
+                    disabled={!formData.nombres.trim()}
+                    className={`w-full px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 ${
+                      !formData.nombres.trim() ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed' : 'border-slate-300'
+                    }`}
                     placeholder="Apellidos"
                     required
                   />
@@ -422,103 +492,174 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Teléfono *
+                  Teléfono * (con indicativo de país)
                 </label>
-                <input
-                  type="tel"
-                  value={formData.telefono}
-                  onChange={(e) => {
-                    const valorNumerico = e.target.value.replace(/[^\d]/g, '');
-                    setFormData({ ...formData, telefono: valorNumerico });
+                <PhoneInput
+                  international
+                  defaultCountry="CO"
+                  countries={COUNTRY_OPTIONS_ORDER}
+                  labels={es}
+                  placeholder="Ej: 300 123 4567"
+                  value={formData.telefono || undefined}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, telefono: value || '' }))}
+                  disabled={!formData.apellidos.trim()}
+                  className={`w-full ${!formData.apellidos.trim() ? 'PhoneInput--disabled' : ''} ${
+                    formData.telefono && !isPhoneValid(formData.telefono) ? 'PhoneInput--error' : ''
+                  }`}
+                  numberInputProps={{
+                    className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
+                      !formData.apellidos.trim()
+                        ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : formData.telefono && !isPhoneValid(formData.telefono)
+                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                        : 'border-slate-300'
+                    }`,
+                    required: true,
+                    disabled: !formData.apellidos.trim(),
+                    'aria-label': 'Número de teléfono',
                   }}
-                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
-                  placeholder="3001234567"
-                  maxLength={12}
-                  required
                 />
+                {formData.telefono && !isPhoneValid(formData.telefono) && (
+                  <p className="mt-1 text-xs text-red-600">Ingrese un número de teléfono válido con indicativo de país</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
-                  placeholder="correo@ejemplo.com"
-                  required
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-slate-700 flex items-center">
-                    Contraseña *
-                    <span className="relative group ml-2">
-                      <button
-                        type="button"
-                        aria-label="Requisitos de contraseña"
-                        className="text-slate-400 hover:text-slate-600 transition-colors"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
-                        </svg>
-                      </button>
-                      <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                        <div className="font-semibold text-slate-700">Requisitos:</div>
-                        <div>Mínimo 8 caracteres</div>
-                        <div>Incluye letras y números</div>
-                        <div className="mt-2 text-[11px] text-orange-600">
-                          Sigue las políticas del instituto para contraseñas seguras.
-                        </div>
-                      </div>
-                    </span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={generarPassword}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Generar
-                  </button>
-                </div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Email *</label>
                 <div className="relative">
                   <input
-                    type={mostrarPassword ? "text" : "password"}
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      setEmailAvailable(null);
+                      setEmailError('');
+                      setCanProceedToPassword(false);
+                    }}
+                    disabled={!isPhoneValid(formData.telefono)}
+                    className={`w-full px-4 py-2.5 pr-12 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 ${
+                      !isPhoneValid(formData.telefono)
+                        ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : emailError
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                        : emailAvailable === true
+                        ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
+                        : 'border-slate-300'
+                    }`}
+                    placeholder="correo@ejemplo.com"
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    {emailValidating ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600" />
+                    ) : emailAvailable === true ? (
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : emailAvailable === false ? (
+                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    ) : null}
+                  </div>
+                </div>
+                {emailError && <p className="mt-1 text-xs text-red-600">{emailError}</p>}
+                {emailAvailable === true && !emailError && (
+                  <p className="mt-1 text-xs text-green-600">Correo disponible. Ya puede definir la contraseña.</p>
+                )}
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={handleVerifyEmail}
+                    disabled={!isPhoneValid(formData.telefono) || !formData.email.trim() || emailValidating || !!emailError}
+                    className="text-sm font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {emailValidating ? 'Verificando...' : 'Verificar correo'}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Contraseña *</label>
+                <div className="relative">
+                  <input
+                    type={mostrarPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2.5 pr-10 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
-                    placeholder="Mínimo 8 caracteres"
+                    disabled={!canProceedToPassword}
+                    className={`w-full px-4 py-2.5 pr-10 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 ${
+                      !canProceedToPassword
+                        ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : validatePassword(formData.password)
+                        ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
+                        : 'border-slate-300'
+                    }`}
+                    placeholder="Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo"
                     required
-                    minLength={8}
                   />
                   <button
                     type="button"
                     onClick={() => setMostrarPassword(!mostrarPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    disabled={!canProceedToPassword}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed"
                   >
                     {mostrarPassword ? (
-                      <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878L3 3m6.878 6.878L21 21" />
                       </svg>
                     ) : (
-                      <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                     )}
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={generarPassword}
+                  disabled={!canProceedToPassword}
+                  className="mt-2 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Generar contraseña
+                </button>
+                {canProceedToPassword && (
+                  <div className="mt-2 text-xs text-slate-500 space-y-1">
+                    {(() => {
+                      const reqs = getPasswordRequirements(formData.password);
+                      const item = (ok: boolean, label: string) => (
+                        <p key={label} className={ok ? 'text-green-600' : 'text-slate-500'}>
+                          {ok ? '✓' : '•'} {label}
+                        </p>
+                      );
+                      return (
+                        <>
+                          {item(reqs.length, 'Al menos 8 caracteres')}
+                          {item(reqs.upper, 'Una letra mayúscula')}
+                          {item(reqs.lower, 'Una letra minúscula')}
+                          {item(reqs.number, 'Un número')}
+                          {item(reqs.symbol, 'Un símbolo (@$!%*?&)')}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               {/* Sección de Grados y Cursos */}
-              <div className="border-t pt-6">
+              <div className={`border-t pt-6 transition-opacity duration-200 ${!validatePassword(formData.password) ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
                 <h3 className="text-lg font-medium text-slate-900 mb-4">Grados y Cursos</h3>
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 mb-4">
+                  <p className="text-sm text-slate-700">
+                    Seleccione a qué <strong>grado</strong> y <strong>curso</strong> debe vincularse el docente. Marque primero el grado y luego los cursos correspondientes en los que impartirá clase.
+                  </p>
+                </div>
+                {!validatePassword(formData.password) && (
+                  <p className="text-sm text-slate-500 mb-3">Complete la contraseña con todos los requisitos para habilitar esta sección.</p>
+                )}
                 {loadingData ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -576,8 +717,16 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
               </div>
 
               {/* Sección de Áreas y Materias */}
-              <div className="border-t pt-6">
+              <div className={`border-t pt-6 transition-opacity duration-200 ${!(gradosSeleccionados.length > 0 && Object.values(cursosPorGrado).some((arr) => arr.length > 0)) ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
                 <h3 className="text-lg font-medium text-slate-900 mb-4">Áreas y Materias</h3>
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 mb-4">
+                  <p className="text-sm text-slate-700">
+                    Seleccione a qué <strong>área</strong> y <strong>materia</strong> debe vincularse el docente. Marque primero el área y luego las materias que impartirá en los cursos asignados.
+                  </p>
+                </div>
+                {!(gradosSeleccionados.length > 0 && Object.values(cursosPorGrado).some((arr) => arr.length > 0)) && (
+                  <p className="text-sm text-slate-500 mb-3">Seleccione al menos un grado y un curso arriba para habilitar esta sección.</p>
+                )}
                 {loadingData ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>

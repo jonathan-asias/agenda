@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { APP_URL } from '@/lib/env';
 import { getSupabaseAdminClient, isSupabaseAdminConfigured } from '@/lib/supabase-admin';
 
 type DocenteInput = {
@@ -25,15 +26,6 @@ export async function POST(request: NextRequest) {
     // Verificar variables de entorno
     console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configurada' : 'NO CONFIGURADA');
     console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Configurada' : 'NO CONFIGURADA');
-
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    if (!baseUrl) {
-      console.error('NEXT_PUBLIC_BASE_URL no está configurada. No se pueden enviar correos de confirmación.');
-      return NextResponse.json(
-        { success: false, error: 'La URL pública de la aplicación no está configurada. Contacta al administrador.' },
-        { status: 500 }
-      );
-    }
 
     if (!isSupabaseAdminConfigured()) {
       console.error('Supabase admin no está configurado. No se pueden crear docentes.');
@@ -350,7 +342,7 @@ export async function POST(request: NextRequest) {
             type: 'signup',
             email: docente.email.toLowerCase().trim(),
             options: {
-              emailRedirectTo: `${baseUrl}/login`
+              emailRedirectTo: `${APP_URL}/login`
             }
           });
 
@@ -365,7 +357,7 @@ export async function POST(request: NextRequest) {
               email: docente.email.toLowerCase().trim(),
               password: docente.password,
               options: {
-                  redirectTo: `${baseUrl}/login`
+                  redirectTo: `${APP_URL}/login`
               }
             });
 

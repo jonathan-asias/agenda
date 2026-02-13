@@ -4,7 +4,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Swal from 'sweetalert2';
 import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase';
+import Header from '../../components/landing/Header';
+import Footer from '../../components/landing/Footer';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -238,8 +241,12 @@ export default function LoginPage() {
             const adminData = await adminResponse.json();
             router.push(`/institucion/${adminData.administrador.institucion.id}/admin`);
           } else {
-            setError('No se encontró un administrador con este correo');
             await supabaseClient.auth.signOut();
+            await Swal.fire({
+              icon: 'warning',
+              title: 'Correo no registrado',
+              text: 'El correo ingresado no se encuentra registrado como administrador.'
+            });
           }
         } else if (userType === 'docente') {
           // Buscar docente
@@ -257,7 +264,7 @@ export default function LoginPage() {
           if (instResponse.ok) {
             const instData = await instResponse.json();
             if (instData?.exists && instData?.id) {
-              router.push(`/institucion/${instData.id}/perfil`);
+              router.push(`/institucion/${instData.id}`);
             } else {
               setError('No se encontró una institución con este correo');
               await supabaseClient.auth.signOut();
@@ -277,8 +284,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-blue-50 flex flex-col">
+      <Header />
+      <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
@@ -295,9 +304,31 @@ export default function LoginPage() {
 
           {/* Tipo de Usuario - Radio Buttons */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 mb-3 text-center">
-              Tipo de Usuario
-            </label>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <label className="text-sm font-medium text-slate-700">
+                Perfil de Usuario
+              </label>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="p-1 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
+                  aria-label="Información para iniciar sesión"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+                <div className="absolute right-0 top-full mt-1.5 z-10 w-72 p-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
+                  <p className="font-medium text-white mb-2">Para iniciar sesión:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-slate-200 leading-relaxed text-left pl-1">
+                    <li>Seleccione el perfil de usuario (Institución, Administrador o Docente).</li>
+                    <li>Ingrese su correo electrónico y contraseña.</li>
+                    <li>Haga clic en <strong className="text-white">Iniciar sesión</strong>.</li>
+                  </ol>
+                  <div className="absolute -top-1.5 right-4 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
+                </div>
+              </div>
+            </div>
             <div className="flex justify-center gap-6">
               <label className="flex items-center cursor-pointer group">
                 <div className="relative">
@@ -371,13 +402,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Security Indicator */}
-          <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-            </svg>
-            Conexión Segura
-          </div>
         </div>
 
         {/* Form */}
@@ -524,24 +548,7 @@ export default function LoginPage() {
               </Link>
             </p>
             
-            {/* Información sobre confirmación de correo */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="w-4 h-4 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-2">
-                  <p className="text-xs text-blue-800 font-medium">
-                    ¿Primera vez?
-                  </p>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Si acabas de registrarte, revisa tu correo para confirmar tu cuenta antes de iniciar sesión.
-                  </p>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
 
@@ -557,7 +564,9 @@ export default function LoginPage() {
             Volver al inicio
           </Link>
         </div>
-      </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }

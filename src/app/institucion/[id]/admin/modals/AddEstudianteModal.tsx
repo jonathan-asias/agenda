@@ -3,6 +3,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect } from 'react';
+import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
+import es from 'react-phone-number-input/locale/es.json';
+import 'react-phone-number-input/style.css';
+
+const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
+  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
+);
+
+const isPhoneValid = (phone: string) => !!phone && isValidPhoneNumber(phone);
 
 interface AddEstudianteModalProps {
   isOpen: boolean;
@@ -129,12 +138,6 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
     return emailRegex.test(email);
   };
 
-  // Función para validar teléfono colombiano
-  const validarTelefonoColombiano = (telefono: string) => {
-    const telefonoLimpio = telefono.replace(/\s+/g, '').replace(/[^\d]/g, '');
-    return telefonoLimpio.length === 10 && telefonoLimpio.startsWith('3');
-  };
-
   // Función para validar campos secuencialmente
   const validarCampo = async (campo: string, valor: string | number) => {
     const errores = { ...erroresValidacion };
@@ -215,10 +218,10 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
         }
         break;
       case 'telefono_acudiente':
-        if (valor && typeof valor === 'string' && !validarTelefonoColombiano(valor.trim())) {
-          errores[campo] = 'Número de celular colombiano inválido (10 dígitos empezando por 3)';
+        if (valor && typeof valor === 'string' && !isPhoneValid(valor)) {
+          errores[campo] = 'Ingrese un número de teléfono válido con indicativo de país';
           validados[campo] = false;
-        } else if (valor && typeof valor === 'string' && validarTelefonoColombiano(valor.trim())) {
+        } else if (valor && typeof valor === 'string' && isPhoneValid(valor)) {
           delete errores[campo];
           validados[campo] = true;
           habilitados.correo_acudiente = true;
@@ -452,7 +455,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div className={`transition-opacity duration-200 ${!camposHabilitados.grado_id ? 'opacity-60' : 'opacity-100'}`}>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Grado *
                   </label>
@@ -466,7 +469,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                       value={formData.grado_id}
                       onChange={(e) => handleGradoChange(parseInt(e.target.value))}
                       disabled={!camposHabilitados.grado_id}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:cursor-not-allowed ${
                         erroresValidacion.grado_id ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                       } ${!camposHabilitados.grado_id ? 'bg-slate-100' : ''}`}
                       required
@@ -480,7 +483,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                     </select>
                   )}
                 </div>
-                <div>
+                <div className={`transition-opacity duration-200 ${!camposHabilitados.curso_id || cursosDisponibles.length === 0 ? 'opacity-60' : 'opacity-100'}`}>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Curso *
                   </label>
@@ -491,7 +494,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                       validarCampo('curso_id', parseInt(e.target.value));
                     }}
                     disabled={!camposHabilitados.curso_id || cursosDisponibles.length === 0}
-                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:cursor-not-allowed ${
                       erroresValidacion.curso_id ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                     } ${!camposHabilitados.curso_id ? 'bg-slate-100' : ''}`}
                     required
@@ -543,24 +546,38 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Teléfono *
+                      Teléfono * (con indicativo de país)
                     </label>
-                    <input
-                      type="tel"
-                      value={formData.telefono_acudiente}
-                      onChange={(e) => {
-                        // Solo permitir números
-                        const valorNumerico = e.target.value.replace(/[^\d]/g, '');
-                        setFormData({ ...formData, telefono_acudiente: valorNumerico });
-                        validarCampo('telefono_acudiente', valorNumerico);
+                    <PhoneInput
+                      international
+                      defaultCountry="CO"
+                      countries={COUNTRY_OPTIONS_ORDER}
+                      labels={es}
+                      placeholder="Ej: 300 123 4567"
+                      value={formData.telefono_acudiente || undefined}
+                      onChange={(value) => {
+                        const val = value || '';
+                        setFormData({ ...formData, telefono_acudiente: val });
+                        validarCampo('telefono_acudiente', val);
                       }}
                       disabled={!camposHabilitados.telefono_acudiente}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                        erroresValidacion.telefono_acudiente ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
-                      } ${!camposHabilitados.telefono_acudiente ? 'bg-slate-100' : ''}`}
-                      placeholder="3001234567"
-                      maxLength={10}
-                      required
+                      className={`w-full ${!camposHabilitados.telefono_acudiente ? 'PhoneInput--disabled' : ''} ${
+                        formData.telefono_acudiente && !isPhoneValid(formData.telefono_acudiente) ? 'PhoneInput--error' : ''
+                      }`}
+                      numberInputProps={{
+                        className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
+                          !camposHabilitados.telefono_acudiente
+                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : formData.telefono_acudiente && !isPhoneValid(formData.telefono_acudiente)
+                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                            : camposValidados.telefono_acudiente
+                            ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
+                            : 'border-slate-300'
+                        }`,
+                        required: true,
+                        disabled: !camposHabilitados.telefono_acudiente,
+                        'aria-label': 'Teléfono del acudiente',
+                      }}
                     />
                     {erroresValidacion.telefono_acudiente && (
                       <p className="text-red-500 text-xs mt-1">{erroresValidacion.telefono_acudiente}</p>
