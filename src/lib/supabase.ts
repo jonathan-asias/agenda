@@ -1,16 +1,16 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/types/supabase';
-import { env } from '@/lib/env';
+import { publicEnv } from '@/lib/env';
 
 let supabaseClient: SupabaseClient<Database> | null = null;
 
 export const isSupabaseConfigured = (): boolean =>
-  Boolean(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  Boolean(publicEnv.NEXT_PUBLIC_SUPABASE_URL && publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 function createSupabaseClient(): SupabaseClient<Database> {
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = publicEnv.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (typeof window !== 'undefined') {
     return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
