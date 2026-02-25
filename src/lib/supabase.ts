@@ -1,26 +1,20 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import { env } from '@/lib/env';
 
 let supabaseClient: SupabaseClient | null = null;
-let hasLoggedMissingConfig = false;
-
-const missingConfigMessage =
-  'Supabase no está configurado. Define NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en las variables de entorno.';
 
 export const isSupabaseConfigured = (): boolean =>
-  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  Boolean(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 const createSupabaseClient = (): SupabaseClient => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    if (!hasLoggedMissingConfig) {
-      console.error(missingConfigMessage);
-      hasLoggedMissingConfig = true;
-    }
-    throw new Error(missingConfigMessage);
+  // En el navegador usar createBrowserClient para almacenar sesión en cookies (necesario para tenant en backend)
+  if (typeof window !== 'undefined') {
+    return createBrowserClient(supabaseUrl, supabaseAnonKey);
   }
-
   return createClient(supabaseUrl, supabaseAnonKey);
 };
 

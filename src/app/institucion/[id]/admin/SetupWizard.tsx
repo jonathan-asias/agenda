@@ -4,16 +4,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
-import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
-import es from 'react-phone-number-input/locale/es.json';
-import 'react-phone-number-input/style.css';
-
-const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
-  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
-);
-
-const isPhoneValidDocente = (phone: string) => !!phone && isValidPhoneNumber(phone);
+import { showSuccess, showError } from '@/lib/notifications';
+import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
+import type { Docente, Estudiante } from '@/types';
 
 interface SetupWizardProps {
   institucionId: number;
@@ -39,36 +32,12 @@ interface MateriaCurso {
   gradoId: number;
 }
 
-interface Docente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  telefono: string;
-  email: string;
-  sede_id?: number;
-  activo: boolean;
-}
-
 interface DocenteForm {
   nombres: string;
   apellidos: string;
   telefono: string;
   email: string;
   password: string;
-}
-
-interface Estudiante {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  codigo_estudiantil: string;
-  nombre_acudiente: string;
-  correo_acudiente: string;
-  telefono_acudiente: string;
-  grado_id: number;
-  curso_id: number;
-  institucion_id: number;
-  activo: boolean;
 }
 
 interface EstudianteForm {
@@ -366,11 +335,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       const data = await response.json();
 
       if (!response.ok) {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: data?.error || 'No se pudo eliminar el curso'
-        });
+        await showError('Error', data?.error || 'No se pudo eliminar el curso');
         return;
       }
 
@@ -387,11 +352,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       setEstudianteActual(prev => (prev.curso_id === cursoId ? { ...prev, curso_id: 0 } : prev));
     } catch (error) {
       console.error('Error eliminando curso:', error);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error de conexión',
-        text: 'Error de conexión al eliminar el curso'
-      });
+      await showError('Error de conexión', 'Error de conexión al eliminar el curso');
     }
   };
 
@@ -1110,10 +1071,10 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         }
         break;
       case 'telefono':
-        if (valor && typeof valor === 'string' && valor.trim() && !isPhoneValidDocente(valor.trim())) {
+        if (valor && typeof valor === 'string' && valor.trim() && !isPhoneValid(valor.trim())) {
           errores[campo] = 'Ingrese un número de teléfono válido con indicativo de país';
           validados[campo] = false;
-        } else if (valor && typeof valor === 'string' && valor.trim() && isPhoneValidDocente(valor.trim())) {
+        } else if (valor && typeof valor === 'string' && valor.trim() && isPhoneValid(valor.trim())) {
           delete errores[campo];
           validados[campo] = true;
           habilitados.email = true;
@@ -1271,10 +1232,10 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         }
         break;
       case 'telefono_acudiente':
-        if (valor && typeof valor === 'string' && valor.trim() && !isPhoneValidDocente(valor.trim())) {
+        if (valor && typeof valor === 'string' && valor.trim() && !isPhoneValid(valor.trim())) {
           errores[campo] = 'Ingrese un número de teléfono válido con indicativo de país';
           validados[campo] = false;
-        } else if (valor && typeof valor === 'string' && valor.trim() && isPhoneValidDocente(valor.trim())) {
+        } else if (valor && typeof valor === 'string' && valor.trim() && isPhoneValid(valor.trim())) {
           delete errores[campo];
           validados[campo] = true;
           habilitados.grado_id = true;
@@ -1353,7 +1314,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     }
 
     // Validar teléfono celular colombiano
-    if (!isPhoneValidDocente(docenteActual.telefono)) {
+    if (!isPhoneValid(docenteActual.telefono)) {
       setModalDocenteAccion({
         tipo: 'error',
         titulo: 'Teléfono inválido',
@@ -1437,11 +1398,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       });
       
       console.log(`🗑️ Docente eliminado: ${docenteId}`);
-      Swal.fire({
-        icon: 'success',
-        title: 'Docente eliminado',
-        text: 'Docente eliminado correctamente'
-      });
+      showSuccess('Docente eliminado', 'Docente eliminado correctamente');
     }
   };
 
@@ -1471,7 +1428,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     }
 
     // Validar teléfono del acudiente
-    if (!isPhoneValidDocente(estudianteActual.telefono_acudiente)) {
+    if (!isPhoneValid(estudianteActual.telefono_acudiente)) {
       setModalEstudianteAccion({
         tipo: 'error',
         titulo: 'Teléfono inválido',
@@ -1761,13 +1718,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         
         if (!response.ok) {
           console.error(`Error guardando estudiante ${estudiante.codigo_estudiantil}:`, responseData);
-          await Swal.fire({
-            icon: 'error',
-            title: 'Error guardando estudiante',
-            text: `Error guardando ${estudiante.nombres} ${estudiante.apellidos}: ${
+          await showError('Error guardando estudiante', `Error guardando ${estudiante.nombres} ${estudiante.apellidos}: ${
               responseData.error || responseData.details || 'Error desconocido'
-            }`
-          });
+            }`);
         }
       }
       
@@ -1780,28 +1733,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       console.log('Fallidos:', fallidos);
       
       if (exitosos > 0) {
-        await Swal.fire({
-          icon: 'success',
-          title: 'Estudiantes creados',
-          text: `Se crearon ${exitosos} estudiante(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}`
-        });
+        await showSuccess('Estudiantes creados', `Se crearon ${exitosos} estudiante(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}`);
         // Avanzar al siguiente paso solo si se crearon estudiantes exitosamente
         setCurrentStep(5);
       } else {
-        await Swal.fire({
-          icon: 'error',
-          title: 'No se pudieron crear estudiantes',
-          text: 'No se pudo crear ningún estudiante. Revisa los errores mostrados.'
-        });
+        await showError('No se pudieron crear estudiantes', 'No se pudo crear ningún estudiante. Revisa los errores mostrados.');
       }
       
     } catch (error) {
       console.error('Error de conexión:', error);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error de conexión',
-        text: error instanceof Error ? error.message : 'Error desconocido'
-      });
+      await showError('Error de conexión', error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setSaving(false);
     }
@@ -1899,11 +1840,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             setCurrentStep(3);
           } else {
             console.error('Error guardando asignaciones:', asignacionesData);
-            await Swal.fire({
-              icon: 'error',
-              title: 'Error al guardar asignaciones',
-              text: asignacionesData.details || asignacionesData.error || 'Error desconocido'
-            });
+            await showError('Error al guardar asignaciones', asignacionesData.details || asignacionesData.error || 'Error desconocido');
           }
         } else {
           setMostrarResumenAreas(false);
@@ -1921,19 +1858,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         console.error('Headers del response:', response.headers);
         
         const errorMessage = responseData.details || responseData.error || responseData.message || 'Error desconocido del servidor';
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error al guardar',
-          text: errorMessage
-        });
+        await showError('Error al guardar', errorMessage);
       }
     } catch (error) {
       console.error('Error de conexión:', error);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error de conexión',
-        text: error instanceof Error ? error.message : 'Error desconocido'
-      });
+      await showError('Error de conexión', error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setSaving(false);
     }
@@ -2019,19 +1948,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         setDuplicadosCursos(Array.isArray(duplicateNames) && duplicateNames.length > 0 ? duplicateNames : []);
       } else {
         console.error('Error del servidor:', responseData);
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error al guardar',
-          text: responseData.details || responseData.error || 'Error desconocido'
-        });
+        await showError('Error al guardar', responseData.details || responseData.error || 'Error desconocido');
       }
     } catch (error) {
       console.error('Error de conexión:', error);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error de conexión',
-        text: error instanceof Error ? error.message : 'Error desconocido'
-      });
+      await showError('Error de conexión', error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setSaving(false);
     }
@@ -3571,35 +3492,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Teléfono Celular * (con indicativo de país)
                     </label>
-                    <PhoneInput
-                      international
-                      defaultCountry="CO"
-                      countries={COUNTRY_OPTIONS_ORDER}
-                      labels={es}
-                      placeholder="Ej: 300 123 4567"
-                      value={docenteActual.telefono || undefined}
-                      onChange={(value) => {
-                        const val = value || '';
+                    <PhoneInputField
+                      value={docenteActual.telefono}
+                      onChange={(val) => {
                         setDocenteActual(prev => ({ ...prev, telefono: val }));
                         validarCampo('telefono', val);
                       }}
                       disabled={!camposHabilitados.telefono}
-                      className={`w-full ${!camposHabilitados.telefono ? 'PhoneInput--disabled' : ''} ${
-                        docenteActual.telefono && !isPhoneValidDocente(docenteActual.telefono) ? 'PhoneInput--error' : ''
-                      }`}
-                      numberInputProps={{
-                        className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
-                          !camposHabilitados.telefono
-                            ? 'border-slate-200 bg-gray-100 cursor-not-allowed'
-                            : docenteActual.telefono && !isPhoneValidDocente(docenteActual.telefono)
-                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                            : camposValidados.telefono
-                            ? 'border-green-500 focus:ring-green-500 focus:border-green-500'
-                            : 'border-slate-300'
-                        }`,
-                        disabled: !camposHabilitados.telefono,
-                        'aria-label': 'Teléfono celular',
-                      }}
+                      showValidState={true}
+                      invalidMessage=""
+                      aria-label="Teléfono celular"
                     />
                     {erroresValidacion.telefono && (
                       <p className="text-red-500 text-xs mt-1">{erroresValidacion.telefono}</p>
@@ -4429,35 +4331,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Teléfono del Acudiente * (con indicativo de país)
                     </label>
-                    <PhoneInput
-                      international
-                      defaultCountry="CO"
-                      countries={COUNTRY_OPTIONS_ORDER}
-                      labels={es}
-                      placeholder="Ej: 300 123 4567"
-                      value={estudianteActual.telefono_acudiente || undefined}
-                      onChange={(value) => {
-                        const val = value || '';
+                    <PhoneInputField
+                      value={estudianteActual.telefono_acudiente}
+                      onChange={(val) => {
                         setEstudianteActual(prev => ({ ...prev, telefono_acudiente: val }));
                         validarCampoEstudiante('telefono_acudiente', val);
                       }}
                       disabled={!camposHabilitadosEstudiante.telefono_acudiente}
-                      className={`w-full ${!camposHabilitadosEstudiante.telefono_acudiente ? 'PhoneInput--disabled' : ''} ${
-                        estudianteActual.telefono_acudiente && !isPhoneValidDocente(estudianteActual.telefono_acudiente) ? 'PhoneInput--error' : ''
-                      }`}
-                      numberInputProps={{
-                        className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
-                          !camposHabilitadosEstudiante.telefono_acudiente
-                            ? 'border-slate-200 bg-gray-100 cursor-not-allowed'
-                            : estudianteActual.telefono_acudiente && !isPhoneValidDocente(estudianteActual.telefono_acudiente)
-                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                            : camposValidadosEstudiante.telefono_acudiente
-                            ? 'border-green-500 focus:ring-green-500 focus:border-green-500'
-                            : 'border-slate-300'
-                        }`,
-                        disabled: !camposHabilitadosEstudiante.telefono_acudiente,
-                        'aria-label': 'Teléfono del acudiente',
-                      }}
+                      showValidState={true}
+                      invalidMessage=""
+                      aria-label="Teléfono del acudiente"
                     />
                     {erroresValidacionEstudiante.telefono_acudiente && (
                       <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.telefono_acudiente}</p>
@@ -4844,11 +4727,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     // Limpiar todos los datos en caché
                     limpiarDatosCompletos();
                     
-                    Swal.fire({
-                      icon: 'success',
-                      title: '¡Configuración completada!',
-                      text: 'Tu institución está lista para comenzar a usar el sistema de agenda virtual.'
-                    });
+                    showSuccess('¡Configuración completada!', 'Tu institución está lista para comenzar a usar el sistema de agenda virtual.');
                     onClose();
                   }}
                   className="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-base sm:text-lg font-medium"

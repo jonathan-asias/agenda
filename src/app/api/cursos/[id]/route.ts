@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const cursoId = Number.parseInt(id, 10);
     const institucionIdParam = request.nextUrl.searchParams.get('institucionId');
@@ -29,6 +39,8 @@ export async function DELETE(
       );
     }
 
+    enforceTenant(userInstitutionId, curso.institucion_id);
+
     await prisma.cursos.delete({
       where: { id: cursoId }
     });
@@ -42,6 +54,8 @@ export async function DELETE(
       }
     });
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al eliminar curso:', error);
     return NextResponse.json(
       {

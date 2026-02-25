@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 type AreaInput = {
   nombre: string;
@@ -14,6 +19,11 @@ type MateriaInput = {
 
 export async function POST(request: NextRequest) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     console.log('=== INICIO ENDPOINT AREAS-MATERIAS ===');
     console.log('Request URL:', request.url);
     console.log('Request method:', request.method);
@@ -66,6 +76,8 @@ export async function POST(request: NextRequest) {
     if (!institucion) {
       throw new Error(`Institución con ID ${institucionId} no encontrada`);
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     console.log('Institución encontrada:', institucion.nombre);
 
@@ -205,6 +217,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('=== ERROR EN ENDPOINT AREAS-MATERIAS ===');
     console.error('Error completo:', error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');

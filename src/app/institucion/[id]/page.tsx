@@ -1,46 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Swal from 'sweetalert2';
+import { showSuccess, showError, showConfirm } from '@/lib/notifications';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import InstitucionAuthGuard from './InstitucionAuthGuard';
+import type { Institucion, Sede, InstitucionAdministrador } from '@/types';
+import { Button } from '@/components/ui';
+import InstitucionAuthGuard from '@/components/auth/InstitucionAuthGuard';
 import AddAdministradorModal from './AddAdministradorModal';
 import Footer from './Footer';
 import Header from './Header';
-
-interface Institucion {
-  id: number;
-  nombre: string;
-  direccion_principal: string;
-  nit: string;
-  nombre_contacto: string;
-  telefono_contacto: string;
-  email: string;
-  color_primario?: string | null;
-  tiene_sedes: boolean;
-  jornadas: string[];
-  created_at: string;
-  sedes: Sede[];
-  administradores: Administrador[];
-}
-
-interface Sede {
-  id: number;
-  nombre: string;
-  jornadas: string[];
-}
-
-interface Administrador {
-  id: number;
-  nombre: string;
-  apellido: string;
-  correo?: string;
-  email?: string;
-  telefono?: string;
-  cargo: string;
-  sede_id?: number | null;
-}
 
 export default function InstitucionPage() {
   const params = useParams();
@@ -48,7 +17,7 @@ export default function InstitucionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState<Administrador | null>(null);
+  const [selectedAdmin, setSelectedAdmin] = useState<InstitucionAdministrador | null>(null);
   const [showViewAdminModal, setShowViewAdminModal] = useState(false);
   const [showEditAdminModal, setShowEditAdminModal] = useState(false);
   const [editAdminData, setEditAdminData] = useState({
@@ -86,12 +55,12 @@ export default function InstitucionPage() {
     }
   }, [params.id, fetchInstitucion]);
 
-  const handleViewAdmin = (admin: Administrador) => {
+  const handleViewAdmin = (admin: InstitucionAdministrador) => {
     setSelectedAdmin(admin);
     setShowViewAdminModal(true);
   };
 
-  const handleEditAdmin = (admin: Administrador) => {
+  const handleEditAdmin = (admin: InstitucionAdministrador) => {
     setSelectedAdmin(admin);
     setEditAdminData({
       nombre: admin.nombre || '',
@@ -123,49 +92,33 @@ export default function InstitucionPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: errorData.error || 'No se pudo actualizar el administrador'
-        });
+        await showError('Error', errorData.error || 'No se pudo actualizar el administrador');
         return;
       }
 
       await fetchInstitucion();
       setShowEditAdminModal(false);
       setSelectedAdmin(null);
-      await Swal.fire({
-        icon: 'success',
-        title: 'Administrador actualizado',
-        text: 'Administrador actualizado correctamente'
-      });
+      await showSuccess('Administrador actualizado', 'Administrador actualizado correctamente');
     } catch (err) {
       console.error('Error actualizando administrador:', err);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo actualizar el administrador'
-      });
+      await showError('Error', 'No se pudo actualizar el administrador');
     } finally {
       setIsUpdatingAdmin(false);
     }
   };
 
-  const handleDeleteAdmin = async (admin: Administrador) => {
+  const handleDeleteAdmin = async (admin: InstitucionAdministrador) => {
     if (!institucion) {
       return;
     }
-    const result = await Swal.fire({
-      icon: 'warning',
+    const confirmed = await showConfirm({
       title: '¿Eliminar administrador?',
       html: `¿Está seguro de eliminar a <strong>${admin.nombre} ${admin.apellido}</strong>? Esta acción no se puede deshacer.`,
-      showCancelButton: true,
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#64748b',
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar'
     });
-    if (!result.isConfirmed) {
+    if (!confirmed) {
       return;
     }
 
@@ -176,26 +129,14 @@ export default function InstitucionPage() {
       );
       if (!response.ok) {
         const errorData = await response.json();
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: errorData.error || 'No se pudo eliminar el administrador'
-        });
+        await showError('Error', errorData.error || 'No se pudo eliminar el administrador');
         return;
       }
       await fetchInstitucion();
-      await Swal.fire({
-        icon: 'success',
-        title: 'Administrador eliminado',
-        text: 'El administrador fue eliminado correctamente'
-      });
+      await showSuccess('Administrador eliminado', 'El administrador fue eliminado correctamente');
     } catch (err) {
       console.error('Error eliminando administrador:', err);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No se pudo eliminar el administrador'
-      });
+      await showError('Error', 'No se pudo eliminar el administrador');
     }
   };
 
@@ -265,15 +206,17 @@ export default function InstitucionPage() {
                 </div>
               </div>
             </div>
-            <button
+            <Button
+              type="button"
+              variant="primary"
               onClick={() => setShowAddAdminModal(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="w-full sm:w-auto"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Agregar Administrador
-            </button>
+            </Button>
           </div>
           
           {institucion.administradores && institucion.administradores.length > 0 ? (
@@ -334,15 +277,12 @@ export default function InstitucionPage() {
               <p className="text-slate-600 text-sm max-w-md mx-auto mb-6">
                 Los administradores tendrán la función de crear y gestionar docentes, estudiantes, materias y cursos de la sede a la cual estén vinculados.
               </p>
-              <button
-                onClick={() => setShowAddAdminModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
+              <Button type="button" variant="primary" onClick={() => setShowAddAdminModal(true)}>
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Crear administrador
-              </button>
+              </Button>
             </div>
           )}
         </div>

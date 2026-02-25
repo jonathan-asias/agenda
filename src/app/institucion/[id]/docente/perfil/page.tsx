@@ -3,49 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../../../../contexts/AuthContext';
-import DocenteAuthGuard from '../DocenteAuthGuard';
+import { useAuth } from '@/contexts/AuthContext';
+import type { Asignacion, Docente } from '@/types/docente';
+import DocenteAuthGuard from '@/components/auth/DocenteAuthGuard';
 import Footer from '../../Footer';
 import Header from '../../Header';
-
-interface Asignacion {
-  id: number;
-  grado: {
-    id: number;
-    nombre: string;
-    nivel: string;
-  };
-  curso: {
-    id: number;
-    nombre: string;
-    jornada: string | null;
-  };
-  materia: {
-    id: number;
-    nombre: string;
-    area: {
-      id: number;
-      nombre: string;
-    };
-  };
-}
-
-interface Docente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  email: string;
-  telefono: string;
-  institucion: {
-    id: number;
-    nombre: string;
-  };
-  sede?: {
-    id: number;
-    nombre: string;
-  };
-  docenteAsignaciones?: Asignacion[];
-}
 
 export default function DocentePerfilPage() {
   const params = useParams();
@@ -202,7 +164,7 @@ export default function DocentePerfilPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-1">Institución</label>
-                  <p className="text-slate-800 font-medium text-lg">{docente.institucion.nombre}</p>
+                  <p className="text-slate-800 font-medium text-lg">{docente.institucion?.nombre}</p>
                 </div>
                 {docente.sede ? (
                   <div>
@@ -230,7 +192,7 @@ export default function DocentePerfilPage() {
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Área</label>
                         <p className="text-sm font-semibold text-indigo-700">
-                          {asignacion.materia.area.nombre}
+                          {asignacion.materia.area?.nombre}
                         </p>
                       </div>
                       <div>

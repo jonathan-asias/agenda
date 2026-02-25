@@ -4,20 +4,14 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
+import type { BrandingData } from '@/types';
 
 interface HeaderProps {
   title?: string;
   subtitle?: string;
   showNavigation?: boolean;
   showBranding?: boolean;
-}
-
-interface BrandingData {
-  logoUrl?: string | null;
-  bannerUrl?: string | null;
-  colorPrimario?: string | null;
-  colorSecundario?: string | null;
 }
 
 const getCachedBranding = (institucionId?: string) => {

@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 interface MateriaGradoAsignacion {
   materiaId: number;
@@ -13,6 +18,11 @@ interface MateriaGradosPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     console.log('=== INICIO ENDPOINT MATERIA-GRADOS ===');
     
     const body = (await request.json()) as MateriaGradosPayload;
@@ -41,6 +51,8 @@ export async function POST(request: NextRequest) {
     if (!institucion) {
       throw new Error(`Institución con ID ${institucionId} no encontrada`);
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     console.log('Institución encontrada:', institucion.nombre);
 
@@ -121,6 +133,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('=== ERROR EN ENDPOINT MATERIA-GRADOS ===');
     console.error('Error completo:', error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');

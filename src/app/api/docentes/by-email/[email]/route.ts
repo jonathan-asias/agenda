@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ email: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { email: emailParam } = await params;
     const email = decodeURIComponent(emailParam);
 
@@ -67,6 +77,8 @@ export async function GET(
       return NextResponse.json({ error: 'Docente no encontrado' }, { status: 404 });
     }
 
+    enforceTenant(userInstitutionId, docente.institucion_id);
+
     return NextResponse.json({
       docente: {
         id: docente.id,
@@ -80,6 +92,8 @@ export async function GET(
       }
     });
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error buscando docente:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }

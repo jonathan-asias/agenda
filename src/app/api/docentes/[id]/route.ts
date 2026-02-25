@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 import {
   getSupabaseAdminClient,
   isSupabaseAdminConfigured,
@@ -18,6 +23,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const docenteId = parseInt(id);
 
@@ -42,6 +52,8 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, docente.institucion_id);
 
     console.log(`Iniciando eliminación del docente ${docente.nombres} ${docente.apellidos} (ID: ${docenteId})`);
 
@@ -151,6 +163,8 @@ export async function DELETE(
     });
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al eliminar docente:', error);
     return NextResponse.json(
       { 
@@ -168,6 +182,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const docenteId = parseInt(id);
     const body = await request.json() as {
@@ -196,6 +215,8 @@ export async function PUT(
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, docenteExistente.institucion_id);
 
     // Actualizar datos del docente
     const docenteActualizado = await prisma.docentes.update({
@@ -300,6 +321,8 @@ export async function PUT(
     });
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al actualizar docente:', error);
     return NextResponse.json(
       { 

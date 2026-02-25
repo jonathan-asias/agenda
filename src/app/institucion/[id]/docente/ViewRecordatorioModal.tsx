@@ -1,41 +1,6 @@
 'use client';
 
-interface Recordatorio {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  fecha: string;
-  tipo: string;
-  modo_envio?: string | null;
-  created_at?: string;
-  updated_at?: string;
-  grado: {
-    id: number;
-    nombre: string;
-    nivel: string;
-  };
-  curso: {
-    id: number;
-    nombre: string;
-    jornada: string | null;
-  };
-  area: {
-    id: number;
-    nombre: string;
-  };
-  materia: {
-    id: number;
-    nombre: string;
-  };
-  estudiantes?: Array<{
-    estudiante: {
-      id: number;
-      nombres: string;
-      apellidos: string;
-      codigo_estudiantil: string;
-    };
-  }>;
-}
+import type { Recordatorio } from '@/types/recordatorio';
 
 interface ViewRecordatorioModalProps {
   isOpen: boolean;

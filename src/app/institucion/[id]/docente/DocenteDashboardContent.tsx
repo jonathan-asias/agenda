@@ -1,88 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../../contexts/AuthContext';
-import Swal from 'sweetalert2';
+import { useAuth } from '@/contexts/AuthContext';
+import { showSuccess, showError, showConfirm } from '@/lib/notifications';
+import type { Asignacion, Docente } from '@/types/docente';
+import type { Recordatorio } from '@/types/recordatorio';
 import AddRecordatorioModal from './AddRecordatorioModal';
 import ViewRecordatorioModal from './ViewRecordatorioModal';
 import EditRecordatorioModal from './EditRecordatorioModal';
 import Footer from '../Footer';
 import Header from '../Header';
 
-interface Asignacion {
-  id: number;
-  grado: {
-    id: number;
-    nombre: string;
-    nivel: string;
-  };
-  curso: {
-    id: number;
-    nombre: string;
-    jornada: string | null;
-  };
-  materia: {
-    id: number;
-    nombre: string;
-    area: {
-      id: number;
-      nombre: string;
-    };
-  };
-}
-
-interface Docente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  email: string;
-  telefono: string;
-  institucion: {
-    id: number;
-    nombre: string;
-  };
-  sede?: {
-    id: number;
-    nombre: string;
-  };
-  docenteAsignaciones?: Asignacion[];
-}
-
-interface Recordatorio {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  fecha: string;
-  tipo: string;
-  created_at?: string;
-  updated_at?: string;
-  grado: {
-    id: number;
-    nombre: string;
-    nivel: string;
-  };
-  curso: {
-    id: number;
-    nombre: string;
-    jornada: string | null;
-  };
-  area: {
-    id: number;
-    nombre: string;
-  };
-  materia: {
-    id: number;
-    nombre: string;
-  };
-  estudiantes?: Array<{
-    estudiante: {
-      id: number;
-      nombres: string;
-      apellidos: string;
-      codigo_estudiantil: string;
-    };
-  }>;
-}
 
 export default function DocenteDashboardContent() {
   const { user } = useAuth();
@@ -134,16 +62,7 @@ export default function DocenteDashboardContent() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
         console.error('Error en la respuesta de la API:', errorData);
-        await Swal.fire({
-          title: 'Error',
-          text: errorData.error || 'Error al cargar los recordatorios. Por favor, intenta nuevamente.',
-          icon: 'error',
-          confirmButtonColor: '#dc2626',
-          customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'rounded-lg'
-          }
-        });
+        await showError('Error', errorData.error || 'Error al cargar los recordatorios. Por favor, intenta nuevamente.');
         return;
       }
 
@@ -156,24 +75,14 @@ export default function DocenteDashboardContent() {
       }
     } catch (error) {
       console.error('Error fetching recordatorios:', error);
-      await Swal.fire({
-        title: 'Error',
-        text: 'Error al cargar los recordatorios. Por favor, intenta nuevamente.',
-        icon: 'error',
-        confirmButtonColor: '#dc2626',
-        customClass: {
-          popup: 'rounded-2xl',
-          confirmButton: 'rounded-lg'
-        }
-      });
+      await showError('Error', 'Error al cargar los recordatorios. Por favor, intenta nuevamente.');
     } finally {
       setLoadingRecordatorios(false);
     }
   };
 
   const handleDeleteRecordatorio = async (recordatorioId: number, recordatorioNombre: string) => {
-    // Mostrar mensaje de advertencia
-    const result = await Swal.fire({
+    const confirmed = await showConfirm({
       title: '¿Eliminar recordatorio?',
       html: `
         <div style="text-align: left; margin-top: 1rem;">
@@ -194,60 +103,28 @@ export default function DocenteDashboardContent() {
           </div>
         </div>
       `,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#64748b',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      reverseButtons: true,
-      focusCancel: true,
-      customClass: {
-        popup: 'rounded-2xl',
-        confirmButton: 'rounded-lg',
-        cancelButton: 'rounded-lg'
-      }
+      cancelButtonText: 'Cancelar'
     });
 
-    // Si el usuario confirma, proceder con la eliminación
-    if (result.isConfirmed) {
-      try {
-        const response = await fetch(`/api/recordatorios/${recordatorioId}`, {
-          method: 'DELETE'
-        });
+    if (!confirmed) return;
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Error al eliminar el recordatorio');
-        }
+    try {
+      const response = await fetch(`/api/recordatorios/${recordatorioId}`, {
+        method: 'DELETE'
+      });
 
-        // Mostrar mensaje de éxito
-        await Swal.fire({
-          title: '¡Recordatorio eliminado!',
-          text: 'El recordatorio ha sido eliminado exitosamente. Usa el botón "Actualizar" para ver los cambios.',
-          icon: 'success',
-          timer: 3000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'rounded-2xl'
-          }
-        });
-
-        // Eliminar el recordatorio de la lista local (sin recargar automáticamente)
-        setRecordatorios(prev => prev.filter(r => r.id !== recordatorioId));
-      } catch (error) {
-        console.error('Error al eliminar recordatorio:', error);
-        await Swal.fire({
-          title: 'Error',
-          text: error instanceof Error ? error.message : 'Hubo un problema al eliminar el recordatorio. Por favor, intenta nuevamente.',
-          icon: 'error',
-          confirmButtonColor: '#dc2626',
-          customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'rounded-lg'
-          }
-        });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar el recordatorio');
       }
+
+      await showSuccess('¡Recordatorio eliminado!', 'El recordatorio ha sido eliminado exitosamente. Usa el botón "Actualizar" para ver los cambios.');
+
+      setRecordatorios(prev => prev.filter(r => r.id !== recordatorioId));
+    } catch (error) {
+      console.error('Error al eliminar recordatorio:', error);
+      await showError('Error', error instanceof Error ? error.message : 'Hubo un problema al eliminar el recordatorio. Por favor, intenta nuevamente.');
     }
   };
 
@@ -351,7 +228,7 @@ export default function DocenteDashboardContent() {
     <>
       <Header 
         title="Panel de Docente" 
-        subtitle={docente.institucion.nombre}
+        subtitle={docente.institucion?.nombre ?? ''}
       />
       <div className="min-h-screen bg-blue-50 flex flex-col">
 
@@ -371,7 +248,7 @@ export default function DocenteDashboardContent() {
                   Bienvenido, {docente.nombres} {docente.apellidos}
                 </h2>
                 <p className="text-slate-600">
-                  Dashboard del docente - {docente.institucion.nombre}
+                  Dashboard del docente - {docente.institucion?.nombre ?? ''}
                 </p>
                 {docente.sede && (
                   <p className="text-sm text-slate-500 mt-2">
@@ -398,31 +275,31 @@ export default function DocenteDashboardContent() {
                         <div>
                           <label className="block text-xs font-medium text-slate-600 mb-1">Área</label>
                           <p className="text-sm font-semibold text-indigo-700">
-                            {asignacion.materia.area.nombre}
+                            {asignacion.materia?.area?.nombre ?? ''}
                           </p>
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-600 mb-1">Materia</label>
                           <p className="text-sm font-medium text-slate-900">
-                            {asignacion.materia.nombre}
+                            {asignacion.materia?.nombre ?? ''}
                           </p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
                             <label className="block text-xs font-medium text-slate-600 mb-1">Grado</label>
                             <p className="text-xs text-slate-800">
-                              {asignacion.grado.nombre}
+                              {asignacion.grado?.nombre ?? ''}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {asignacion.grado.nivel}
+                              {asignacion.grado?.nivel ?? ''}
                             </p>
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-slate-600 mb-1">Curso</label>
                             <p className="text-xs text-slate-800">
-                              {asignacion.curso.nombre}
+                              {asignacion.curso?.nombre ?? ''}
                             </p>
-                            {asignacion.curso.jornada && (
+                            {asignacion.curso?.jornada && (
                               <p className="text-xs text-slate-500">
                                 {asignacion.curso.jornada}
                               </p>
@@ -852,20 +729,11 @@ export default function DocenteDashboardContent() {
           isOpen={showRecordatorioModal}
           onClose={() => setShowRecordatorioModal(false)}
           onSuccess={async () => {
-            await Swal.fire({
-              title: '¡Recordatorio creado!',
-              text: 'El recordatorio ha sido creado exitosamente. Usa el botón "Actualizar" para ver los nuevos recordatorios.',
-              icon: 'success',
-              timer: 3000,
-              showConfirmButton: false,
-              customClass: {
-                popup: 'rounded-2xl'
-              }
-            });
-            // No recargar automáticamente - el usuario debe usar el botón de actualizar
+            await showSuccess('¡Recordatorio creado!', 'El recordatorio ha sido creado exitosamente.');
+            if (docente?.id) fetchRecordatorios(docente.id);
           }}
           docenteId={docente.id}
-          institucionId={docente.institucion.id}
+          institucionId={docente.institucion?.id ?? 0}
           asignaciones={docente.docenteAsignaciones || []}
         />
       )}
@@ -888,16 +756,7 @@ export default function DocenteDashboardContent() {
           setRecordatorioToEdit(null);
         }}
         onSuccess={async (updatedRecordatorio?: Recordatorio) => {
-          await Swal.fire({
-            title: '¡Recordatorio actualizado!',
-            text: 'El recordatorio ha sido actualizado exitosamente.',
-            icon: 'success',
-            timer: 3000,
-            showConfirmButton: false,
-            customClass: {
-              popup: 'rounded-2xl'
-            }
-          });
+          await showSuccess('¡Recordatorio actualizado!', 'El recordatorio ha sido actualizado exitosamente.');
           // Actualizar el recordatorio en la lista local
           if (updatedRecordatorio && recordatorioToEdit) {
             setRecordatorios(prev => 

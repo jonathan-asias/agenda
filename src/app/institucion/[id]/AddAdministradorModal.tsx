@@ -1,30 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
-import es from 'react-phone-number-input/locale/es.json';
-import 'react-phone-number-input/style.css';
-
-// Países ordenados alfabéticamente por nombre (en español)
-const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
-  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
-);
-
-const isPhoneValid = (phone: string): boolean => {
-  return !!phone && isValidPhoneNumber(phone);
-};
-
-interface Sede {
-  id: number;
-  nombre: string;
-  jornadas: string[];
-}
-
-interface Institucion {
-  id: number;
-  nombre: string;
-  sedes: Sede[];
-}
+import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
+import type { Sede, Institucion } from '@/types';
 
 interface AddAdministradorModalProps {
   isOpen: boolean;
@@ -454,40 +432,16 @@ export default function AddAdministradorModal({
                   <span className="text-green-600 text-xs ml-2">✓</span>
                 )}
               </label>
-              <PhoneInput
-                international
-                defaultCountry="CO"
-                countries={COUNTRY_OPTIONS_ORDER}
-                labels={es}
-                placeholder="Ej: 300 123 4567"
-                value={formData.telefono || undefined}
-                onChange={(value) => {
-                  const val = value || '';
+              <PhoneInputField
+                value={formData.telefono}
+                onChange={(val) => {
                   setFormData((prev) => ({ ...prev, telefono: val }));
                   setTelefonoValid(isPhoneValid(val));
                 }}
                 disabled={!cargoValid}
-                className={`w-full ${!cargoValid ? 'PhoneInput--disabled' : ''} ${
-                  formData.telefono && !telefonoValid ? 'PhoneInput--error' : ''
-                }`}
-                numberInputProps={{
-                  className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
-                    !cargoValid
-                      ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : formData.telefono && !telefonoValid
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                      : telefonoValid
-                      ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                      : 'border-slate-300'
-                  }`,
-                  required: true,
-                  disabled: !cargoValid,
-                  'aria-label': 'Número de teléfono'
-                }}
+                showValidState={true}
+                aria-label="Número de teléfono"
               />
-              {formData.telefono && !telefonoValid && (
-                <p className="mt-1 text-xs text-red-600">Ingrese un número de teléfono válido con indicativo de país</p>
-              )}
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">Sede *</label>

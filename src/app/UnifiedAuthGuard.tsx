@@ -1,8 +1,9 @@
+// ⚠ Archivo actualmente no utilizado. Pendiente decisión de eliminación.
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUnifiedAuth } from '../contexts/UnifiedAuthContext';
+import { useUnifiedAuth } from '@/contexts/UnifiedAuthContext';
 
 interface UnifiedAuthGuardProps {
   children: React.ReactNode;

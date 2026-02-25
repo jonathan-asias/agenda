@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 type MateriaInput = {
   nombre: string;
@@ -8,6 +13,11 @@ type MateriaInput = {
 
 export async function POST(request: NextRequest) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { institucionId, materias } = await request.json() as {
       institucionId: number;
       materias: MateriaInput[];
@@ -41,6 +51,8 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     // Áreas predeterminadas (exactamente iguales que en SetupWizard)
     const areasPredeterminadas = [
@@ -129,6 +141,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error creating materias:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },

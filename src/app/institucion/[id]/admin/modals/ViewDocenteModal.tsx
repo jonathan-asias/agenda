@@ -1,18 +1,6 @@
 'use client';
 
-interface Docente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  email: string;
-  telefono: string;
-  sede: { nombre: string } | null;
-  docenteAsignaciones: {
-    grado: { nombre: string; nivel: string };
-    curso: { nombre: string };
-    materia: { nombre: string };
-  }[];
-}
+import type { Docente } from '@/types/docente';
 
 interface ViewDocenteModalProps {
   isOpen: boolean;

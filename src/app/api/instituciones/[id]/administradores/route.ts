@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 import { APP_URL } from '@/lib/env';
 import {
   getSupabaseAdminClient,
@@ -16,6 +21,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const institucionId = parseInt(id);
 
@@ -25,6 +35,8 @@ export async function GET(
         { status: 400 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     const administradores = await prisma.administradores.findMany({
       where: {
@@ -45,6 +57,8 @@ export async function GET(
 
     return NextResponse.json(administradores);
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al obtener administradores:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
@@ -58,6 +72,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const institucionId = parseInt(id);
 
@@ -99,6 +118,8 @@ export async function POST(
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     // Manejar el caso de sede principal cuando no hay sedes configuradas
     let sedeId = null;
@@ -295,6 +316,8 @@ export async function POST(
 
     return NextResponse.json(nuevoAdministrador, { status: 201 });
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al crear administrador:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },

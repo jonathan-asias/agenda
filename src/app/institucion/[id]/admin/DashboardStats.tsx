@@ -1,5 +1,7 @@
 'use client';
 
+import { Card } from '@/components/ui';
+
 interface DashboardStatsProps {
   estadisticas: {
     areas: number;
@@ -104,7 +106,7 @@ export default function DashboardStats({ estadisticas, recordatoriosCount = 0 }:
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 mb-8">
       {stats.map((stat, index) => (
-        <div key={index} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 pr-8 hover:shadow-md transition-shadow">
+        <Card key={index} variant="default" padding="lg" className="p-6 pr-8 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between gap-4">
             <div className={`${stat.bgColor} ${stat.textColor} w-11 h-11 min-w-11 min-h-11 flex items-center justify-center flex-shrink-0 rounded-lg`}>
               {stat.icon}
@@ -114,7 +116,7 @@ export default function DashboardStats({ estadisticas, recordatoriosCount = 0 }:
               <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
             </div>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

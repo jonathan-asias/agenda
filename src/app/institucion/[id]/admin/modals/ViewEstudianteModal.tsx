@@ -1,19 +1,6 @@
 'use client';
 
-interface Estudiante {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  codigo_estudiantil: string;
-  nombre_acudiente: string;
-  correo_acudiente?: string;
-  telefono_acudiente: string;
-  grado: { nombre: string; nivel: string };
-  curso: { nombre: string; jornada: string | null };
-  activo: boolean;
-  grado_id?: number | null;
-  curso_id?: number | null;
-}
+import type { Estudiante } from '@/types/estudiante';
 
 interface ViewEstudianteModalProps {
   isOpen: boolean;

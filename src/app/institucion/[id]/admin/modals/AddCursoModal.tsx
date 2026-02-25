@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import { showSuccess } from '@/lib/notifications';
 
 interface AddCursoModalProps {
   isOpen: boolean;
@@ -140,17 +140,7 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
       if (response.ok) {
         const data = await response.json();
         
-        // Mostrar SweetAlert de éxito
-        await Swal.fire({
-          icon: 'success',
-          title: '¡Curso Creado!',
-          text: `El curso "${formData.nombre}" se ha creado exitosamente`,
-          confirmButtonText: 'Continuar',
-          confirmButtonColor: '#f97316', // Color naranja
-          timer: 3000,
-          timerProgressBar: true
-        });
-        
+        await showSuccess('¡Curso Creado!', `El curso "${formData.nombre}" se ha creado exitosamente`);
         onSuccess();
         onClose();
       } else {
@@ -200,13 +190,14 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
                   onChange={(e) => {
                     const gradoNombre = e.target.value;
                     const normalizar = (texto: string) => texto.trim().toLowerCase();
-                    const gradoEncontrado = gradosDisponibles.find(
-                      (grado) => normalizar(grado.nombre) === normalizar(gradoNombre)
+                    // Usar grados predeterminados para el ID: la API acepta IDs 1-15 y crea el grado en la institución si no existe
+                    const gradoPredeterminado = gradosPredeterminados.find(
+                      (g) => normalizar(g.nombre) === normalizar(gradoNombre)
                     );
                     setFormData({
                       ...formData,
                       grado_nombre: gradoNombre,
-                      grado_id: gradoEncontrado ? Number(gradoEncontrado.id) : 0
+                      grado_id: gradoPredeterminado ? gradoPredeterminado.id : 0
                     });
                   }}
                   className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder:text-slate-400"

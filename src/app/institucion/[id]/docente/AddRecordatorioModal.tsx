@@ -2,35 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useMemo, useEffect } from 'react';
-
-interface Asignacion {
-  id: number;
-  grado: {
-    id: number;
-    nombre: string;
-    nivel: string;
-  };
-  curso: {
-    id: number;
-    nombre: string;
-    jornada: string | null;
-  };
-  materia: {
-    id: number;
-    nombre: string;
-    area: {
-      id: number;
-      nombre: string;
-    };
-  };
-}
-
-interface Estudiante {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  codigo_estudiantil: string;
-}
+import type { AsignacionLike } from '@/types/docente';
+import type { Estudiante } from '@/types/estudiante';
 
 interface AddRecordatorioModalProps {
   isOpen: boolean;
@@ -38,7 +11,7 @@ interface AddRecordatorioModalProps {
   onSuccess: () => void;
   docenteId: number;
   institucionId: number;
-  asignaciones?: Asignacion[];
+  asignaciones?: AsignacionLike[];
 }
 
 export default function AddRecordatorioModal({
@@ -86,13 +59,15 @@ export default function AddRecordatorioModal({
 
     asignaciones.forEach(asignacion => {
       // Grados
-      if (!gradosMap.has(asignacion.grado.id)) {
-        gradosMap.set(asignacion.grado.id, asignacion.grado);
+      const grado = asignacion.grado;
+      if (grado?.id != null && !gradosMap.has(grado.id)) {
+        gradosMap.set(grado.id, { id: grado.id, nombre: grado.nombre, nivel: grado.nivel });
       }
-      
+
       // Áreas
-      if (!areasMap.has(asignacion.materia.area.id)) {
-        areasMap.set(asignacion.materia.area.id, asignacion.materia.area);
+      const area = asignacion.materia?.area;
+      if (area?.id != null && !areasMap.has(area.id)) {
+        areasMap.set(area.id, { id: area.id, nombre: area.nombre });
       }
     });
 
@@ -110,10 +85,11 @@ export default function AddRecordatorioModal({
     const cursosMap = new Map<number, { id: number; nombre: string; jornada: string | null }>();
     
     asignaciones
-      .filter(asignacion => asignacion.grado.id === gradoIdNum)
+      .filter(asignacion => asignacion.grado?.id === gradoIdNum)
       .forEach(asignacion => {
-        if (!cursosMap.has(asignacion.curso.id)) {
-          cursosMap.set(asignacion.curso.id, asignacion.curso);
+        const curso = asignacion.curso;
+        if (curso?.id != null && !cursosMap.has(curso.id)) {
+          cursosMap.set(curso.id, { id: curso.id, nombre: curso.nombre, jornada: curso.jornada ?? null });
         }
       });
 
@@ -128,12 +104,13 @@ export default function AddRecordatorioModal({
     const materiasMap = new Map<number, { id: number; nombre: string }>();
     
     asignaciones
-      .filter(asignacion => asignacion.materia.area.id === areaIdNum)
+      .filter(asignacion => asignacion.materia?.area?.id === areaIdNum)
       .forEach(asignacion => {
-        if (!materiasMap.has(asignacion.materia.id)) {
-          materiasMap.set(asignacion.materia.id, {
-            id: asignacion.materia.id,
-            nombre: asignacion.materia.nombre
+        const materia = asignacion.materia;
+        if (materia?.id != null && !materiasMap.has(materia.id)) {
+          materiasMap.set(materia.id, {
+            id: materia.id,
+            nombre: materia.nombre
           });
         }
       });

@@ -3,34 +3,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect } from 'react';
-import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
-import es from 'react-phone-number-input/locale/es.json';
-import 'react-phone-number-input/style.css';
-
-const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
-  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
-);
-
-const isPhoneValid = (phone: string) => !!phone && isValidPhoneNumber(phone);
+import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
+import type { Grado, Curso } from '@/types';
 
 interface AddEstudianteModalProps {
   isOpen: boolean;
   onClose: () => void;
   institucionId: number;
   onSuccess: () => void;
-}
-
-interface Grado {
-  id: number;
-  nombre: string;
-  nivel: string;
-  cursos: Curso[];
-}
-
-interface Curso {
-  id: number;
-  nombre: string;
-  jornada: string | null;
 }
 
 export default function AddEstudianteModal({ isOpen, onClose, institucionId, onSuccess }: AddEstudianteModalProps) {
@@ -267,7 +247,7 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
   const handleGradoChange = (gradoId: number) => {
     const gradoSeleccionado = grados.find(g => g.id === gradoId);
     if (gradoSeleccionado) {
-      setCursosDisponibles(gradoSeleccionado.cursos);
+      setCursosDisponibles(gradoSeleccionado.cursos ?? []);
       setFormData({ ...formData, grado_id: gradoId, curso_id: 0 });
       validarCampo('grado_id', gradoId);
     } else {
@@ -548,36 +528,16 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Teléfono * (con indicativo de país)
                     </label>
-                    <PhoneInput
-                      international
-                      defaultCountry="CO"
-                      countries={COUNTRY_OPTIONS_ORDER}
-                      labels={es}
-                      placeholder="Ej: 300 123 4567"
-                      value={formData.telefono_acudiente || undefined}
-                      onChange={(value) => {
-                        const val = value || '';
+                    <PhoneInputField
+                      value={formData.telefono_acudiente}
+                      onChange={(val) => {
                         setFormData({ ...formData, telefono_acudiente: val });
                         validarCampo('telefono_acudiente', val);
                       }}
                       disabled={!camposHabilitados.telefono_acudiente}
-                      className={`w-full ${!camposHabilitados.telefono_acudiente ? 'PhoneInput--disabled' : ''} ${
-                        formData.telefono_acudiente && !isPhoneValid(formData.telefono_acudiente) ? 'PhoneInput--error' : ''
-                      }`}
-                      numberInputProps={{
-                        className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
-                          !camposHabilitados.telefono_acudiente
-                            ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                            : formData.telefono_acudiente && !isPhoneValid(formData.telefono_acudiente)
-                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                            : camposValidados.telefono_acudiente
-                            ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
-                            : 'border-slate-300'
-                        }`,
-                        required: true,
-                        disabled: !camposHabilitados.telefono_acudiente,
-                        'aria-label': 'Teléfono del acudiente',
-                      }}
+                      showValidState={true}
+                      invalidMessage=""
+                      aria-label="Teléfono del acudiente"
                     />
                     {erroresValidacion.telefono_acudiente && (
                       <p className="text-red-500 text-xs mt-1">{erroresValidacion.telefono_acudiente}</p>

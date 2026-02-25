@@ -3,26 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../../../../contexts/AuthContext';
-import AdminAuthGuard from '../AdminAuthGuard';
+import { useAuth } from '@/contexts/AuthContext';
+import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Footer from '../../Footer';
 import Header from '../../Header';
 
-interface Administrador {
-  id: number;
-  nombre: string;
-  apellido: string;
-  correo: string;
-  cargo: string;
-  institucion: {
-    id: number;
-    nombre: string;
-  };
-  sede?: {
-    id: number;
-    nombre: string;
-  };
-}
+import type { Administrador } from '@/types';
 
 export default function AdminPerfilPage() {
   const params = useParams();

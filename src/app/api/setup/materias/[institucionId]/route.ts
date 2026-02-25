@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ institucionId: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { institucionId: institucionIdParam } = await params;
     const institucionId = parseInt(institucionIdParam);
 
@@ -15,6 +25,8 @@ export async function GET(
         { status: 400 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     // Buscar materias de la institución
     const materias = await prisma.materias.findMany({
@@ -28,6 +40,8 @@ export async function GET(
     });
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error cargando materias:', error);
     return NextResponse.json(
       { 

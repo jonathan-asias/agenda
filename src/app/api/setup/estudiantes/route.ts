@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 type EstudianteInput = {
   nombres: string;
@@ -14,6 +19,11 @@ type EstudianteInput = {
 
 export async function POST(request: NextRequest) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     console.log('=== INICIANDO CREACIÓN DE ESTUDIANTES ===');
     
     const body = await request.json() as {
@@ -56,6 +66,8 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
     
     type EstudianteCreadoResumen = {
       id: number;
@@ -161,6 +173,8 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error en endpoint estudiantes:', error);
     return NextResponse.json(
       { 

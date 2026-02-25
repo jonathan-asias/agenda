@@ -5,13 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
-import es from 'react-phone-number-input/locale/es.json';
-import 'react-phone-number-input/style.css';
-
-const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
-  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
-);
+import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
 
 interface AddDocenteModalProps {
   isOpen: boolean;
@@ -155,8 +149,6 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
     }
     checkEmailAvailability(formData.email.trim());
   };
-
-  const isPhoneValid = (phone: string) => !!phone && isValidPhoneNumber(phone);
 
   const getPasswordRequirements = (password: string) => ({
     length: password.length >= 8,
@@ -494,34 +486,12 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Teléfono * (con indicativo de país)
                 </label>
-                <PhoneInput
-                  international
-                  defaultCountry="CO"
-                  countries={COUNTRY_OPTIONS_ORDER}
-                  labels={es}
-                  placeholder="Ej: 300 123 4567"
-                  value={formData.telefono || undefined}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, telefono: value || '' }))}
+                <PhoneInputField
+                  value={formData.telefono}
+                  onChange={(v) => setFormData((prev) => ({ ...prev, telefono: v }))}
                   disabled={!formData.apellidos.trim()}
-                  className={`w-full ${!formData.apellidos.trim() ? 'PhoneInput--disabled' : ''} ${
-                    formData.telefono && !isPhoneValid(formData.telefono) ? 'PhoneInput--error' : ''
-                  }`}
-                  numberInputProps={{
-                    className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
-                      !formData.apellidos.trim()
-                        ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
-                        : formData.telefono && !isPhoneValid(formData.telefono)
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-slate-300'
-                    }`,
-                    required: true,
-                    disabled: !formData.apellidos.trim(),
-                    'aria-label': 'Número de teléfono',
-                  }}
+                  aria-label="Número de teléfono"
                 />
-                {formData.telefono && !isPhoneValid(formData.telefono) && (
-                  <p className="mt-1 text-xs text-red-600">Ingrese un número de teléfono válido con indicativo de país</p>
-                )}
               </div>
 
               <div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import type { Grado, Curso, Estudiante, Docente } from '@/types';
 import ViewDocenteModal from './modals/ViewDocenteModal';
 import EditDocenteModal from './modals/EditDocenteModal';
 import DeleteDocenteModal from './modals/DeleteDocenteModal';
@@ -28,38 +29,6 @@ interface Materia {
   };
 }
 
-interface Grado {
-  id: number;
-  nombre: string;
-  nivel: string;
-  cursos: { id: number; nombre: string; jornada: string | null }[];
-  _count: { estudiantes: number };
-}
-
-interface Curso {
-  id: number;
-  nombre: string;
-  jornada: string | null;
-  grado: { nombre: string; nivel: string };
-  _count: { estudiantes: number };
-}
-
-
-interface Estudiante {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  codigo_estudiantil: string;
-  nombre_acudiente: string;
-  correo_acudiente?: string;
-  telefono_acudiente: string;
-  grado: { nombre: string; nivel: string };
-  curso: { nombre: string; jornada: string | null };
-  activo: boolean;
-  grado_id?: number | null;
-  curso_id?: number | null;
-}
-
 interface DashboardSectionsProps {
   areas: Area[];
   materias: Materia[];
@@ -68,20 +37,6 @@ interface DashboardSectionsProps {
   docentes: Docente[];
   estudiantes: Estudiante[];
   institucionId: number;
-}
-
-interface Docente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  email: string;
-  telefono: string;
-  sede: { nombre: string } | null;
-  docenteAsignaciones: {
-    grado: { id: number; nombre: string; nivel: string };
-    curso: { id: number; nombre: string };
-    materia: { id: number; nombre: string; area: { id: number; nombre: string } };
-  }[];
 }
 
 export default function DashboardSections({
@@ -299,8 +254,8 @@ export default function DashboardSections({
     // Filtro por acudiente
     if (filtrosEstudiantes.acudiente) {
       estudiantesFiltrados = estudiantesFiltrados.filter(
-        estudiante => 
-          estudiante.nombre_acudiente.toLowerCase().includes(filtrosEstudiantes.acudiente.toLowerCase())
+        estudiante =>
+          (estudiante.nombre_acudiente ?? '').toLowerCase().includes(filtrosEstudiantes.acudiente.toLowerCase())
       );
     }
 
@@ -340,18 +295,18 @@ export default function DashboardSections({
 
     // Filtro por grado
     if (filtrosDocentes.grado) {
-      docentesFiltrados = docentesFiltrados.filter(docente => 
-        docente.docenteAsignaciones.some(asignacion => 
-          asignacion.grado.id.toString() === filtrosDocentes.grado
+      docentesFiltrados = docentesFiltrados.filter(docente =>
+        (docente.docenteAsignaciones ?? []).some(asignacion =>
+          asignacion.grado?.id?.toString() === filtrosDocentes.grado
         )
       );
     }
 
     // Filtro por curso
     if (filtrosDocentes.curso) {
-      docentesFiltrados = docentesFiltrados.filter(docente => 
-        docente.docenteAsignaciones.some(asignacion => 
-          asignacion.curso.id.toString() === filtrosDocentes.curso
+      docentesFiltrados = docentesFiltrados.filter(docente =>
+        (docente.docenteAsignaciones ?? []).some(asignacion =>
+          asignacion.curso?.id?.toString() === filtrosDocentes.curso
         )
       );
     }
@@ -365,18 +320,18 @@ export default function DashboardSections({
 
     // Filtro por área
     if (filtrosDocentes.area) {
-      docentesFiltrados = docentesFiltrados.filter(docente => 
-        docente.docenteAsignaciones.some(asignacion => 
-          asignacion.materia.area.id.toString() === filtrosDocentes.area
+      docentesFiltrados = docentesFiltrados.filter(docente =>
+        (docente.docenteAsignaciones ?? []).some(asignacion =>
+          asignacion.materia?.area?.id?.toString() === filtrosDocentes.area
         )
       );
     }
 
     // Filtro por materia
     if (filtrosDocentes.materia) {
-      docentesFiltrados = docentesFiltrados.filter(docente => 
-        docente.docenteAsignaciones.some(asignacion => 
-          asignacion.materia.id.toString() === filtrosDocentes.materia
+      docentesFiltrados = docentesFiltrados.filter(docente =>
+        (docente.docenteAsignaciones ?? []).some(asignacion =>
+          asignacion.materia?.id?.toString() === filtrosDocentes.materia
         )
       );
     }

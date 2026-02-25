@@ -4,28 +4,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
-
-interface Docente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  email: string;
-  telefono: string;
-  sede: { nombre: string } | null;
-  docenteAsignaciones: {
-    grado: { id: number; nombre: string; nivel: string };
-    curso: { id: number; nombre: string };
-    materia: { id: number; nombre: string; area?: { id: number; nombre: string } };
-  }[];
-}
-
-interface Grado {
-  id: number;
-  nombre: string;
-  nivel: string;
-  cursos: { id: number; nombre: string; jornada: string | null }[];
-}
+import { showSuccess } from '@/lib/notifications';
+import type { Docente, Grado } from '@/types';
 
 interface Area {
   id: number;
@@ -89,13 +69,18 @@ export default function EditDocenteModal({
         await cargarDatosInstitucion();
 
         if (docente.docenteAsignaciones && docente.docenteAsignaciones.length > 0) {
-          const gradosIds = [...new Set(docente.docenteAsignaciones.map(a => a.grado.id))];
+          const gradosIds = [...new Set(
+            docente.docenteAsignaciones
+              .map(a => a.grado?.id)
+              .filter((id): id is number => id !== undefined)
+          )];
           setGradosSeleccionados(gradosIds);
 
           const cursosMap: { [gradoId: number]: number[] } = {};
           docente.docenteAsignaciones.forEach(asignacion => {
-            const gradoId = asignacion.grado.id;
-            const cursoId = asignacion.curso.id;
+            const gradoId = asignacion.grado?.id;
+            const cursoId = asignacion.curso?.id;
+            if (gradoId == null || cursoId == null) return;
             if (!cursosMap[gradoId]) {
               cursosMap[gradoId] = [];
             }
@@ -114,9 +99,9 @@ export default function EditDocenteModal({
 
           const materiasMap: { [areaId: number]: number[] } = {};
           docente.docenteAsignaciones.forEach(asignacion => {
-            const areaId = asignacion.materia.area?.id;
-            const materiaId = asignacion.materia.id;
-            if (areaId) {
+            const areaId = asignacion.materia?.area?.id;
+            const materiaId = asignacion.materia?.id;
+            if (areaId != null && materiaId != null) {
               if (!materiasMap[areaId]) {
                 materiasMap[areaId] = [];
               }
@@ -310,15 +295,7 @@ export default function EditDocenteModal({
       });
 
       if (response.ok) {
-        await Swal.fire({
-          icon: 'success',
-          title: '¡Docente Actualizado!',
-          text: `El docente "${formData.nombres} ${formData.apellidos}" se ha actualizado exitosamente`,
-          confirmButtonText: 'Continuar',
-          confirmButtonColor: '#f97316',
-          timer: 3000,
-          timerProgressBar: true
-        });
+        await showSuccess('¡Docente Actualizado!', `El docente "${formData.nombres} ${formData.apellidos}" se ha actualizado exitosamente`);
         onSuccess();
         onClose();
       } else {
@@ -484,7 +461,7 @@ export default function EditDocenteModal({
                         <div className="ml-7 space-y-2 mt-3">
                           <p className="text-xs text-slate-600 mb-2">Selecciona los cursos:</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {grado.cursos.map((curso) => (
+                            {(grado.cursos ?? []).map((curso) => (
                               <label key={curso.id} className="flex items-center space-x-2 cursor-pointer">
                                 <input
                                   type="checkbox"

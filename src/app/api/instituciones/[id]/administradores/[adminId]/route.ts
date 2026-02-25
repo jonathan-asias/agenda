@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
+import {
   getSupabaseAdminClient,
   isSupabaseAdminConfigured,
 } from '@/lib/supabase-admin';
@@ -10,6 +15,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; adminId: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id, adminId } = await params;
     const institucionId = parseInt(id);
     const administradorId = parseInt(adminId);
@@ -47,6 +57,8 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, administrador.institucion_id);
 
     // Eliminar el usuario de Supabase Auth si tiene supabase_user_id
     if (administrador.supabase_user_id) {
@@ -94,6 +106,8 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al eliminar administrador:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
@@ -107,6 +121,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; adminId: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id, adminId } = await params;
     const institucionId = parseInt(id);
     const administradorId = parseInt(adminId);
@@ -157,6 +176,8 @@ export async function PUT(
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, administrador.institucion_id);
 
     const emailExistente = await prisma.administradores.findFirst({
       where: {
@@ -240,6 +261,8 @@ export async function PUT(
 
     return NextResponse.json({ data: administradorActualizado });
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al actualizar administrador:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }

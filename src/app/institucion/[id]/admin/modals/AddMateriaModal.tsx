@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import { showSuccess } from '@/lib/notifications';
 
 interface AddMateriaModalProps {
   isOpen: boolean;
@@ -141,17 +141,7 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
       if (response.ok) {
         const data = await response.json();
         
-        // Mostrar SweetAlert de éxito
-        await Swal.fire({
-          icon: 'success',
-          title: '¡Materia Creada!',
-          text: `La materia "${formData.nombre}" se ha creado exitosamente`,
-          confirmButtonText: 'Continuar',
-          confirmButtonColor: '#10b981', // Color verde
-          timer: 3000,
-          timerProgressBar: true
-        });
-        
+        await showSuccess('¡Materia Creada!', `La materia "${formData.nombre}" se ha creado exitosamente`);
         onSuccess();
         onClose();
       } else {
@@ -201,13 +191,14 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
                   onChange={(e) => {
                     const areaNombre = e.target.value;
                     const normalizar = (texto: string) => texto.trim().toLowerCase();
-                    const areaEncontrada = areasDisponibles.find(
-                      (area) => normalizar(area.nombre) === normalizar(areaNombre)
+                    // Usar áreas predeterminadas para el ID: la API acepta IDs 1-13 y crea el área en la institución si no existe
+                    const areaPredeterminada = areasPredeterminadas.find(
+                      (a) => normalizar(a.nombre) === normalizar(areaNombre)
                     );
                     setFormData({
                       ...formData,
                       area_nombre: areaNombre,
-                      area_id: areaEncontrada ? String(areaEncontrada.id) : '0'
+                      area_id: areaPredeterminada ? String(areaPredeterminada.id) : '0'
                     });
                   }}
                   className="w-full max-w-full min-w-0 px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 placeholder:text-slate-400 truncate"

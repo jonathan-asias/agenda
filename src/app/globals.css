@@ -10,6 +10,9 @@
   /* Variables base (compatibilidad) */
   --background: #ffffff;
   --foreground: #171717;
+  /* Aliases para design tokens (src/design/tokens.ts) */
+  --surface: var(--color-surface);
+  --text: var(--color-text-primary);
 
   /* ========================================================================
    * COLORES PRINCIPALES

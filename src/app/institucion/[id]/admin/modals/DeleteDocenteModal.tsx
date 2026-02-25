@@ -2,21 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState } from 'react';
-import Swal from 'sweetalert2';
-
-interface Docente {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  email: string;
-  telefono: string;
-  sede: { nombre: string } | null;
-  docenteAsignaciones: {
-    grado: { nombre: string; nivel: string };
-    curso: { nombre: string };
-    materia: { nombre: string };
-  }[];
-}
+import { showSuccess, showError } from '@/lib/notifications';
+import type { Docente } from '@/types/docente';
 
 interface DeleteDocenteModalProps {
   isOpen: boolean;
@@ -47,35 +34,15 @@ export default function DeleteDocenteModal({
       });
 
       if (response.ok) {
-        await Swal.fire({
-          icon: 'success',
-          title: '¡Docente Eliminado!',
-          text: `El docente "${docente.nombres} ${docente.apellidos}" ha sido eliminado exitosamente`,
-          confirmButtonText: 'Continuar',
-          confirmButtonColor: '#dc2626',
-          timer: 3000,
-          timerProgressBar: true
-        });
+        await showSuccess('¡Docente Eliminado!', `El docente "${docente.nombres} ${docente.apellidos}" ha sido eliminado exitosamente`);
         onSuccess();
         onClose();
       } else {
         const errorData = await response.json();
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error al Eliminar',
-          text: errorData.error || 'No se pudo eliminar el docente',
-          confirmButtonText: 'Entendido',
-          confirmButtonColor: '#dc2626'
-        });
+        await showError('Error al Eliminar', errorData.error || 'No se pudo eliminar el docente');
       }
     } catch (error) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error de Conexión',
-        text: 'No se pudo conectar con el servidor',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#dc2626'
-      });
+      await showError('Error de Conexión', 'No se pudo conectar con el servidor');
     } finally {
       setLoading(false);
     }

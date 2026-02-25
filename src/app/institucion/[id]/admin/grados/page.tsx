@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import AdminAuthGuard from '../AdminAuthGuard';
+import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Header from '../../Header';
 import Footer from '../../Footer';
-import Skeleton from '../../../../../components/ui/Skeleton';
+import Skeleton from '@/components/ui/Skeleton';
 
 interface CursoResumen {
   id: number;

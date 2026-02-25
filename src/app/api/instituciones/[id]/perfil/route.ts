@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -8,6 +13,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const institucionId = Number.parseInt(id, 10);
 
@@ -33,6 +43,8 @@ export async function PUT(
     if (!institucionExistente) {
       return NextResponse.json({ error: 'Institución no encontrada' }, { status: 404 });
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     const emailExistente = await prisma.instituciones.findFirst({
       where: {
@@ -60,6 +72,8 @@ export async function PUT(
 
     return NextResponse.json({ data: institucionActualizada });
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al actualizar perfil de institución:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }

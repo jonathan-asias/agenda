@@ -2,23 +2,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState } from 'react';
-import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase';
-import Header from '../../components/landing/Header';
-import Footer from '../../components/landing/Footer';
-import PhoneInput, { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
-import es from 'react-phone-number-input/locale/es.json';
-import 'react-phone-number-input/style.css';
-
-interface Sede {
-  id: string;
-  nombre: string;
-  jornadas: string[];
-}
-
-// Países ordenados alfabéticamente por nombre (en español)
-const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries()].sort(
-  (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
-);
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import Header from '@/components/landing/Header';
+import Footer from '@/components/landing/Footer';
+import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
+import type { Sede } from '@/types/sede';
 
 export default function RegistroInstitucion() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -108,10 +96,6 @@ export default function RegistroInstitucion() {
     return nitRegex.test(nit);
   };
 
-  // Validación de teléfono: E.164 válido (react-phone-number-input)
-  const isPhoneValid = (phone: string): boolean => {
-    return !!phone && isValidPhoneNumber(phone);
-  };
 
   // Validación de campos vacíos
   const hasEmptyFields = (): string[] => {
@@ -522,18 +506,18 @@ export default function RegistroInstitucion() {
   };
 
   const removeSede = (id: string) => {
-    setSedes(prev => prev.filter(sede => sede.id !== id));
+    setSedes(prev => prev.filter(sede => String(sede.id) !== id));
   };
 
   const updateSede = (id: string, field: keyof Sede, value: string | string[]) => {
     setSedes(prev => prev.map(sede => 
-      sede.id === id ? { ...sede, [field]: value } : sede
+      String(sede.id) === id ? { ...sede, [field]: value } : sede
     ));
   };
 
   const handleSedeJornadaChange = (sedeId: string, jornada: string, checked: boolean) => {
     setSedes(prev => prev.map(sede => {
-      if (sede.id === sedeId) {
+      if (String(sede.id) === sedeId) {
         let newJornadas = [...sede.jornadas];
         
         if (checked) {
@@ -1037,33 +1021,12 @@ export default function RegistroInstitucion() {
               <label htmlFor="telefono_contacto" className="block text-sm font-medium text-slate-700 mb-2">
                 Teléfono de Contacto *
               </label>
-              <PhoneInput
+              <PhoneInputField
                 id="telefono_contacto"
-                international
-                defaultCountry="CO"
-                countries={COUNTRY_OPTIONS_ORDER}
-                labels={es}
-                placeholder="Ej: 300 123 4567"
-                value={formData.telefono_contacto || undefined}
-                onChange={(value) => setFormData((prev) => ({ ...prev, telefono_contacto: value || '' }))}
-                className={`w-full ${
-                  (formData.telefono_contacto && !isPhoneValid(formData.telefono_contacto)) || securityErrors.telefono_contacto
-                    ? 'PhoneInput--error'
-                    : ''
-                }`}
-                numberInputProps={{
-                  className: `flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 min-w-0 ${
-                    (formData.telefono_contacto && !isPhoneValid(formData.telefono_contacto)) || securityErrors.telefono_contacto
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                      : 'border-slate-300'
-                  }`,
-                  required: true,
-                  'aria-label': 'Número de teléfono'
-                }}
+                value={formData.telefono_contacto}
+                onChange={(v) => setFormData((prev) => ({ ...prev, telefono_contacto: v }))}
+                aria-label="Número de teléfono"
               />
-              {formData.telefono_contacto && !isPhoneValid(formData.telefono_contacto) && (
-                <p className="mt-1 text-xs text-red-600">Ingrese un número de teléfono válido con indicativo de país</p>
-              )}
               {securityErrors.telefono_contacto && (
                 <p className="mt-1 text-xs text-red-600 flex items-center">
                   <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
@@ -1337,7 +1300,7 @@ export default function RegistroInstitucion() {
                       <h5 className="text-sm font-medium text-slate-700">Sede {index + 1}</h5>
                       <button
                         type="button"
-                        onClick={() => removeSede(sede.id)}
+                        onClick={() => removeSede(String(sede.id))}
                         className="text-red-600 hover:text-red-800 text-sm font-medium"
                       >
                         Eliminar
@@ -1351,7 +1314,7 @@ export default function RegistroInstitucion() {
                       <input
                         type="text"
                         value={sede.nombre}
-                        onChange={(e) => updateSede(sede.id, 'nombre', e.target.value)}
+                        onChange={(e) => updateSede(String(sede.id), 'nombre', e.target.value)}
                         className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
                         placeholder="Nombre de la sede"
                         required
@@ -1367,7 +1330,7 @@ export default function RegistroInstitucion() {
                           <input
                             type="checkbox"
                             checked={sede.jornadas.includes('única')}
-                            onChange={(e) => handleSedeJornadaChange(sede.id, 'única', e.target.checked)}
+                            onChange={(e) => handleSedeJornadaChange(String(sede.id), 'única', e.target.checked)}
                             disabled={sede.jornadas.some(j => j !== 'única')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                           />
@@ -1378,7 +1341,7 @@ export default function RegistroInstitucion() {
                           <input
                             type="checkbox"
                             checked={sede.jornadas.includes('mañana')}
-                            onChange={(e) => handleSedeJornadaChange(sede.id, 'mañana', e.target.checked)}
+                            onChange={(e) => handleSedeJornadaChange(String(sede.id), 'mañana', e.target.checked)}
                             disabled={sede.jornadas.includes('única')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                           />
@@ -1389,7 +1352,7 @@ export default function RegistroInstitucion() {
                           <input
                             type="checkbox"
                             checked={sede.jornadas.includes('tarde')}
-                            onChange={(e) => handleSedeJornadaChange(sede.id, 'tarde', e.target.checked)}
+                            onChange={(e) => handleSedeJornadaChange(String(sede.id), 'tarde', e.target.checked)}
                             disabled={sede.jornadas.includes('única')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                           />
@@ -1400,7 +1363,7 @@ export default function RegistroInstitucion() {
                           <input
                             type="checkbox"
                             checked={sede.jornadas.includes('nocturna')}
-                            onChange={(e) => handleSedeJornadaChange(sede.id, 'nocturna', e.target.checked)}
+                            onChange={(e) => handleSedeJornadaChange(String(sede.id), 'nocturna', e.target.checked)}
                             disabled={sede.jornadas.includes('única')}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
                           />

@@ -1,29 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Swal from 'sweetalert2';
-
-interface Estudiante {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  codigo_estudiantil: string;
-  nombre_acudiente: string;
-  correo_acudiente?: string;
-  telefono_acudiente: string;
-  grado: { nombre: string; nivel: string };
-  curso: { nombre: string; jornada: string | null };
-  activo: boolean;
-  grado_id?: number | null;
-  curso_id?: number | null;
-}
-
-interface Grado {
-  id: number;
-  nombre: string;
-  nivel: string;
-  cursos: { id: number; nombre: string; jornada: string | null }[];
-}
+import { showError } from '@/lib/notifications';
+import type { Estudiante, Grado } from '@/types';
 
 interface EditEstudianteModalProps {
   isOpen: boolean;
@@ -62,12 +41,12 @@ export default function EditEstudianteModal({
         nombres: estudiante.nombres,
         apellidos: estudiante.apellidos,
         codigo_estudiantil: estudiante.codigo_estudiantil,
-        nombre_acudiente: estudiante.nombre_acudiente,
+        nombre_acudiente: estudiante.nombre_acudiente ?? '',
         correo_acudiente: estudiante.correo_acudiente || '',
-        telefono_acudiente: estudiante.telefono_acudiente,
+        telefono_acudiente: estudiante.telefono_acudiente ?? '',
         grado_id: estudiante.grado_id || 0,
         curso_id: estudiante.curso_id || 0,
-        activo: estudiante.activo
+        activo: estudiante.activo ?? true
       });
     }
   }, [estudiante]);
@@ -98,17 +77,19 @@ export default function EditEstudianteModal({
     let gradoId = formData.grado_id;
     let cursoId = formData.curso_id;
 
-    if (!gradoId && estudiante.grado?.nombre) {
-      const gradoMatch = grados.find(g => g.nombre === estudiante.grado.nombre);
+    const nombreGrado = estudiante.grado?.nombre;
+    if (!gradoId && nombreGrado) {
+      const gradoMatch = grados.find(g => g.nombre === nombreGrado);
       gradoId = gradoMatch?.id || 0;
     }
 
     const gradoSeleccionado = grados.find(g => g.id === gradoId);
-    const cursos = gradoSeleccionado?.cursos || [];
+    const cursos = gradoSeleccionado?.cursos ?? [];
     setCursosDisponibles(cursos);
 
-    if (!cursoId && estudiante.curso?.nombre) {
-      const cursoMatch = cursos.find(c => c.nombre === estudiante.curso.nombre);
+    const nombreCurso = estudiante.curso?.nombre;
+    if (!cursoId && nombreCurso) {
+      const cursoMatch = cursos.find(c => c.nombre === nombreCurso);
       cursoId = cursoMatch?.id || 0;
     }
 
@@ -125,7 +106,7 @@ export default function EditEstudianteModal({
     setFormData(prev => ({ ...prev, grado_id: gradoId, curso_id: 0 }));
     const gradoSeleccionado = grados.find(g => g.id === gradoId);
     if (gradoSeleccionado) {
-      setCursosDisponibles(gradoSeleccionado.cursos);
+      setCursosDisponibles(gradoSeleccionado.cursos ?? []);
     } else {
       setCursosDisponibles([]);
     }
@@ -147,19 +128,11 @@ export default function EditEstudianteModal({
         onClose();
       } else {
         const error = await response.json();
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: `Error: ${error.error}`
-        });
+        await showError('Error', `Error: ${error.error}`);
       }
     } catch (error) {
       console.error('Error al actualizar estudiante:', error);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Error al actualizar el estudiante'
-      });
+      await showError('Error', 'Error al actualizar el estudiante');
     } finally {
       setSaving(false);
     }

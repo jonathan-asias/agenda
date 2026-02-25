@@ -1,30 +1,11 @@
+// ⚠ Archivo actualmente no utilizado. Pendiente decisión de eliminación.
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
-
-interface Institucion {
-  id: number;
-  nombre: string;
-  email: string;
-}
-
-interface Administrador {
-  id: number;
-  nombre: string;
-  apellido: string;
-  correo: string;
-  cargo: string;
-  institucion: {
-    id: number;
-    nombre: string;
-  };
-  sede?: {
-    id: number;
-    nombre: string;
-  };
-}
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import type { Institucion } from '@/types/institucion';
+import type { Administrador } from '@/types';
 
 interface UnifiedAuthContextType {
   user: User | null;

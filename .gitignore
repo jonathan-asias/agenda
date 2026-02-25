@@ -15,8 +15,12 @@ dist/
 .env.local
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 .env.docker
+
+# Vercel
+.vercel
 
 # Prisma
 prisma/migrations/

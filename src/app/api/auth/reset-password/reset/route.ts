@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
-import { getSupabaseClient, isSupabaseConfigured } from '../../../../../lib/supabase';
+import { prisma } from '@/lib/prisma';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {

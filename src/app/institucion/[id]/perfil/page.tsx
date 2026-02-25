@@ -3,39 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getSupabaseClient, isSupabaseConfigured } from '../../../../lib/supabase';
-import InstitucionAuthGuard from '../InstitucionAuthGuard';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import type { Institucion, Sede, BrandingData } from '@/types';
+import InstitucionAuthGuard from '@/components/auth/InstitucionAuthGuard';
 import Swal from 'sweetalert2';
+import { showSuccess, showError } from '@/lib/notifications';
 import AddAdministradorModal from '../AddAdministradorModal';
 import Footer from '../Footer';
 import Header from '../Header';
-
-interface Institucion {
-  id: number;
-  nombre: string;
-  direccion_principal: string;
-  nit: string;
-  nombre_contacto: string;
-  telefono_contacto: string;
-  email: string;
-  tiene_sedes: boolean;
-  jornadas: string[];
-  created_at: string;
-  sedes: Sede[];
-}
-
-interface Sede {
-  id: number;
-  nombre: string;
-  jornadas: string[];
-}
-
-interface BrandingData {
-  logoUrl?: string | null;
-  bannerUrl?: string | null;
-  colorPrimario: string;
-  colorSecundario: string;
-}
 
 interface PerfilFormData {
   email: string;
@@ -117,14 +92,14 @@ export default function PerfilPage() {
 
   const obtainSupabaseClient = () => {
     if (!isSupabaseConfigured()) {
-      Swal.fire('Error', 'Supabase no está configurado.', 'error');
+      showError('Error', 'Supabase no está configurado.');
       return null;
     }
     try {
       return getSupabaseClient();
     } catch (clientError) {
       console.error('No se pudo inicializar Supabase:', clientError);
-      Swal.fire('Error', 'No se pudo conectar con Supabase.', 'error');
+      showError('Error', 'No se pudo conectar con Supabase.');
       return null;
     }
   };
@@ -148,7 +123,7 @@ export default function PerfilPage() {
 
     if (uploadError) {
       console.error(`Error subiendo ${kind}:`, uploadError);
-      Swal.fire('Error', `No se pudo subir el ${kind}.`, 'error');
+      showError('Error', `No se pudo subir el ${kind}.`);
       return null;
     }
 
@@ -170,11 +145,7 @@ export default function PerfilPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        Swal.fire(
-          'No se pudo guardar',
-          errorData.error || 'Verifica los datos ingresados e intenta nuevamente.',
-          'error'
-        );
+        showError('No se pudo guardar', errorData.error || 'Verifica los datos ingresados e intenta nuevamente.');
         return;
       }
 
@@ -226,18 +197,10 @@ export default function PerfilPage() {
       setLogoFile(null);
       setBannerFile(null);
       setIsEditing(false);
-      Swal.fire(
-        'Actualización exitosa',
-        'Los datos de la institución y la personalización fueron guardados.',
-        'success'
-      );
+      showSuccess('Actualización exitosa', 'Los datos de la institución y la personalización fueron guardados.');
     } catch (saveError) {
       console.error('Error al guardar cambios:', saveError);
-      Swal.fire(
-        'Error inesperado',
-        'Ocurrió un problema al guardar los cambios. Intenta nuevamente.',
-        'error'
-      );
+      showError('Error inesperado', 'Ocurrió un problema al guardar los cambios. Intenta nuevamente.');
     } finally {
       setIsSaving(false);
     }
@@ -368,11 +331,13 @@ export default function PerfilPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Fecha de Registro</label>
                 <p className="text-slate-800 font-medium">
-                  {new Date(institucion.created_at).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {institucion.created_at
+                  ? new Date(institucion.created_at).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })
+                  : '-'}
                 </p>
               </div>
             </div>
@@ -384,9 +349,9 @@ export default function PerfilPage() {
           {/* Jornadas */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
             <h2 className="text-xl font-semibold text-slate-800 mb-4">Jornadas de la Institución</h2>
-            {institucion.jornadas.length > 0 ? (
+            {(institucion.jornadas ?? []).length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {institucion.jornadas.map((jornada, index) => (
+                {(institucion.jornadas ?? []).map((jornada, index) => (
                   <span
                     key={index}
                     className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
@@ -472,14 +437,14 @@ export default function PerfilPage() {
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
-                    value={branding.colorPrimario}
+                    value={branding.colorPrimario ?? ''}
                     disabled={!isEditing}
                     onChange={(e) => setBranding(prev => ({ ...prev, colorPrimario: e.target.value }))}
                     className="h-10 w-14 rounded border border-slate-300 bg-white"
                   />
                   <input
                     type="text"
-                    value={branding.colorPrimario}
+                    value={branding.colorPrimario ?? ''}
                     disabled={!isEditing}
                     onChange={(e) => setBranding(prev => ({ ...prev, colorPrimario: e.target.value }))}
                     className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900"
@@ -491,14 +456,14 @@ export default function PerfilPage() {
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
-                    value={branding.colorSecundario}
+                    value={branding.colorSecundario ?? ''}
                     disabled={!isEditing}
                     onChange={(e) => setBranding(prev => ({ ...prev, colorSecundario: e.target.value }))}
                     className="h-10 w-14 rounded border border-slate-300 bg-white"
                   />
                   <input
                     type="text"
-                    value={branding.colorSecundario}
+                    value={branding.colorSecundario ?? ''}
                     disabled={!isEditing}
                     onChange={(e) => setBranding(prev => ({ ...prev, colorSecundario: e.target.value }))}
                     className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900"

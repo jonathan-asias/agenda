@@ -1,3 +1,4 @@
+// ⚠ Archivo actualmente no utilizado. Pendiente decisión de eliminación.
 /**
  * UI Design Tokens - Constantes de diseño para mantener consistencia
  * 

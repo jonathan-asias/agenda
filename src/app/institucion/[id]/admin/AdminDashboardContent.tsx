@@ -2,29 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import SetupWizard from './SetupWizard';
 import DashboardStats from './DashboardStats';
 import DashboardSections from './DashboardSections';
 import AddItemModal from './AddItemModal';
 import Footer from '../Footer';
 import Header from '../Header';
-
-interface Administrador {
-  id: number;
-  nombre: string;
-  apellido: string;
-  correo: string;
-  cargo: string;
-  institucion: {
-    id: number;
-    nombre: string;
-  };
-  sede?: {
-    id: number;
-    nombre: string;
-  };
-}
+import type { Administrador } from '@/types';
 
 interface DashboardData {
   estadisticas: {
@@ -277,7 +262,7 @@ export default function AdminDashboardContent() {
             <>
               <div className="space-y-2">
                 {/* Acordeón 1: Resumen institucional (siempre uno abierto) */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
                   <div
                     role="button"
                     tabIndex={0}
@@ -306,11 +291,11 @@ export default function AdminDashboardContent() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </button>
-                          <div className="absolute left-0 top-full mt-1.5 z-20 min-w-[280px] max-w-md p-5 bg-slate-800 text-white text-base rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
+                          <div className="absolute left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 top-full mt-1.5 z-20 min-w-[200px] max-w-[min(28rem,calc(100vw-2rem))] w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[280px] p-4 sm:p-5 bg-slate-800 text-white text-sm sm:text-base rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
                             <p className="leading-relaxed tracking-wide text-slate-100">
                               En este resumen se muestran las cantidades de áreas, materias, grados, cursos, docentes y estudiantes registrados en la institución.
                             </p>
-                            <div className="absolute -top-1.5 left-4 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
+                            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
                           </div>
                         </div>
                       )}
@@ -332,7 +317,7 @@ export default function AdminDashboardContent() {
                 </div>
 
                 {/* Acordeón 2: Resumen detallado */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
                   <div
                     role="button"
                     tabIndex={0}
@@ -361,11 +346,11 @@ export default function AdminDashboardContent() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </button>
-                          <div className="absolute left-0 top-full mt-1.5 z-20 min-w-[280px] max-w-md p-5 bg-slate-800 text-white text-base rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
+                          <div className="absolute left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 top-full mt-1.5 z-20 min-w-[200px] max-w-[min(28rem,calc(100vw-2rem))] w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[280px] p-4 sm:p-5 bg-slate-800 text-white text-sm sm:text-base rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
                             <p className="leading-relaxed tracking-wide text-slate-100">
                               Aquí puedes consultar el listado completo de áreas, materias, grados, cursos, docentes y estudiantes con sus nombres, así como los recordatorios creados por los docentes.
                             </p>
-                            <div className="absolute -top-1.5 left-4 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
+                            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
                           </div>
                         </div>
                       )}

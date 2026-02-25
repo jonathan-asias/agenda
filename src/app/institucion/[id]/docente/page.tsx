@@ -1,5 +1,5 @@
 import DocenteDashboardContent from './DocenteDashboardContent';
-import DocenteAuthGuard from './DocenteAuthGuard';
+import DocenteAuthGuard from '@/components/auth/DocenteAuthGuard';
 
 export default function DocenteDashboardPage() {
   return (

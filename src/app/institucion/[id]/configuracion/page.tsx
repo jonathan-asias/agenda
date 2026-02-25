@@ -2,23 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import Swal from 'sweetalert2';
-import InstitucionAuthGuard from '../InstitucionAuthGuard';
+import { showSuccess } from '@/lib/notifications';
+import type { Institucion } from '@/types';
+import InstitucionAuthGuard from '@/components/auth/InstitucionAuthGuard';
 import Footer from '../Footer';
 import Header from '../Header';
-
-type Institucion = {
-  id: number;
-  nombre: string;
-  direccion_principal: string;
-  nit: string;
-  nombre_contacto: string;
-  telefono_contacto: string;
-  email: string;
-  tiene_sedes: boolean;
-  jornadas: string[];
-  created_at: string;
-};
 
 type NotificationSettings = {
   recordatorios: boolean;
@@ -72,12 +60,7 @@ export default function ConfiguracionPage() {
   };
 
   const handleSavePreferences = async () => {
-    await Swal.fire({
-      icon: 'success',
-      title: 'Preferencias guardadas',
-      text: 'Tus configuraciones de notificación se han actualizado.',
-      confirmButtonColor: '#2563eb',
-    });
+    await showSuccess('Preferencias guardadas', 'Tus configuraciones de notificación se han actualizado.');
   };
 
   return (

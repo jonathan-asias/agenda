@@ -1,18 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Swal from 'sweetalert2';
-
-interface Estudiante {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  codigo_estudiantil: string;
-  grado: { nombre: string; nivel: string };
-  curso: { nombre: string; jornada: string | null };
-  grado_id?: number | null;
-  curso_id?: number | null;
-}
+import { showSuccess, showError } from '@/lib/notifications';
+import type { Estudiante } from '@/types/estudiante';
 
 interface DeleteEstudianteModalProps {
   isOpen: boolean;
@@ -40,36 +30,16 @@ export default function DeleteEstudianteModal({
       });
 
       if (response.ok) {
-        // Mostrar SweetAlert de éxito
-        await Swal.fire({
-          icon: 'success',
-          title: '¡Eliminado!',
-          text: `El estudiante ${estudiante.nombres} ${estudiante.apellidos} ha sido eliminado exitosamente.`,
-          confirmButtonText: 'Entendido',
-          confirmButtonColor: '#10b981'
-        });
-        
+        await showSuccess('¡Eliminado!', `El estudiante ${estudiante.nombres} ${estudiante.apellidos} ha sido eliminado exitosamente.`);
         onSuccess();
         onClose();
       } else {
         const error = await response.json();
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.error || 'No se pudo eliminar el estudiante',
-          confirmButtonText: 'Entendido',
-          confirmButtonColor: '#ef4444'
-        });
+        await showError('Error', error.error || 'No se pudo eliminar el estudiante');
       }
     } catch (error) {
       console.error('Error al eliminar estudiante:', error);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Ocurrió un error inesperado al eliminar el estudiante',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#ef4444'
-      });
+      await showError('Error', 'Ocurrió un error inesperado al eliminar el estudiante');
     } finally {
       setDeleting(false);
     }

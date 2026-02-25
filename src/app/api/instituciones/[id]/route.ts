@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const institucionId = parseInt(id);
 
@@ -15,6 +25,8 @@ export async function GET(
         { status: 400 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     const institucion = await prisma.instituciones.findUnique({
       where: {
@@ -35,6 +47,8 @@ export async function GET(
 
     return NextResponse.json(institucion);
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al obtener institución:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
@@ -48,6 +62,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const institucionId = parseInt(id);
 
@@ -147,6 +166,8 @@ export async function PUT(
       );
     }
 
+    enforceTenant(userInstitutionId, institucionId);
+
     // Actualizar la institución
     const institucionActualizada = await prisma.instituciones.update({
       where: { id: institucionId },
@@ -170,6 +191,8 @@ export async function PUT(
     });
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al actualizar institución:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
@@ -183,6 +206,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const institucionId = parseInt(id);
 
@@ -192,6 +220,8 @@ export async function DELETE(
         { status: 400 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     // Verificar que la institución existe
     const institucionExistente = await prisma.instituciones.findUnique({
@@ -215,6 +245,8 @@ export async function DELETE(
     });
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al eliminar institución:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },

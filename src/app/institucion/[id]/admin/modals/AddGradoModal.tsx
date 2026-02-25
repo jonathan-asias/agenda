@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect } from 'react';
+import { Modal, Button, Loader } from '@/components/ui';
 
 interface AddGradoModalProps {
   isOpen: boolean;
@@ -32,23 +33,6 @@ export default function AddGradoModal({ isOpen, onClose, institucionId, onSucces
       setFormData({ nombre: '', nivel: '', orden: 1 });
       setError('');
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const body = document.body;
-    const count = Number(body.dataset.modalCount || '0');
-    body.dataset.modalCount = String(count + 1);
-    body.classList.add('modal-open');
-    return () => {
-      const next = Math.max(Number(body.dataset.modalCount || '1') - 1, 0);
-      if (next === 0) {
-        body.classList.remove('modal-open');
-        delete body.dataset.modalCount;
-      } else {
-        body.dataset.modalCount = String(next);
-      }
-    };
   }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,33 +66,16 @@ export default function AddGradoModal({ isOpen, onClose, institucionId, onSucces
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
-        <form onSubmit={handleSubmit}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-slate-900">Agregar Grado</h2>
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {error && (
+    <Modal open={isOpen} onClose={onClose} title="Agregar Grado" size="md">
+      <form onSubmit={handleSubmit}>
+        {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
 
-            <div className="space-y-4">
+        <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Nombre del Grado *
@@ -160,32 +127,22 @@ export default function AddGradoModal({ isOpen, onClose, institucionId, onSucces
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors flex items-center"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creando...
-                  </>
-                ) : (
-                  'Crear Grado'
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader size="sm" className="mr-2 border-white border-t-transparent" />
+                Creando...
+              </>
+            ) : (
+              'Crear Grado'
+            )}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

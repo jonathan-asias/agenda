@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { prisma } from '../../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 const getSupabaseAdminClient = () => {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,6 +23,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const institucionId = Number.parseInt(id, 10);
 
@@ -38,6 +48,8 @@ export async function GET(
     if (!institucion) {
       return NextResponse.json({ error: 'Institución no encontrada' }, { status: 404 });
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     const bucket =
       process.env.SUPABASE_STORAGE_BUCKET ||
@@ -75,6 +87,8 @@ export async function GET(
     response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     return response;
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al obtener branding:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
@@ -85,12 +99,19 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const institucionId = Number.parseInt(id, 10);
 
     if (Number.isNaN(institucionId)) {
       return NextResponse.json({ error: 'ID de institución inválido' }, { status: 400 });
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     const body = await request.json();
     const { logo_url, banner_url, color_primario, color_secundario } = body;
@@ -107,6 +128,8 @@ export async function PUT(
 
     return NextResponse.json({ data: institucion });
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error al actualizar branding:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }

@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const recordatorioId = parseInt(id);
 
@@ -39,6 +49,14 @@ export async function PATCH(
       );
     }
 
+    const docente = await prisma.docentes.findUnique({
+      where: { id: recordatorio.docente_id },
+      select: { institucion_id: true }
+    });
+    if (docente) {
+      enforceTenant(userInstitutionId, docente.institucion_id);
+    }
+
     // Convertir la fecha a DateTime
     const fechaDateTime = new Date(fecha);
 
@@ -63,6 +81,8 @@ export async function PATCH(
       }
     });
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error actualizando recordatorio:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
@@ -76,6 +96,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { id } = await params;
     const recordatorioId = parseInt(id);
 
@@ -98,6 +123,14 @@ export async function DELETE(
       );
     }
 
+    const docente = await prisma.docentes.findUnique({
+      where: { id: recordatorio.docente_id },
+      select: { institucion_id: true }
+    });
+    if (docente) {
+      enforceTenant(userInstitutionId, docente.institucion_id);
+    }
+
     // Eliminar el recordatorio y sus relaciones en una transacción
     await prisma.$transaction(async (tx) => {
       // Eliminar las relaciones con estudiantes primero
@@ -116,6 +149,8 @@ export async function DELETE(
       message: 'Recordatorio eliminado exitosamente'
     });
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error eliminando recordatorio:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },

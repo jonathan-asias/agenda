@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { APP_URL } from '@/lib/env';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 import { getSupabaseAdminClient, isSupabaseAdminConfigured } from '@/lib/supabase-admin';
 
 type DocenteInput = {
@@ -21,6 +26,11 @@ type AsignacionesPayload = {
 
 export async function POST(request: NextRequest) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     console.log('=== INICIANDO CREACIÓN DE DOCENTES ===');
     
     // Verificar variables de entorno
@@ -78,6 +88,8 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
     
     // Obtener la sede principal o la sede del administrador
     let sedeId: number | null = null;
@@ -402,6 +414,8 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error en endpoint docentes:', error);
     return NextResponse.json(
       { 

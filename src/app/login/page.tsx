@@ -1,15 +1,18 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Swal from 'sweetalert2';
-import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase';
-import Header from '../../components/landing/Header';
-import Footer from '../../components/landing/Footer';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { applyBranding } from '@/lib/applyBranding';
+import Header from '@/components/landing/Header';
+import Footer from '@/components/landing/Footer';
 
 export default function LoginPage() {
+  const { institutionId } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,6 +21,27 @@ export default function LoginPage() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [userType, setUserType] = useState<'institucion' | 'administrador' | 'docente'>('institucion');
   const router = useRouter();
+
+  // Aplicar branding de la institución en login cuando ya hay sesión (ej. usuario volvió a login)
+  useEffect(() => {
+    if (!institutionId) return;
+    let cancelled = false;
+    const fetchBranding = async () => {
+      try {
+        const resp = await fetch(`/api/instituciones/${institutionId}/branding`);
+        if (cancelled || !resp.ok) return;
+        const data = await resp.json();
+        applyBranding({
+          colorPrimario: data.color_primario ?? undefined,
+          colorSecundario: data.color_secundario ?? undefined,
+        });
+      } catch {
+        // Silenciar
+      }
+    };
+    fetchBranding();
+    return () => { cancelled = true; };
+  }, [institutionId]);
 
   // Función para sanitizar entrada de texto
   const sanitizeInput = (input: string): string => {

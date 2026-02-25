@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  getAuthInstitutionId,
+  enforceTenant,
+  tenantErrorToResponse
+} from '@/lib/tenant';
 
 type CursoInput = {
   nombre: string;
@@ -12,6 +17,11 @@ type GradoCursoInput = {
 
 export async function POST(request: NextRequest) {
   try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
     const { institucionId, gradosCursos } = await request.json() as {
       institucionId: number;
       gradosCursos: GradoCursoInput[];
@@ -35,6 +45,8 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    enforceTenant(userInstitutionId, institucionId);
 
     const nombresCursos = gradosCursos
       .flatMap(gradoCurso => gradoCurso.cursos.map(curso => curso.nombre?.trim()))
@@ -169,6 +181,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
     console.error('Error creating cursos:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
