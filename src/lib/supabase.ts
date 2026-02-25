@@ -1,34 +1,34 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
+import type { Database } from '@/types/supabase';
 import { env } from '@/lib/env';
 
-let supabaseClient: SupabaseClient | null = null;
+let supabaseClient: SupabaseClient<Database> | null = null;
 
 export const isSupabaseConfigured = (): boolean =>
   Boolean(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-const createSupabaseClient = (): SupabaseClient => {
+function createSupabaseClient(): SupabaseClient<Database> {
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // En el navegador usar createBrowserClient para almacenar sesión en cookies (necesario para tenant en backend)
   if (typeof window !== 'undefined') {
-    return createBrowserClient(supabaseUrl, supabaseAnonKey);
+    return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
   }
-  return createClient(supabaseUrl, supabaseAnonKey);
-};
+  return createClient<Database>(supabaseUrl, supabaseAnonKey);
+}
 
-export const getSupabaseClient = (): SupabaseClient => {
+export function getSupabaseClient(): SupabaseClient<Database> {
   if (!supabaseClient) {
     supabaseClient = createSupabaseClient();
   }
   return supabaseClient;
-};
+}
 
-export const tryGetSupabaseClient = (): SupabaseClient | null => {
+export function tryGetSupabaseClient(): SupabaseClient<Database> | null {
   try {
     return getSupabaseClient();
   } catch {
     return null;
   }
-};
+}
