@@ -73,11 +73,12 @@ export async function POST(request: NextRequest) {
 
     enforceTenant(userInstitutionId, docente.institucion_id);
 
-    // Validar que los estudiantes existen y pertenecen al curso
+    // Validar que los estudiantes existen y pertenecen al curso y a la institución
     const estudiantes = await prisma.estudiantes.findMany({
       where: {
         id: { in: estudiantesSeleccionados.map((id: number) => parseInt(id.toString())) },
         curso_id: parseInt(cursoId),
+        institucion_id: userInstitutionId,
         activo: true
       }
     });

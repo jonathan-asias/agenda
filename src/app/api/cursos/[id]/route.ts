@@ -18,18 +18,17 @@ export async function DELETE(
 
     const { id } = await params;
     const cursoId = Number.parseInt(id, 10);
-    const institucionIdParam = request.nextUrl.searchParams.get('institucionId');
-    const institucionId = institucionIdParam ? Number.parseInt(institucionIdParam, 10) : NaN;
 
-    if (Number.isNaN(cursoId) || Number.isNaN(institucionId)) {
+    if (Number.isNaN(cursoId)) {
       return NextResponse.json(
-        { error: 'ID de curso o institución inválido' },
+        { error: 'ID de curso inválido' },
         { status: 400 }
       );
     }
 
+    // Solo permitir eliminar cursos de la institución del usuario autenticado
     const curso = await prisma.cursos.findFirst({
-      where: { id: cursoId, institucion_id: institucionId }
+      where: { id: cursoId, institucion_id: userInstitutionId }
     });
 
     if (!curso) {
@@ -39,10 +38,8 @@ export async function DELETE(
       );
     }
 
-    enforceTenant(userInstitutionId, curso.institucion_id);
-
     await prisma.cursos.delete({
-      where: { id: cursoId }
+      where: { id: cursoId, institucion_id: userInstitutionId }
     });
 
     return NextResponse.json({

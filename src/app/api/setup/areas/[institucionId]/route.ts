@@ -17,19 +17,20 @@ export async function GET(
     }
 
     const { institucionId } = await params;
-    const id = parseInt(institucionId);
+    const idFromUrl = parseInt(institucionId);
 
-    if (isNaN(id)) {
+    if (isNaN(idFromUrl)) {
       return NextResponse.json(
         { error: 'ID de institución inválido' },
         { status: 400 }
       );
     }
 
-    enforceTenant(userInstitutionId, id);
+    enforceTenant(userInstitutionId, idFromUrl);
 
+    // Listado SIEMPRE por sesión autenticada; no se confía en el parámetro de URL para los datos
     const areas = await prisma.areas.findMany({
-      where: { institucion_id: id },
+      where: { institucion_id: userInstitutionId },
       orderBy: { orden: 'asc' }
     });
 

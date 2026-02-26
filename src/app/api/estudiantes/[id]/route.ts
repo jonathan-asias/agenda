@@ -28,9 +28,9 @@ export async function DELETE(
 
     console.log(`Iniciando eliminación del estudiante con ID: ${estudianteId}`);
 
-    // Verificar que el estudiante existe
-    const estudiante = await prisma.estudiantes.findUnique({
-      where: { id: estudianteId }
+    // Verificar que el estudiante existe y pertenece a la institución del usuario
+    const estudiante = await prisma.estudiantes.findFirst({
+      where: { id: estudianteId, institucion_id: userInstitutionId }
     });
 
     if (!estudiante) {
@@ -44,9 +44,9 @@ export async function DELETE(
 
     console.log(`Estudiante encontrado: ${estudiante.nombres} ${estudiante.apellidos}`);
 
-    // Eliminar el estudiante de la base de datos
+    // Eliminar el estudiante de la base de datos (solo si pertenece a la institución del usuario)
     await prisma.estudiantes.delete({
-      where: { id: estudianteId }
+      where: { id: estudianteId, institucion_id: userInstitutionId }
     });
 
     console.log(`✅ Estudiante eliminado exitosamente: ${estudiante.nombres} ${estudiante.apellidos}`);
@@ -100,9 +100,9 @@ export async function PUT(
       );
     }
 
-    // Verificar que el estudiante existe
-    const estudianteExistente = await prisma.estudiantes.findUnique({
-      where: { id: estudianteId }
+    // Verificar que el estudiante existe y pertenece a la institución del usuario
+    const estudianteExistente = await prisma.estudiantes.findFirst({
+      where: { id: estudianteId, institucion_id: userInstitutionId }
     });
 
     if (!estudianteExistente) {
@@ -112,13 +112,11 @@ export async function PUT(
       );
     }
 
-    enforceTenant(userInstitutionId, estudianteExistente.institucion_id);
-
     console.log(`Actualizando estudiante: ${estudianteExistente.nombres} ${estudianteExistente.apellidos}`);
 
-    // Actualizar datos del estudiante
+    // Actualizar datos del estudiante (solo si pertenece a la institución del usuario)
     const estudianteActualizado = await prisma.estudiantes.update({
-      where: { id: estudianteId },
+      where: { id: estudianteId, institucion_id: userInstitutionId },
       data: {
         nombres,
         apellidos,
@@ -174,9 +172,9 @@ export async function GET(
       );
     }
 
-    // Obtener información del estudiante
-    const estudiante = await prisma.estudiantes.findUnique({
-      where: { id: estudianteId },
+    // Obtener información del estudiante (solo si pertenece a la institución del usuario)
+    const estudiante = await prisma.estudiantes.findFirst({
+      where: { id: estudianteId, institucion_id: userInstitutionId },
       include: {
         grado: {
           select: {

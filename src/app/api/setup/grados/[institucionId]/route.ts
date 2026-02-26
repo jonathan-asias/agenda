@@ -17,22 +17,22 @@ export async function GET(
     }
 
     const { institucionId } = await params;
-    const institucionIdNum = parseInt(institucionId);
+    const institucionIdFromUrl = parseInt(institucionId);
 
-    if (!institucionIdNum) {
+    if (!institucionIdFromUrl || isNaN(institucionIdFromUrl)) {
       return NextResponse.json(
         { error: 'ID de institución inválido' },
         { status: 400 }
       );
     }
 
-    enforceTenant(userInstitutionId, institucionIdNum);
+    enforceTenant(userInstitutionId, institucionIdFromUrl);
 
-    console.log('Cargando grados para institución:', institucionIdNum);
+    // Listado SIEMPRE por sesión autenticada
+    console.log('Cargando grados para institución (desde sesión):', userInstitutionId);
 
-    // Cargar grados con sus cursos
     const grados = await prisma.grados.findMany({
-      where: { institucion_id: institucionIdNum },
+      where: { institucion_id: userInstitutionId },
       include: {
         cursos: {
           select: {

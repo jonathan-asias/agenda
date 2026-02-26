@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
   getAuthInstitutionId,
-  enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
 
@@ -23,25 +22,11 @@ export async function GET(
       return NextResponse.json({ error: 'ID de curso inválido' }, { status: 400 });
     }
 
-    // Obtener institucion_id desde query params
-    const { searchParams } = new URL(request.url);
-    const institucionId = searchParams.get('institucionId');
-
-    if (!institucionId) {
-      return NextResponse.json({ error: 'ID de institución es requerido' }, { status: 400 });
-    }
-
-    const institucionIdNum = parseInt(institucionId);
-    if (isNaN(institucionIdNum)) {
-      return NextResponse.json({ error: 'ID de institución inválido' }, { status: 400 });
-    }
-
-    enforceTenant(userInstitutionId, institucionIdNum);
-
+    // Institución SIEMPRE desde sesión autenticada; no se usa query ni body
     const estudiantes = await prisma.estudiantes.findMany({
       where: {
         curso_id: cursoId,
-        institucion_id: institucionIdNum,
+        institucion_id: userInstitutionId,
         activo: true
       },
       select: {

@@ -57,33 +57,56 @@ export async function getAuthInstitutionId(
       error
     } = await supabase.auth.getUser();
 
-    if (error || !user?.email) return null;
+    if (error || !user?.email) {
+      console.log('AUTH USER:', user?.email ?? '(none)', error?.message ?? '');
+      console.log('AUTH INSTITUTION ID:', null);
+      return null;
+    }
 
     const email = user.email.trim();
 
     // Admin
     const admin = await prisma.administradores.findUnique({
       where: { correo: email },
-      select: { institucion_id: true }
+      select: { institucion_id: true, supabase_user_id: true }
     });
-    if (admin?.institucion_id != null) return admin.institucion_id;
+    if (admin?.institucion_id != null) {
+      const institutionId = admin.institucion_id;
+      console.log('AUTH USER:', user?.email);
+      console.log('AUTH INSTITUTION ID:', institutionId);
+      return institutionId;
+    }
 
     // Docente
     const docente = await prisma.docentes.findUnique({
       where: { email },
       select: { institucion_id: true }
     });
-    if (docente?.institucion_id != null) return docente.institucion_id;
+    if (docente?.institucion_id != null) {
+      const institutionId = docente.institucion_id;
+      console.log('AUTH USER:', user?.email);
+      console.log('AUTH INSTITUTION ID:', institutionId);
+      return institutionId;
+    }
 
     // Institución
     const inst = await prisma.instituciones.findUnique({
       where: { email },
       select: { id: true }
     });
-    if (inst?.id != null) return inst.id;
+    if (inst?.id != null) {
+      const institutionId = inst.id;
+      console.log('AUTH USER:', user?.email);
+      console.log('AUTH INSTITUTION ID:', institutionId);
+      return institutionId;
+    }
 
+    console.log('AUTH USER:', user?.email);
+    console.log('AUTH INSTITUTION ID:', null);
     return null;
-  } catch {
+  } catch (e) {
+    console.log('AUTH USER:', '(exception)');
+    console.log('AUTH INSTITUTION ID:', null);
     return null;
   }
 }

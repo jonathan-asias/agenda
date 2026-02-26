@@ -17,19 +17,19 @@ export async function GET(
     }
 
     const { institucionId: institucionIdParam } = await params;
-    const institucionId = parseInt(institucionIdParam);
+    const institucionIdFromUrl = parseInt(institucionIdParam);
 
-    if (!institucionId || isNaN(institucionId)) {
+    if (!institucionIdFromUrl || isNaN(institucionIdFromUrl)) {
       return NextResponse.json({ error: 'ID de institución inválido' }, { status: 400 });
     }
 
-    enforceTenant(userInstitutionId, institucionId);
+    enforceTenant(userInstitutionId, institucionIdFromUrl);
 
-    // Obtener todos los recordatorios de los docentes de la institución
+    // Listado SIEMPRE por sesión autenticada
     const recordatorios = await prisma.recordatorios.findMany({
       where: {
         docente: {
-          institucion_id: institucionId
+          institucion_id: userInstitutionId
         }
       },
       include: {

@@ -17,20 +17,20 @@ export async function GET(
     }
 
     const { institucionId: institucionIdParam } = await params;
-    const institucionId = parseInt(institucionIdParam);
+    const institucionIdFromUrl = parseInt(institucionIdParam);
 
-    if (isNaN(institucionId)) {
+    if (isNaN(institucionIdFromUrl)) {
       return NextResponse.json(
         { success: false, error: 'ID de institución inválido' },
         { status: 400 }
       );
     }
 
-    enforceTenant(userInstitutionId, institucionId);
+    enforceTenant(userInstitutionId, institucionIdFromUrl);
 
-    // Buscar materias de la institución
+    // Listado SIEMPRE por sesión autenticada; no se confía en el parámetro de URL para los datos
     const materias = await prisma.materias.findMany({
-      where: { institucion_id: institucionId },
+      where: { institucion_id: userInstitutionId },
       orderBy: { nombre: 'asc' }
     });
 

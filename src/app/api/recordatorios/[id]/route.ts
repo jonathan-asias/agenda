@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
   getAuthInstitutionId,
-  enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
 
@@ -37,9 +36,12 @@ export async function PATCH(
       );
     }
 
-    // Verificar que el recordatorio existe
-    const recordatorio = await prisma.recordatorios.findUnique({
-      where: { id: recordatorioId }
+    // Verificar que el recordatorio existe y pertenece a la institución del usuario (vía docente)
+    const recordatorio = await prisma.recordatorios.findFirst({
+      where: {
+        id: recordatorioId,
+        docente: { institucion_id: userInstitutionId }
+      }
     });
 
     if (!recordatorio) {
@@ -49,18 +51,10 @@ export async function PATCH(
       );
     }
 
-    const docente = await prisma.docentes.findUnique({
-      where: { id: recordatorio.docente_id },
-      select: { institucion_id: true }
-    });
-    if (docente) {
-      enforceTenant(userInstitutionId, docente.institucion_id);
-    }
-
     // Convertir la fecha a DateTime
     const fechaDateTime = new Date(fecha);
 
-    // Actualizar solo los campos permitidos
+    // Actualizar solo los campos permitidos (recordatorio ya validado por tenant)
     const recordatorioActualizado = await prisma.recordatorios.update({
       where: { id: recordatorioId },
       data: {
@@ -111,9 +105,12 @@ export async function DELETE(
       );
     }
 
-    // Verificar que el recordatorio existe
-    const recordatorio = await prisma.recordatorios.findUnique({
-      where: { id: recordatorioId }
+    // Verificar que el recordatorio existe y pertenece a la institución del usuario (vía docente)
+    const recordatorio = await prisma.recordatorios.findFirst({
+      where: {
+        id: recordatorioId,
+        docente: { institucion_id: userInstitutionId }
+      }
     });
 
     if (!recordatorio) {
@@ -123,14 +120,6 @@ export async function DELETE(
       );
     }
 
-    const docente = await prisma.docentes.findUnique({
-      where: { id: recordatorio.docente_id },
-      select: { institucion_id: true }
-    });
-    if (docente) {
-      enforceTenant(userInstitutionId, docente.institucion_id);
-    }
-
     // Eliminar el recordatorio y sus relaciones en una transacción
     await prisma.$transaction(async (tx) => {
       // Eliminar las relaciones con estudiantes primero
@@ -138,7 +127,7 @@ export async function DELETE(
         where: { recordatorio_id: recordatorioId }
       });
 
-      // Eliminar el recordatorio
+      // Eliminar el recordatorio (ya validado por tenant)
       await tx.recordatorios.delete({
         where: { id: recordatorioId }
       });

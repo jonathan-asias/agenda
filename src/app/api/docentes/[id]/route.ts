@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
   getAuthInstitutionId,
-  enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
 import {
@@ -38,9 +37,9 @@ export async function DELETE(
       );
     }
 
-    // Verificar que el docente existe
-    const docente = await prisma.docentes.findUnique({
-      where: { id: docenteId },
+    // Verificar que el docente existe y pertenece a la institución del usuario
+    const docente = await prisma.docentes.findFirst({
+      where: { id: docenteId, institucion_id: userInstitutionId },
       include: {
         docenteAsignaciones: true
       }
@@ -52,8 +51,6 @@ export async function DELETE(
         { status: 404 }
       );
     }
-
-    enforceTenant(userInstitutionId, docente.institucion_id);
 
     console.log(`Iniciando eliminación del docente ${docente.nombres} ${docente.apellidos} (ID: ${docenteId})`);
 
@@ -84,9 +81,9 @@ export async function DELETE(
         console.log(`Eliminadas ${deletedMateriaGrados.count} relaciones MateriaGrados`);
       }
 
-      // 3. Eliminar el docente de la tabla docentes
+      // 3. Eliminar el docente de la tabla docentes (solo si pertenece a la institución del usuario)
       const deletedDocente = await tx.docentes.delete({
-        where: { id: docenteId }
+        where: { id: docenteId, institucion_id: userInstitutionId }
       });
       console.log(`Docente eliminado: ${deletedDocente.nombres} ${deletedDocente.apellidos}`);
 
@@ -204,9 +201,9 @@ export async function PUT(
       );
     }
 
-    // Verificar que el docente existe
-    const docenteExistente = await prisma.docentes.findUnique({
-      where: { id: docenteId }
+    // Verificar que el docente existe y pertenece a la institución del usuario
+    const docenteExistente = await prisma.docentes.findFirst({
+      where: { id: docenteId, institucion_id: userInstitutionId }
     });
 
     if (!docenteExistente) {
@@ -216,11 +213,9 @@ export async function PUT(
       );
     }
 
-    enforceTenant(userInstitutionId, docenteExistente.institucion_id);
-
-    // Actualizar datos del docente
+    // Actualizar datos del docente (solo si pertenece a la institución del usuario)
     const docenteActualizado = await prisma.docentes.update({
-      where: { id: docenteId },
+      where: { id: docenteId, institucion_id: userInstitutionId },
       data: {
         nombres,
         apellidos,

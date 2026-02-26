@@ -27,20 +27,21 @@ export async function GET(
     }
 
     const { id } = await params;
-    const institucionId = parseInt(id);
+    const institucionIdFromUrl = parseInt(id);
 
-    if (isNaN(institucionId)) {
+    if (isNaN(institucionIdFromUrl)) {
       return NextResponse.json(
         { error: 'ID de institución inválido' },
         { status: 400 }
       );
     }
 
-    enforceTenant(userInstitutionId, institucionId);
+    enforceTenant(userInstitutionId, institucionIdFromUrl);
 
+    // Listado SIEMPRE por sesión autenticada
     const administradores = await prisma.administradores.findMany({
       where: {
-        institucion_id: institucionId
+        institucion_id: userInstitutionId
       },
       include: {
         sede: {
