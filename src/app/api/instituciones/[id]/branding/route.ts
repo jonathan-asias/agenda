@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase-admin';
 import { prisma } from '@/lib/prisma';
 import {
   getAuthInstitutionId,
@@ -7,27 +7,11 @@ import {
   tenantErrorToResponse
 } from '@/lib/tenant';
 
-const getSupabaseAdminClient = () => {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Supabase service role no configurado');
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey);
-};
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const institucionId = Number.parseInt(id, 10);
 
@@ -49,14 +33,12 @@ export async function GET(
       return NextResponse.json({ error: 'Institución no encontrada' }, { status: 404 });
     }
 
-    enforceTenant(userInstitutionId, institucionId);
-
     const bucket =
       process.env.SUPABASE_STORAGE_BUCKET ||
       process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ||
       'instituciones';
 
-    const supabaseAdmin = getSupabaseAdminClient();
+    const supabase = createAdminClient();
     const expiresIn = 60 * 60;
 
     const logoPath = institucion.logo_url;
@@ -64,10 +46,10 @@ export async function GET(
 
     const [logoSigned, bannerSigned] = await Promise.all([
       logoPath
-        ? supabaseAdmin.storage.from(bucket).createSignedUrl(logoPath, expiresIn)
+        ? supabase.storage.from(bucket).createSignedUrl(logoPath, expiresIn)
         : Promise.resolve({ data: null, error: null }),
       bannerPath
-        ? supabaseAdmin.storage.from(bucket).createSignedUrl(bannerPath, expiresIn)
+        ? supabase.storage.from(bucket).createSignedUrl(bannerPath, expiresIn)
         : Promise.resolve({ data: null, error: null })
     ]);
 
@@ -89,7 +71,7 @@ export async function GET(
   } catch (error) {
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
-    console.error('Error al obtener branding:', error);
+    console.error('Error branding upload:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
@@ -130,7 +112,7 @@ export async function PUT(
   } catch (error) {
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
-    console.error('Error al actualizar branding:', error);
+    console.error('Error branding upload:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

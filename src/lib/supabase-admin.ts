@@ -11,6 +11,21 @@ const missingAdminConfigMessage =
 export const isSupabaseAdminConfigured = (): boolean =>
   Boolean(publicEnv.NEXT_PUBLIC_SUPABASE_URL && serverEnv.SUPABASE_SERVICE_ROLE_KEY);
 
+/** Cliente admin con SERVICE ROLE para uso en APIs (branding, storage). */
+export function createAdminClient(): SupabaseClient<Database> {
+  const supabaseUrl = publicEnv.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRole = serverEnv.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRole) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY no configurado');
+  }
+  return createClient<Database>(supabaseUrl, serviceRole, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+}
+
 const createSupabaseAdminClient = (): SupabaseClient<Database> => {
   const supabaseUrl = publicEnv.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = serverEnv.SUPABASE_SERVICE_ROLE_KEY;
