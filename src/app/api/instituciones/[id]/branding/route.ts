@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { prisma } from '@/lib/prisma';
-import {
-  getAuthInstitutionId,
-  enforceTenant,
-  tenantErrorToResponse
-} from '@/lib/tenant';
+import { tenantErrorToResponse } from '@/lib/tenant';
 
 export async function GET(
   request: NextRequest,
@@ -77,42 +73,59 @@ export async function GET(
 }
 
 export async function PUT(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
+    const supabase = createAdminClient();
     const { id } = await params;
-    const institucionId = Number.parseInt(id, 10);
+    const institutionId = id;
 
-    if (Number.isNaN(institucionId)) {
-      return NextResponse.json({ error: 'ID de institución inválido' }, { status: 400 });
+    const formData = await req.formData();
+    const logo = formData.get('logo') as File | null;
+    const banner = formData.get('banner') as File | null;
+
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'instituciones';
+
+    console.log('Uploading branding for institution:', institutionId);
+
+    let logoUrl: string | null = null;
+    let bannerUrl: string | null = null;
+    let logoPath: string | null = null;
+    let bannerPath: string | null = null;
+
+    if (logo && logo.size > 0) {
+      const path = `${institutionId}/logo-${Date.now()}`;
+      const { error } = await supabase.storage.from(bucket).upload(path, logo, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      logoUrl = data.publicUrl;
+      logoPath = path;
     }
 
-    enforceTenant(userInstitutionId, institucionId);
+    if (banner && banner.size > 0) {
+      const path = `${institutionId}/banner-${Date.now()}`;
+      const { error } = await supabase.storage.from(bucket).upload(path, banner, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      bannerUrl = data.publicUrl;
+      bannerPath = path;
+    }
 
-    const body = await request.json();
-    const { logo_url, banner_url, color_primario, color_secundario } = body;
+    const institucionIdNum = Number.parseInt(institutionId, 10);
+    if (!Number.isNaN(institucionIdNum)) {
+      await prisma.instituciones.update({
+        where: { id: institucionIdNum },
+        data: {
+          ...(logoPath && { logo_url: logoPath }),
+          ...(bannerPath && { banner_url: bannerPath })
+        }
+      });
+    }
 
-    const institucion = await prisma.instituciones.update({
-      where: { id: institucionId },
-      data: {
-        logo_url: logo_url ?? null,
-        banner_url: banner_url ?? null,
-        color_primario: color_primario || undefined,
-        color_secundario: color_secundario || undefined
-      }
-    });
-
-    return NextResponse.json({ data: institucion });
+    return NextResponse.json({ success: true, logoUrl, bannerUrl });
   } catch (error) {
-    const tenantResp = tenantErrorToResponse(error);
-    if (tenantResp) return tenantResp;
-    console.error('Error branding upload:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    console.error('Branding upload error:', error);
+    return NextResponse.json({ error: 'Error subiendo branding' }, { status: 500 });
   }
 }

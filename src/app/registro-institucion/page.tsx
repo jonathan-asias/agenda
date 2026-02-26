@@ -810,32 +810,13 @@ export default function RegistroInstitucion() {
           return;
         }
 
-        const logoPath = await uploadInstitutionAsset(
-          supabaseClient,
-          institucionId,
-          logoFile as File,
-          'logo'
-        );
-        if (!logoPath) {
-          return;
-        }
-        const bannerPath = await uploadInstitutionAsset(
-          supabaseClient,
-          institucionId,
-          bannerFile as File,
-          'banner'
-        );
-        if (!bannerPath) {
-          return;
-        }
+        const brandingFormData = new FormData();
+        if (logoFile) brandingFormData.append('logo', logoFile);
+        if (bannerFile) brandingFormData.append('banner', bannerFile);
 
         const brandingResponse = await fetch(`/api/instituciones/${institucionId}/branding`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            logo_url: logoPath,
-            banner_url: bannerPath
-          })
+          body: brandingFormData
         });
 
         if (!brandingResponse.ok) {

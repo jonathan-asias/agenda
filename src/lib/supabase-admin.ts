@@ -13,17 +13,20 @@ export const isSupabaseAdminConfigured = (): boolean =>
 
 /** Cliente admin con SERVICE ROLE para uso en APIs (branding, storage). */
 export function createAdminClient(): SupabaseClient<Database> {
-  const supabaseUrl = publicEnv.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRole = serverEnv.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRole) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY no configurado');
-  }
-  return createClient<Database>(supabaseUrl, serviceRole, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL)
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY)
+    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY');
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
     }
-  });
+  );
 }
 
 const createSupabaseAdminClient = (): SupabaseClient<Database> => {
