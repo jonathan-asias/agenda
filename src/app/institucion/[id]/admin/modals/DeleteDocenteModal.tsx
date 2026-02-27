@@ -3,12 +3,18 @@
 
 import { useState } from 'react';
 import { showSuccess, showError } from '@/lib/notifications';
-import type { Docente } from '@/types/docente';
+
+/** Mínimo necesario para eliminar (compatible con Docente y DocenteResumen). */
+export interface DocenteParaEliminar {
+  id: number;
+  nombres: string;
+  apellidos: string;
+}
 
 interface DeleteDocenteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  docente: Docente | null;
+  docente: DocenteParaEliminar | null;
   onSuccess: () => void;
 }
 

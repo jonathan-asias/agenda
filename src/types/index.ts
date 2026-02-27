@@ -9,6 +9,6 @@ export type { Curso } from './curso';
 export type { Sede } from './sede';
 export type { Institucion, InstitucionAdministrador } from './institucion';
 export type { Recordatorio } from './recordatorio';
-export type { Docente, Asignacion } from './docente';
+export type { Docente, Asignacion, DocenteGetResponse } from './docente';
 export type { BrandingData } from './branding';
 export type { Administrador } from './administrador';

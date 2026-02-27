@@ -39,3 +39,6 @@ export interface Docente {
     materia: { id?: number; nombre: string; area?: { id: number; nombre: string } };
   }[];
 }
+
+/** Respuesta de GET /api/docentes/[id]. Misma forma que Docente para edición. */
+export interface DocenteGetResponse extends Docente {}

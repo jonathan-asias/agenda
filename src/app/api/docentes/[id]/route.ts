@@ -17,6 +17,90 @@ type AsignacionesPayload = {
   materias: Record<number | string, Array<AsignacionMateriaInput | string>>;
 };
 
+/** GET: devuelve un docente completo por ID (para edición). */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const userInstitutionId = await getAuthInstitutionId(request);
+    if (userInstitutionId == null) {
+      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const docenteId = parseInt(id, 10);
+    if (!Number.isFinite(docenteId)) {
+      return NextResponse.json({ error: 'ID de docente inválido' }, { status: 400 });
+    }
+
+    const docente = await prisma.docentes.findFirst({
+      where: { id: docenteId, institucion_id: userInstitutionId },
+      include: {
+        sede: { select: { id: true, nombre: true } },
+        docenteAsignaciones: {
+          include: {
+            grado: { select: { id: true, nombre: true, nivel: true } },
+            curso: { select: { id: true, nombre: true, jornada: true } },
+            materia: {
+              select: {
+                id: true,
+                nombre: true,
+                area: { select: { id: true, nombre: true } }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!docente) {
+      return NextResponse.json({ error: 'Docente no encontrado' }, { status: 404 });
+    }
+
+    const payload = {
+      id: docente.id,
+      nombres: docente.nombres,
+      apellidos: docente.apellidos,
+      email: docente.email,
+      telefono: docente.telefono,
+      sede_id: docente.sede_id,
+      activo: docente.activo,
+      sede: docente.sede
+        ? { id: docente.sede.id, nombre: docente.sede.nombre }
+        : null,
+      docenteAsignaciones: docente.docenteAsignaciones.map((a) => ({
+        id: a.id,
+        grado: {
+          id: a.grado.id,
+          nombre: a.grado.nombre,
+          nivel: a.grado.nivel
+        },
+        curso: {
+          id: a.curso.id,
+          nombre: a.curso.nombre,
+          jornada: a.curso.jornada
+        },
+        materia: {
+          id: a.materia.id,
+          nombre: a.materia.nombre,
+          area: a.materia.area ? { id: a.materia.area.id, nombre: a.materia.area.nombre } : undefined
+        }
+      }))
+    };
+
+    return NextResponse.json(payload);
+  } catch (error) {
+    const tenantResp = tenantErrorToResponse(error);
+    if (tenantResp) return tenantResp;
+    console.error('Error al obtener docente:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

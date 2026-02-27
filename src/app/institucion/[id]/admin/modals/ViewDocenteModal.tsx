@@ -1,11 +1,28 @@
 'use client';
 
-import type { Docente } from '@/types/docente';
+/**
+ * Tipo mínimo para mostrar un docente en el modal de vista.
+ * Compatible con Docente (dashboard) y DocenteResumen (página listado).
+ * telefono y sede son opcionales porque DocenteResumen no los incluye.
+ */
+export interface DocenteParaVista {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  email: string;
+  telefono?: string;
+  sede?: { nombre: string };
+  docenteAsignaciones?: Array<{
+    grado: { nombre: string; nivel?: string };
+    curso: { nombre: string };
+    materia: { nombre: string };
+  }>;
+}
 
 interface ViewDocenteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  docente: Docente | null;
+  docente: DocenteParaVista | null;
 }
 
 export default function ViewDocenteModal({ isOpen, onClose, docente }: ViewDocenteModalProps) {
@@ -56,7 +73,7 @@ export default function ViewDocenteModal({ isOpen, onClose, docente }: ViewDocen
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>
-                <p className="text-slate-900 bg-slate-50 p-3 rounded-lg">{docente.telefono}</p>
+                <p className="text-slate-900 bg-slate-50 p-3 rounded-lg">{docente.telefono ?? 'No indicado'}</p>
               </div>
               {docente.sede && (
                 <div className="md:col-span-2">
@@ -83,7 +100,7 @@ export default function ViewDocenteModal({ isOpen, onClose, docente }: ViewDocen
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Grado</label>
                         <p className="text-sm text-slate-900 font-medium">
-                          {asignacion.grado.nombre} - {asignacion.grado.nivel}
+                          {asignacion.grado.nombre}{asignacion.grado.nivel ? ` - ${asignacion.grado.nivel}` : ''}
                         </p>
                       </div>
                       <div>

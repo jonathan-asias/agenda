@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Header from '../../Header';
@@ -10,6 +10,7 @@ import ViewDocenteModal from '../modals/ViewDocenteModal';
 import EditDocenteModal from '../modals/EditDocenteModal';
 import DeleteDocenteModal from '../modals/DeleteDocenteModal';
 import Skeleton from '@/components/ui/Skeleton';
+import type { Docente, DocenteGetResponse } from '@/types';
 
 interface DocenteAsignacion {
   id: number;
@@ -38,6 +39,9 @@ export default function AdminDocentesPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDocente, setSelectedDocente] = useState<DocenteResumen | null>(null);
+  /** Docente completo para edición (se obtiene por GET /api/docentes/[id]). */
+  const [docenteParaEditar, setDocenteParaEditar] = useState<Docente | null>(null);
+  const [loadingEditDocente, setLoadingEditDocente] = useState(false);
 
   useEffect(() => {
     const fetchDocentes = async () => {
@@ -60,6 +64,27 @@ export default function AdminDocentesPage() {
 
     fetchDocentes();
   }, [institucionId]);
+
+  const openEditModal = useCallback(async (docente: DocenteResumen) => {
+    setSelectedDocente(docente);
+    setLoadingEditDocente(true);
+    setDocenteParaEditar(null);
+    try {
+      const res = await fetch(`/api/docentes/${docente.id}`);
+      if (!res.ok) {
+        setError('No se pudo cargar el docente para editar');
+        return;
+      }
+      const data: DocenteGetResponse = await res.json();
+      setDocenteParaEditar(data);
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('Error cargando docente:', err);
+      setError('Error al cargar el docente');
+    } finally {
+      setLoadingEditDocente(false);
+    }
+  }, []);
 
   const handleRefetch = async () => {
     setLoading(true);
@@ -164,8 +189,9 @@ export default function AdminDocentesPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setSelectedDocente(docente); setShowEditModal(true); }}
-                      className="px-3 py-1.5 text-xs bg-amber-100 text-amber-700 rounded-md hover:bg-amber-200 transition-colors flex items-center gap-1"
+                      onClick={() => openEditModal(docente)}
+                      disabled={loadingEditDocente}
+                      className="px-3 py-1.5 text-xs bg-amber-100 text-amber-700 rounded-md hover:bg-amber-200 transition-colors flex items-center gap-1 disabled:opacity-50"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       Editar
@@ -197,10 +223,10 @@ export default function AdminDocentesPage() {
         />
         <EditDocenteModal
           isOpen={showEditModal}
-          onClose={() => { setShowEditModal(false); setSelectedDocente(null); }}
-          docente={selectedDocente}
+          onClose={() => { setShowEditModal(false); setSelectedDocente(null); setDocenteParaEditar(null); }}
+          docente={docenteParaEditar}
           institucionId={Number(institucionId)}
-          onSuccess={() => { handleRefetch(); setShowEditModal(false); setSelectedDocente(null); }}
+          onSuccess={() => { handleRefetch(); setShowEditModal(false); setSelectedDocente(null); setDocenteParaEditar(null); }}
         />
         <DeleteDocenteModal
           isOpen={showDeleteModal}
