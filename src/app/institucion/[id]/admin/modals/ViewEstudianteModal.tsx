@@ -1,11 +1,27 @@
 'use client';
 
-import type { Estudiante } from '@/types/estudiante';
+/**
+ * Tipo mínimo para mostrar un estudiante en el modal de vista.
+ * Compatible con Estudiante (dashboard) y EstudianteResumen (página listado).
+ * curso.jornada y datos de acudiente/activo son opcionales.
+ */
+export interface EstudianteParaVista {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  codigo_estudiantil: string;
+  grado?: { nombre: string; nivel?: string };
+  curso?: { nombre: string; jornada?: string | null };
+  nombre_acudiente?: string;
+  correo_acudiente?: string;
+  telefono_acudiente?: string;
+  activo?: boolean;
+}
 
 interface ViewEstudianteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  estudiante: Estudiante | null;
+  estudiante: EstudianteParaVista | null;
 }
 
 export default function ViewEstudianteModal({ 
@@ -68,11 +84,11 @@ export default function ViewEstudianteModal({
                 <div>
                   <label className="text-sm font-medium text-slate-700">Estado</label>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    estudiante.activo 
-                      ? 'bg-green-100 text-green-800' 
+                    estudiante.activo !== false
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {estudiante.activo ? 'Activo' : 'Inactivo'}
+                    {estudiante.activo !== false ? 'Activo' : 'Inactivo'}
                   </span>
                 </div>
               </div>
@@ -97,7 +113,7 @@ export default function ViewEstudianteModal({
                 <div>
                   <label className="text-sm font-medium text-slate-700">Curso</label>
                   <p className="text-slate-900 font-medium">{estudiante.curso?.nombre || 'N/A'}</p>
-                  {estudiante.curso?.jornada && (
+                  {estudiante.curso?.jornada != null && estudiante.curso.jornada !== '' && (
                     <p className="text-xs text-slate-500">Jornada: {estudiante.curso.jornada}</p>
                   )}
                 </div>
@@ -115,16 +131,16 @@ export default function ViewEstudianteModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-slate-700">Nombre del Acudiente</label>
-                  <p className="text-slate-900 font-medium">{estudiante.nombre_acudiente}</p>
+                  <p className="text-slate-900 font-medium">{estudiante.nombre_acudiente ?? '—'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700">Teléfono</label>
-                  <p className="text-slate-900 font-medium">{estudiante.telefono_acudiente}</p>
+                  <p className="text-slate-900 font-medium">{estudiante.telefono_acudiente ?? '—'}</p>
                 </div>
-                {estudiante.correo_acudiente && estudiante.correo_acudiente.trim() !== '' && (
+                {(estudiante.correo_acudiente ?? '').trim() !== '' && (
                   <div className="md:col-span-2">
                     <label className="text-sm font-medium text-slate-700">Correo Electrónico</label>
-                    <p className="text-slate-900 font-medium">{estudiante.correo_acudiente}</p>
+                    <p className="text-slate-900 font-medium">{estudiante.correo_acudiente ?? ''}</p>
                   </div>
                 )}
               </div>

@@ -3,7 +3,7 @@
  */
 
 export type { UserRole } from './auth';
-export type { Estudiante } from './estudiante';
+export type { Estudiante, EstudianteGetResponse } from './estudiante';
 export type { Grado } from './grado';
 export type { Curso } from './curso';
 export type { Sede } from './sede';

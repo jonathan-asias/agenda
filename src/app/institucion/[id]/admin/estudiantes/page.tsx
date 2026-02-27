@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Header from '../../Header';
@@ -10,6 +10,7 @@ import ViewEstudianteModal from '../modals/ViewEstudianteModal';
 import EditEstudianteModal from '../modals/EditEstudianteModal';
 import DeleteEstudianteModal from '../modals/DeleteEstudianteModal';
 import { Button, Card, LoaderPage, Skeleton } from '@/components/ui';
+import type { Estudiante, EstudianteGetResponse } from '@/types';
 
 interface EstudianteResumen {
   id: number;
@@ -31,6 +32,35 @@ export default function AdminEstudiantesPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEstudiante, setSelectedEstudiante] = useState<EstudianteResumen | null>(null);
+  /** Estudiante completo para edición (se obtiene por GET /api/estudiantes/[id]). */
+  const [estudianteParaEditar, setEstudianteParaEditar] = useState<Estudiante | null>(null);
+  const [loadingEditEstudiante, setLoadingEditEstudiante] = useState(false);
+
+  const openEditModal = useCallback(async (estudiante: EstudianteResumen) => {
+    setSelectedEstudiante(estudiante);
+    setLoadingEditEstudiante(true);
+    setEstudianteParaEditar(null);
+    try {
+      const res = await fetch(`/api/estudiantes/${estudiante.id}`);
+      if (!res.ok) {
+        setError('No se pudo cargar el estudiante para editar');
+        return;
+      }
+      const json: { success?: boolean; data?: EstudianteGetResponse } = await res.json();
+      const data = json.data;
+      if (data) {
+        setEstudianteParaEditar(data);
+        setShowEditModal(true);
+      } else {
+        setError('No se pudo cargar el estudiante');
+      }
+    } catch (err) {
+      console.error('Error cargando estudiante:', err);
+      setError('Error al cargar el estudiante');
+    } finally {
+      setLoadingEditEstudiante(false);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchEstudiantes = async () => {
@@ -121,8 +151,9 @@ export default function AdminEstudiantesPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setSelectedEstudiante(estudiante); setShowEditModal(true); }}
-                      className="px-3 py-1.5 text-xs bg-amber-100 text-amber-700 rounded-md hover:bg-amber-200 transition-colors flex items-center gap-1"
+                      onClick={() => openEditModal(estudiante)}
+                      disabled={loadingEditEstudiante}
+                      className="px-3 py-1.5 text-xs bg-amber-100 text-amber-700 rounded-md hover:bg-amber-200 transition-colors flex items-center gap-1 disabled:opacity-50"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       Editar
@@ -155,10 +186,10 @@ export default function AdminEstudiantesPage() {
         />
         <EditEstudianteModal
           isOpen={showEditModal}
-          onClose={() => { setShowEditModal(false); setSelectedEstudiante(null); }}
-          estudiante={selectedEstudiante}
+          onClose={() => { setShowEditModal(false); setSelectedEstudiante(null); setEstudianteParaEditar(null); }}
+          estudiante={estudianteParaEditar}
           institucionId={Number(institucionId)}
-          onSuccess={() => { handleRefetch(); setShowEditModal(false); setSelectedEstudiante(null); }}
+          onSuccess={() => { handleRefetch(); setShowEditModal(false); setSelectedEstudiante(null); setEstudianteParaEditar(null); }}
         />
         <DeleteEstudianteModal
           isOpen={showDeleteModal}

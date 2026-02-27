@@ -4,6 +4,7 @@
  * Tipo mínimo para mostrar un docente en el modal de vista.
  * Compatible con Docente (dashboard) y DocenteResumen (página listado).
  * telefono y sede son opcionales porque DocenteResumen no los incluye.
+ * sede acepta null para ser compatible con Docente.sede.
  */
 export interface DocenteParaVista {
   id: number;
@@ -11,7 +12,7 @@ export interface DocenteParaVista {
   apellidos: string;
   email: string;
   telefono?: string;
-  sede?: { nombre: string };
+  sede?: { id?: number; nombre: string } | null;
   docenteAsignaciones?: Array<{
     grado: { nombre: string; nivel?: string };
     curso: { nombre: string };

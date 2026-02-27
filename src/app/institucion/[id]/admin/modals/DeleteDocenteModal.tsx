@@ -9,6 +9,8 @@ export interface DocenteParaEliminar {
   id: number;
   nombres: string;
   apellidos: string;
+  email?: string;
+  docenteAsignaciones?: unknown[];
 }
 
 interface DeleteDocenteModalProps {
@@ -91,7 +93,7 @@ export default function DeleteDocenteModal({
                 <h4 className="font-medium text-slate-900">
                   {docente.nombres} {docente.apellidos}
                 </h4>
-                <p className="text-sm text-slate-600">{docente.email}</p>
+                <p className="text-sm text-slate-600">{docente.email ?? '—'}</p>
               </div>
             </div>
             

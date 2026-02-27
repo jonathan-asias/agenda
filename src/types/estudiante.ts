@@ -24,3 +24,6 @@ export interface Estudiante {
     jornada: string | null;
   };
 }
+
+/** Respuesta de GET /api/estudiantes/[id] para edición. */
+export interface EstudianteGetResponse extends Estudiante {}

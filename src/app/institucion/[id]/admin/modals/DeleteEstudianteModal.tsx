@@ -2,12 +2,21 @@
 
 import { useState } from 'react';
 import { showSuccess, showError } from '@/lib/notifications';
-import type { Estudiante } from '@/types/estudiante';
+
+/** Mínimo necesario para eliminar (compatible con Estudiante y EstudianteResumen). */
+export interface EstudianteParaEliminar {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  codigo_estudiantil?: string;
+  grado?: { nombre: string };
+  curso?: { nombre: string };
+}
 
 interface DeleteEstudianteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  estudiante: Estudiante | null;
+  estudiante: EstudianteParaEliminar | null;
   onSuccess: () => void;
 }
 
@@ -97,15 +106,15 @@ export default function DeleteEstudianteModal({
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-slate-700">Código estudiantil:</span>
-                <span className="text-sm text-slate-900">{estudiante.codigo_estudiantil}</span>
+                <span className="text-sm text-slate-900">{estudiante.codigo_estudiantil ?? '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-slate-700">Grado:</span>
-                <span className="text-sm text-slate-900">{estudiante.grado?.nombre || 'N/A'}</span>
+                <span className="text-sm text-slate-900">{estudiante.grado?.nombre ?? 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-slate-700">Curso:</span>
-                <span className="text-sm text-slate-900">{estudiante.curso?.nombre || 'N/A'}</span>
+                <span className="text-sm text-slate-900">{estudiante.curso?.nombre ?? 'N/A'}</span>
               </div>
             </div>
           </div>
