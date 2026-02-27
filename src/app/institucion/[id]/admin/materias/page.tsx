@@ -22,6 +22,8 @@ export default function AdminMateriasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedMateria, setSelectedMateria] = useState<MateriaResumen | null>(null);
 
   useEffect(() => {
     const fetchMaterias = async () => {
@@ -112,6 +114,16 @@ export default function AdminMateriasPage() {
                       {materia._count?.materiaGrados ?? 0} grado(s)
                     </div>
                   </div>
+                  <div className="flex flex-wrap gap-2 mt-3 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedMateria(materia); setShowViewModal(true); }}
+                      className="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      Ver
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -123,6 +135,21 @@ export default function AdminMateriasPage() {
           institucionId={Number(institucionId)}
           onSuccess={handleRefetch}
         />
+        {showViewModal && selectedMateria && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-lg font-semibold text-slate-900">Detalle de la materia</h3>
+                <button type="button" onClick={() => { setShowViewModal(false); setSelectedMateria(null); }} className="text-slate-500 hover:text-slate-700">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <p className="text-slate-700"><span className="font-medium">Nombre:</span> {selectedMateria.nombre}</p>
+              <p className="text-slate-700 mt-2"><span className="font-medium">Área:</span> {selectedMateria.area?.nombre || 'Sin área'}</p>
+              <p className="text-slate-700 mt-2"><span className="font-medium">Grados asignados:</span> {selectedMateria._count?.materiaGrados ?? 0}</p>
+            </div>
+          </div>
+        )}
         <Footer />
       </div>
     </AdminAuthGuard>
