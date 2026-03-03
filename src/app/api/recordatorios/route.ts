@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendReminderEmailNotification } from '@/lib/notifications/reminder';
 import {
   getAuthInstitutionId,
   enforceTenant,
@@ -59,9 +60,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar que el docente existe
+    // Validar que el docente existe y traer institución para notificaciones
     const docente = await prisma.docentes.findUnique({
-      where: { id: parseInt(docenteId) }
+      where: { id: parseInt(docenteId) },
+      include: { institucion: true }
     });
 
     if (!docente) {
@@ -131,6 +133,31 @@ export async function POST(request: NextRequest) {
 
       return nuevoRecordatorio;
     });
+
+    // Notificación por email solo si el docente eligió "email" en modo de envío
+    const enviarPorEmail = Array.isArray(modoEnvio) && modoEnvio.some(
+      (m: string) => String(m).toLowerCase() === 'email'
+    );
+    if (enviarPorEmail) {
+      const emailsDestino = [
+        ...new Set(
+          estudiantes
+            .map((e) => e.correo_acudiente)
+            .filter((email): email is string => Boolean(email?.trim()))
+        )
+      ];
+      if (emailsDestino.length > 0) {
+        const docenteNombre = `${docente.nombres} ${docente.apellidos}`.trim();
+        sendReminderEmailNotification({
+          institucionNombre: docente.institucion.nombre,
+          docenteNombre,
+          titulo: nombre.trim(),
+          descripcion: descripcion.trim(),
+          fechaLimite: fechaDateTime,
+          emails: emailsDestino
+        }).catch(() => {});
+      }
+    }
 
     return NextResponse.json({
       success: true,

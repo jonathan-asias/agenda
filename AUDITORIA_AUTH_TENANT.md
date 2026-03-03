@@ -1,5 +1,10 @@
 # Auditoría: Auth y tenant — getAuthInstitutionId
 
+
+
+
+
+
 **Fecha:** 26 de febrero de 2025  
 **Rol:** Auditor senior SaaS multi-tenant  
 **Hipótesis:** `getAuthInstitutionId(req)` podría estar devolviendo el mismo `institutionId` para distintas sesiones (Admin A y Admin B), provocando que datos de una institución aparezcan en otra.
