@@ -148,7 +148,11 @@ export async function POST(request: NextRequest) {
       ];
       if (emailsDestino.length > 0) {
         const docenteNombre = `${docente.nombres} ${docente.apellidos}`.trim();
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? request.nextUrl?.origin ?? '';
+        // En producción (Vercel, etc.) nextUrl.origin puede no estar disponible; usar env o VERCEL_URL
+        const baseUrl =
+          process.env.NEXT_PUBLIC_SITE_URL ??
+          request.nextUrl?.origin ??
+          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
         const primerEstudianteId = estudiantes[0]?.id;
         sendReminderEmailNotification({
           institucionNombre: docente.institucion.nombre,

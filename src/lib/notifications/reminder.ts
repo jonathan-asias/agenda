@@ -74,7 +74,7 @@ function escapeHtml(text: string): string {
 export async function sendReminderEmailNotification(
   params: SendReminderEmailParams
 ): Promise<{ success: boolean; error?: unknown }> {
-  const { emails, institucionNombre, docenteNombre, titulo, descripcion, fechaLimite } = params;
+  const { emails, institucionNombre, docenteNombre, titulo, descripcion, fechaLimite, baseUrl, primerEstudianteId } = params;
 
   if (emails.length > MAX_EMAILS_WARNING) {
     // TODO: implementar batching (ej. envío por lotes de N para evitar límites del proveedor)
@@ -101,6 +101,8 @@ export async function sendReminderEmailNotification(
     descripcion,
     fechaLimite,
     emails: validEmails,
+    baseUrl,
+    primerEstudianteId,
   });
 
   return sendEmail({
