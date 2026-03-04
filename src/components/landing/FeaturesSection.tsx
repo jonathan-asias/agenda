@@ -31,21 +31,21 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="border-t border-slate-200 bg-white px-6 py-16 sm:py-24">
+    <section id="features" className="border-t border-slate-200 bg-white px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="features-heading">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            Todo lo que tu institución necesita
+          <h2 id="features-heading" className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Características de la plataforma
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
             Herramientas pensadas para reducir la carga administrativa y mejorar la comunicación con la comunidad educativa.
           </p>
         </div>
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group rounded-2xl border border-slate-200 bg-slate-50/50 p-8 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
+              className="group rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md sm:p-8"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white transition-transform duration-300 group-hover:scale-105">
                 {feature.icon}

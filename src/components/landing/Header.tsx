@@ -5,7 +5,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-lg font-semibold text-slate-900 transition-opacity hover:opacity-90">
-          Agenda Escolar Digital
+          Agenda Virtual
         </Link>
         <nav className="flex items-center gap-4">
           <a

@@ -6,14 +6,19 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <p className="text-base font-semibold text-slate-900">Agenda Escolar Digital</p>
+            <p className="text-base font-semibold text-slate-900">Agenda Virtual</p>
             <p className="mt-2 text-sm text-slate-600">
-              Plataforma inteligente de recordatorios escolares para instituciones educativas.
+              Plataforma de recordatorios escolares por Email y WhatsApp para instituciones educativas.
             </p>
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-900">Producto</p>
             <ul className="mt-3 space-y-2">
+              <li>
+                <Link href="#benefits" className="text-slate-600 transition-colors hover:text-slate-900">
+                  Beneficios
+                </Link>
+              </li>
               <li>
                 <Link href="#features" className="text-slate-600 transition-colors hover:text-slate-900">
                   Características
@@ -63,7 +68,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-10 border-t border-slate-200 pt-8 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} Agenda Escolar Digital. Todos los derechos reservados.
+          © {new Date().getFullYear()} Agenda Virtual. Todos los derechos reservados.
         </div>
       </div>
     </footer>

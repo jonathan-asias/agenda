@@ -11,6 +11,7 @@ datasource db {
 
 model Instituciones {
   id                  Int               @id @default(autoincrement())
+  push_enabled        Boolean           @default(true) // Futuro: activar push solo en plan plus
   nombre              String            @db.VarChar(255)
   direccion_principal String            @db.VarChar(500)
   nit                 String            @db.VarChar(50)
@@ -34,8 +35,39 @@ model Instituciones {
   materias            Materias[]
   docentes            Docentes[]
   estudiantes         Estudiantes[]
+  acudientes          Acudientes[]
+  pushSubscriptions   PushSubscriptions[]
 
   @@map("Instituciones")
+}
+
+model Acudientes {
+  id               Int                 @id @default(autoincrement())
+  institucion_id   Int
+  email            String              @db.VarChar(255)
+  nombre           String              @db.VarChar(255)
+  telefono         String?             @db.VarChar(20)
+  created_at       DateTime            @default(now()) @map("created_at")
+  institucion      Instituciones       @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  pushSubscriptions PushSubscriptions[]
+
+  @@unique([institucion_id, email])
+  @@map("Acudientes")
+}
+
+model PushSubscriptions {
+  id             Int           @id @default(autoincrement())
+  institucion_id Int
+  acudiente_id   Int
+  endpoint       String        @db.Text
+  p256dh        String        @db.VarChar(255)
+  auth          String        @db.VarChar(255)
+  created_at    DateTime      @default(now()) @map("created_at")
+  institucion   Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  acudiente     Acudientes    @relation(fields: [acudiente_id], references: [id], onDelete: Cascade)
+
+  @@unique([institucion_id, acudiente_id, endpoint])
+  @@map("PushSubscriptions")
 }
 
 model Sedes {

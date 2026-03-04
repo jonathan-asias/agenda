@@ -7,12 +7,16 @@ export type SendReminderEmailParams = {
   descripcion: string;
   fechaLimite?: Date | null;
   emails: string[];
+  /** URL base para enlace de activar push (ej. https://app.example.com) */
+  baseUrl?: string;
+  /** ID del primer estudiante para link de activar push (?estudianteId=X) */
+  primerEstudianteId?: number;
 };
 
 const MAX_EMAILS_WARNING = 200;
 
 function buildReminderHtml(params: SendReminderEmailParams): string {
-  const { institucionNombre, titulo, descripcion, fechaLimite } = params;
+  const { institucionNombre, titulo, descripcion, fechaLimite, baseUrl, primerEstudianteId } = params;
   const fechaTexto = fechaLimite
     ? fechaLimite.toLocaleDateString('es-CO', {
         weekday: 'long',
@@ -40,8 +44,9 @@ function buildReminderHtml(params: SendReminderEmailParams): string {
       <h2 style="margin:0 0 16px;font-size:1.125rem;color:#0f172a;">${escapeHtml(titulo)}</h2>
       <div style="color:#475569;line-height:1.6;white-space:pre-wrap;">${escapeHtml(descripcion)}</div>
       ${fechaLimite ? `<p style="margin:20px 0 0;padding:12px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:0.875rem;"><strong>Fecha límite:</strong> ${escapeHtml(fechaTexto)}</p>` : ''}
-      <div style="margin-top:24px;">
+      <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px;">
         <span style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:8px;font-weight:500;">Ver en la plataforma</span>
+        ${baseUrl && typeof primerEstudianteId === 'number' ? `<a href="${escapeHtml(baseUrl)}/activar-notificaciones?estudianteId=${primerEstudianteId}" style="display:inline-block;padding:12px 24px;background:#0f172a;color:#fff;border-radius:8px;font-weight:500;text-decoration:none;">Activar notificaciones push</a>` : ''}
       </div>
     </div>
   </div>

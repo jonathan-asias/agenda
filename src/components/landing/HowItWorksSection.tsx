@@ -18,10 +18,10 @@ const steps = [
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="border-t border-slate-200 bg-slate-50/50 px-6 py-16 sm:py-24">
+    <section id="how-it-works" className="border-t border-slate-200 bg-slate-50/50 px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="how-heading">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 id="how-heading" className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Cómo funciona
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">

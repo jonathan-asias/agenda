@@ -45,14 +45,14 @@ export default function PricingSection() {
   };
 
   return (
-    <section id="pricing" className="border-t border-slate-200 bg-white px-6 py-16 sm:py-24">
+    <section id="pricing" className="border-t border-slate-200 bg-white px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="pricing-heading">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 id="pricing-heading" className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Planes para tu institución
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Elige el plan que mejor se adapte. Puedes cambiar o cancelar cuando lo necesites.
+            Elige el plan que mejor se adapte. Facturación mensual. Pago seguro (integración Wompi en próximas fases).
           </p>
         </div>
         <div className="mt-16 grid gap-8 lg:grid-cols-2 lg:gap-10 lg:max-w-4xl lg:mx-auto">
