@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendReminderEmailNotification } from '@/lib/notifications/reminder';
+import { sendPushNotification } from '@/lib/notifications/push';
 import {
   getAuthInstitutionId,
   enforceTenant,
@@ -165,6 +166,37 @@ export async function POST(request: NextRequest) {
           primerEstudianteId,
         }).catch(() => {});
       }
+    }
+
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('📢 Creando recordatorio y disparando notificaciones push...');
+    }
+    const emailsAcudientes = [
+      ...new Set(
+        estudiantes
+          .map((e) => e.correo_acudiente)
+          .filter((email): email is string => Boolean(email?.trim()))
+      )
+    ];
+    if (emailsAcudientes.length > 0) {
+      const acudientes = await prisma.acudientes.findMany({
+        where: {
+          institucion_id: userInstitutionId,
+          email: { in: emailsAcudientes },
+        },
+        select: { id: true },
+      });
+      const acudienteIds = acudientes.map((a) => a.id);
+      sendPushNotification({
+        institucionId: userInstitutionId,
+        title: nombre.trim(),
+        body: descripcion.trim().slice(0, 200) + (descripcion.trim().length > 200 ? '...' : ''),
+        acudienteIds: acudienteIds.length > 0 ? acudienteIds : undefined,
+      }).catch((err) => {
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Error en envío push tras recordatorio:', err);
+        }
+      });
     }
 
     return NextResponse.json({
