@@ -1,14 +1,34 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { APP_URL } from '@/lib/env';
+import { useSearchParams } from 'next/navigation';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import Header from '@/components/landing/Header';
 import Footer from '@/components/landing/Footer';
 import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import { LoaderPage } from '@/components/ui';
 import type { Sede } from '@/types/sede';
 
-export default function RegistroInstitucion() {
+export default function RegistroInstitucionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
+          <LoaderPage message="Cargando registro..." />
+        </div>
+      }
+    >
+      <RegistroInstitucion />
+    </Suspense>
+  );
+}
+
+function RegistroInstitucion() {
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     nombre: '',
@@ -42,6 +62,19 @@ export default function RegistroInstitucion() {
   const [fileErrors, setFileErrors] = useState<{ logo?: string; banner?: string }>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalMessage, setSuccessModalMessage] = useState('');
+  const [registroToken, setRegistroToken] = useState('');
+  const [paymentPrefilled, setPaymentPrefilled] = useState(false);
+  const [accessValidated, setAccessValidated] = useState(false);
+  const [accessBlocked, setAccessBlocked] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const submitInFlightRef = useRef(false);
+
+  useEffect(() => {
+    const emailFromUrl = searchParams.get('email');
+    if (emailFromUrl?.trim()) {
+      setFormData((prev) => ({ ...prev, email: emailFromUrl.trim() }));
+    }
+  }, [searchParams]);
 
   const steps = [
     { id: 1, name: 'Información Básica', description: 'Datos principales de la institución' },
@@ -61,6 +94,93 @@ export default function RegistroInstitucion() {
     setShowToast(true);
     setTimeout(() => setShowToast(false), 5000);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    const token = searchParams.get('token')?.trim();
+
+    (async () => {
+      setCheckingAccess(true);
+      try {
+        const cfgRes = await fetch('/api/payments/config');
+        const cfg = cfgRes.ok ? await cfgRes.json() : { configured: false };
+
+        if (!token) {
+          if (cfg.configured) {
+            if (!cancelled) {
+              showToastMessage(
+                'Use el enlace seguro enviado a su correo tras completar el pago.',
+                'error'
+              );
+              setAccessBlocked(true);
+              setTimeout(() => {
+                window.location.href = '/#pricing';
+              }, 3000);
+            }
+            return;
+          }
+
+          const emailFromUrl = searchParams.get('email')?.trim();
+          if (emailFromUrl && !cancelled) {
+            setFormData((prev) => ({ ...prev, email: emailFromUrl }));
+            setAccessValidated(true);
+          }
+          return;
+        }
+
+        if (!cancelled) setRegistroToken(token);
+
+        const res = await fetch(
+          `/api/payments/validate-registro-access?token=${encodeURIComponent(token)}`
+        );
+        const data = await res.json();
+        if (cancelled) return;
+
+        if (data.valid && data.email) {
+          setFormData((prev) => ({
+            ...prev,
+            email: data.email,
+            ...(data.preRegistro
+              ? {
+                  nombre: data.preRegistro.nombre ?? prev.nombre,
+                  direccion_principal:
+                    data.preRegistro.direccion_principal ?? prev.direccion_principal,
+                  nit: data.preRegistro.nit ?? prev.nit,
+                  nombre_contacto: data.preRegistro.nombre_contacto ?? prev.nombre_contacto,
+                  telefono_contacto:
+                    data.preRegistro.telefono_contacto ?? prev.telefono_contacto,
+                }
+              : {}),
+          }));
+          setIsEmailVerified(true);
+          setEmailDuplicateError('');
+          setPaymentPrefilled(Boolean(data.preRegistro));
+          setAccessValidated(true);
+          return;
+        }
+
+        const msg =
+          data.reason === 'expired'
+            ? 'El enlace de registro expiró. Realice el pago nuevamente o contacte a soporte.'
+            : 'Enlace de registro no válido. Use el enlace del correo de confirmación de pago.';
+        showToastMessage(msg, 'error');
+        setAccessBlocked(true);
+        setTimeout(() => {
+          window.location.href = '/#pricing';
+        }, 3500);
+      } catch {
+        if (!cancelled) {
+          showToastMessage('No se pudo validar el acceso. Intente de nuevo.', 'error');
+        }
+      } finally {
+        if (!cancelled) setCheckingAccess(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
 
   const closeSuccessModalAndRedirect = () => {
     setShowSuccessModal(false);
@@ -367,6 +487,7 @@ export default function RegistroInstitucion() {
         );
       case 2:
         const emailValid = formData.email && isValidEmail(formData.email) && !emailDuplicateError;
+        const emailReady = emailValid && (isEmailVerified || !!registroToken);
         const passwordValid = formData.password && validatePassword(formData.password).length === 0;
         const phoneValid = formData.telefono_contacto && isPhoneValid(formData.telefono_contacto);
         const passwordMatch = formData.password && formData.confirm_password && formData.password === formData.confirm_password;
@@ -375,7 +496,7 @@ export default function RegistroInstitucion() {
           formData.telefono_contacto.trim() && 
           phoneValid && 
           emailValid && 
-          isEmailVerified &&
+          emailReady &&
           passwordValid &&
           passwordMatch
         );
@@ -402,6 +523,15 @@ export default function RegistroInstitucion() {
   const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
+
+    const lockedByPayment = paymentPrefilled
+      ? ['nombre', 'direccion_principal', 'nit', 'nombre_contacto', 'telefono_contacto', 'email']
+      : registroToken
+        ? ['email']
+        : [];
+    if (lockedByPayment.includes(name)) {
+      return;
+    }
     
     // Restricción para campos numéricos
     let processedValue = value;
@@ -540,12 +670,17 @@ export default function RegistroInstitucion() {
   };
 
   const isAllowedImageFile = (file: File): boolean => {
-    const allowedTypes = ['image/png', 'image/svg+xml'];
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
     if (allowedTypes.includes(file.type)) {
       return true;
     }
     const lowerName = file.name.toLowerCase();
-    return lowerName.endsWith('.png') || lowerName.endsWith('.svg');
+    return (
+      lowerName.endsWith('.png') ||
+      lowerName.endsWith('.jpg') ||
+      lowerName.endsWith('.jpeg') ||
+      lowerName.endsWith('.webp')
+    );
   };
 
   const parseSvgDimensions = (svgText: string): { width: number; height: number } | null => {
@@ -619,7 +754,7 @@ export default function RegistroInstitucion() {
     if (!isAllowedImageFile(file)) {
       setFileErrors(prev => ({
         ...prev,
-        [kind]: 'Solo se permiten archivos PNG o SVG'
+        [kind]: 'Solo se permiten archivos PNG, JPEG o WebP'
       }));
       if (kind === 'logo') {
         setLogoFile(null);
@@ -682,6 +817,10 @@ export default function RegistroInstitucion() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitInFlightRef.current || isSubmitting) {
+      return;
+    }
+    submitInFlightRef.current = true;
     setIsSubmitting(true);
     setMessage('');
 
@@ -780,13 +919,28 @@ export default function RegistroInstitucion() {
         return;
       }
 
-      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+      const { error: authError } = await supabaseClient.auth.signUp({
         email: sanitizedFormData.email,
         password: sanitizedFormData.password,
+        options: {
+          emailRedirectTo: `${APP_URL}/login`,
+        },
       });
 
       if (authError) {
-        showToastMessage(authError.message, 'error');
+        const alreadyRegistered =
+          authError.message?.toLowerCase().includes('already registered') ||
+          authError.message?.toLowerCase().includes('already been registered') ||
+          (authError as { code?: string }).code === 'user_already_exists';
+
+        if (alreadyRegistered) {
+          showToastMessage(
+            'Este correo ya está registrado. Confirme el correo anterior o use recuperar contraseña. No vuelva a enviar el formulario.',
+            'error'
+          );
+        } else {
+          showToastMessage(authError.message, 'error');
+        }
         return;
       }
 
@@ -798,9 +952,41 @@ export default function RegistroInstitucion() {
         },
         body: JSON.stringify({
           ...sanitizedFormData,
-          sedes: sanitizedSedes
+          sedes: sanitizedSedes,
+          ...(registroToken ? { registroToken } : {}),
         }),
       });
+
+      if (response.status === 403) {
+        const errorData = await response.json();
+        if (errorData?.code === 'REGISTRO_TOKEN_EXPIRED') {
+          showToastMessage(
+            'El enlace de registro expiró. Realice el pago nuevamente o contacte a soporte.',
+            'error'
+          );
+          setTimeout(() => {
+            window.location.href = '/#pricing';
+          }, 2500);
+          return;
+        }
+        if (errorData?.code === 'REGISTRO_TOKEN_INVALID') {
+          showToastMessage(
+            'Enlace de registro no válido. Use el enlace del correo de confirmación de pago.',
+            'error'
+          );
+          return;
+        }
+        if (errorData?.code === 'PAYMENT_REQUIRED') {
+          showToastMessage(
+            'Debe completar el pago desde la página de inicio antes de registrar la institución. Será redirigido.',
+            'error'
+          );
+          setTimeout(() => {
+            window.location.href = '/#pricing';
+          }, 2500);
+          return;
+        }
+      }
 
       if (response.ok) {
         const result = await response.json();
@@ -813,6 +999,7 @@ export default function RegistroInstitucion() {
         const brandingFormData = new FormData();
         if (logoFile) brandingFormData.append('logo', logoFile);
         if (bannerFile) brandingFormData.append('banner', bannerFile);
+        brandingFormData.append('bootstrapEmail', sanitizedFormData.email);
 
         const brandingResponse = await fetch(`/api/instituciones/${institucionId}/branding`, {
           method: 'PUT',
@@ -820,7 +1007,16 @@ export default function RegistroInstitucion() {
         });
 
         if (!brandingResponse.ok) {
-          showToastMessage('La institución se creó, pero no se pudo guardar el logo y banner', 'error');
+          let brandingError = 'La institución se creó, pero no se pudo guardar el logo y banner';
+          try {
+            const errData = await brandingResponse.json();
+            if (typeof errData?.error === 'string' && errData.error.trim()) {
+              brandingError = `La institución se creó, pero el branding falló: ${errData.error}`;
+            }
+          } catch {
+            // ignore
+          }
+          showToastMessage(brandingError, 'error');
           return;
         }
 
@@ -856,17 +1052,27 @@ export default function RegistroInstitucion() {
     } catch (error) {
       setMessage('Error de seguridad detectado. Intente nuevamente.');
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };
+
+  const lockedInputClass =
+    'bg-[var(--color-surface-nested)] cursor-not-allowed text-[var(--color-text-secondary)] border-[var(--color-border-light)]';
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
           <div className="space-y-5">
+            {paymentPrefilled && (
+              <div className="rounded-xl p-4 bg-emerald-50 border border-emerald-200 text-sm text-emerald-900">
+                Estos datos fueron confirmados al contratar el plan. Solo debe completar sedes,
+                personalización y contraseña.
+              </div>
+            )}
             <div>
-              <label htmlFor="nombre" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="nombre" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Nombre de la Institución *
               </label>
               <input
@@ -874,9 +1080,12 @@ export default function RegistroInstitucion() {
                 name="nombre"
                 type="text"
                 required
+                readOnly={paymentPrefilled}
                 value={formData.nombre}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-[var(--color-border)] rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
+                  paymentPrefilled ? lockedInputClass : 'bg-[var(--color-surface)]'
+                } ${
                   securityErrors.nombre ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                 }`}
                 placeholder="Ingrese el nombre de la institución"
@@ -893,7 +1102,7 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <label htmlFor="direccion_principal" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="direccion_principal" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Dirección Principal *
               </label>
               <input
@@ -901,9 +1110,12 @@ export default function RegistroInstitucion() {
                 name="direccion_principal"
                 type="text"
                 required
+                readOnly={paymentPrefilled}
                 value={formData.direccion_principal}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-[var(--color-border)] rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
+                  paymentPrefilled ? lockedInputClass : 'bg-[var(--color-surface)]'
+                } ${
                   securityErrors.direccion_principal ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                 }`}
                 placeholder="Ingrese la dirección principal"
@@ -920,10 +1132,10 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <label htmlFor="nit" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="nit" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 NIT * (9 dígitos)
               </label>
-              <p className="text-xs text-slate-500 mb-2">
+              <p className="text-xs text-[var(--color-text-secondary)] mb-2">
                 No incluya el dígito de verificación. Solo los 9 primeros dígitos.
               </p>
               <input
@@ -931,9 +1143,12 @@ export default function RegistroInstitucion() {
                 name="nit"
                 type="text"
                 required
+                readOnly={paymentPrefilled}
                 value={formData.nit}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-[var(--color-border)] rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
+                  paymentPrefilled ? lockedInputClass : 'bg-[var(--color-surface)]'
+                } ${
                   (formData.nit && !isValidNIT(formData.nit)) || securityErrors.nit
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
                     : ''
@@ -960,19 +1175,19 @@ export default function RegistroInstitucion() {
       case 2:
         return (
           <div className="space-y-5">
-            <div className="rounded-xl p-4 bg-blue-50 border-l-4 border-blue-500 shadow-sm flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+            <div className="rounded-xl p-4 bg-[var(--color-primary-light)] border-l-4 border-[var(--color-primary)] shadow-sm flex gap-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center">
+                <svg className="w-5 h-5 text-[var(--color-primary)]" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
               </div>
-              <p className="text-sm text-blue-900 leading-relaxed pt-0.5">
+              <p className="text-sm text-[var(--color-primary-text)] leading-relaxed pt-0.5">
                 El correo electrónico y los datos de contacto que ingrese a continuación serán registrados como superadministrador de la institución.
               </p>
             </div>
 
             <div>
-              <label htmlFor="nombre_contacto" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="nombre_contacto" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Nombre de Contacto *
               </label>
               <input
@@ -980,9 +1195,12 @@ export default function RegistroInstitucion() {
                 name="nombre_contacto"
                 type="text"
                 required
+                readOnly={paymentPrefilled}
                 value={formData.nombre_contacto}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-[var(--color-border)] rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
+                  paymentPrefilled ? lockedInputClass : 'bg-[var(--color-surface)]'
+                } ${
                   securityErrors.nombre_contacto ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
                 }`}
                 placeholder="Ingrese el nombre del contacto"
@@ -999,13 +1217,17 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <label htmlFor="telefono_contacto" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="telefono_contacto" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Teléfono de Contacto *
               </label>
               <PhoneInputField
                 id="telefono_contacto"
                 value={formData.telefono_contacto}
-                onChange={(v) => setFormData((prev) => ({ ...prev, telefono_contacto: v }))}
+                onChange={(v) => {
+                  if (paymentPrefilled) return;
+                  setFormData((prev) => ({ ...prev, telefono_contacto: v }));
+                }}
+                disabled={paymentPrefilled}
                 aria-label="Número de teléfono"
               />
               {securityErrors.telefono_contacto && (
@@ -1019,10 +1241,16 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <p className="text-sm text-slate-600 mb-2">
-                Debe dar clic en el botón &quot;Verificar correo&quot; para comprobar que el correo no está en uso en la aplicación y así poder continuar con el campo de contraseña.
-              </p>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+              {registroToken ? (
+                <p className="text-sm text-[var(--color-text-secondary)] mb-2">
+                  Correo verificado con su pago. Defina la contraseña del superadministrador.
+                </p>
+              ) : (
+                <p className="text-sm text-[var(--color-text-secondary)] mb-2">
+                  Debe dar clic en el botón &quot;Verificar correo&quot; para comprobar que el correo no está en uso en la aplicación y así poder continuar con el campo de contraseña.
+                </p>
+              )}
+              <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Correo Electrónico *
               </label>
               <input
@@ -1030,9 +1258,12 @@ export default function RegistroInstitucion() {
                 name="email"
                 type="email"
                 required
+                readOnly={!!registroToken}
                 value={formData.email}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-[var(--color-border)] rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
+                  registroToken ? lockedInputClass : 'bg-[var(--color-surface)]'
+                } ${
                   (formData.email && !isValidEmail(formData.email)) || emailDuplicateError || securityErrors.email
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : ''
@@ -1040,16 +1271,18 @@ export default function RegistroInstitucion() {
                 placeholder="correo@ejemplo.com"
                 maxLength={254}
               />
-              <div className="mt-2">
-                <button
-                  type="button"
-                  onClick={handleVerifyEmail}
-                  disabled={!formData.email || !isValidEmail(formData.email) || isCheckingEmail || !!securityErrors.email}
-                  className="text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isCheckingEmail ? 'Verificando...' : 'Verificar correo'}
-                </button>
-              </div>
+              {!registroToken && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={handleVerifyEmail}
+                    disabled={!formData.email || !isValidEmail(formData.email) || isCheckingEmail || !!securityErrors.email}
+                    className="text-sm font-semibold text-[var(--color-primary-text)] bg-[var(--color-primary-light)] border border-[var(--color-border-light)] rounded-lg px-3 py-2 hover:bg-[var(--color-primary-light)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isCheckingEmail ? 'Verificando...' : 'Verificar correo'}
+                  </button>
+                </div>
+              )}
               {formData.email && !isValidEmail(formData.email) && (
                 <p className="mt-1 text-xs text-red-600">Por favor ingrese un correo electrónico válido</p>
               )}
@@ -1057,7 +1290,14 @@ export default function RegistroInstitucion() {
                 <p className="mt-1 text-xs text-red-600">{emailDuplicateError}</p>
               )}
               {isEmailVerified && !emailDuplicateError && (
-                <p className="mt-1 text-xs text-green-600">Correo disponible</p>
+                <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  {registroToken
+                    ? 'Correo verificado (confirmado con el pago)'
+                    : 'Correo disponible'}
+                </p>
               )}
               {securityErrors.email && (
                 <p className="mt-1 text-xs text-red-600 flex items-center">
@@ -1070,7 +1310,7 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Contraseña *
               </label>
               <div className="relative">
@@ -1083,7 +1323,7 @@ export default function RegistroInstitucion() {
                   onChange={handleInputChange}
                   autoComplete="new-password"
                   disabled={!isEmailVerified}
-                  className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  className={`w-full px-4 py-2.5 pr-12 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
                     passwordErrors.length > 0 || securityErrors.password
                       ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
                       : ''
@@ -1094,7 +1334,7 @@ export default function RegistroInstitucion() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1114,14 +1354,14 @@ export default function RegistroInstitucion() {
                   type="button"
                   onClick={generateStrongPassword}
                   disabled={!isEmailVerified}
-                  className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-50"
+                  className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-[var(--color-primary-text)] bg-[var(--color-primary-light)] border border-[var(--color-border-light)] rounded-lg hover:bg-[var(--color-primary-light)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[var(--color-primary-light)]"
                 >
                   Generar contraseña automáticamente
                 </button>
               </div>
 
               {/* Características de la contraseña: se marcan en verde al cumplirse */}
-              <p className="mt-3 text-xs font-medium text-slate-600 mb-1.5">La contraseña debe cumplir:</p>
+              <p className="mt-3 text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">La contraseña debe cumplir:</p>
               <ul className="space-y-1.5" aria-live="polite">
                 {PASSWORD_REQUIREMENTS.map(({ id, label, check }) => {
                   const fulfilled = !!formData.password && check(formData.password);
@@ -1129,7 +1369,7 @@ export default function RegistroInstitucion() {
                     <li
                       key={id}
                       className={`text-xs flex items-center gap-2 transition-colors duration-200 ${
-                        fulfilled ? 'text-green-600' : 'text-slate-500'
+                        fulfilled ? 'text-green-600' : 'text-[var(--color-text-secondary)]'
                       }`}
                     >
                       {fulfilled ? (
@@ -1137,7 +1377,7 @@ export default function RegistroInstitucion() {
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
                       ) : (
-                        <span className="w-4 h-4 flex-shrink-0 rounded-full border-2 border-slate-300 inline-block" aria-hidden />
+                        <span className="w-4 h-4 flex-shrink-0 rounded-full border-2 border-[var(--color-border)] inline-block" aria-hidden />
                       )}
                       <span className={fulfilled ? 'font-medium' : ''}>{label}</span>
                     </li>
@@ -1147,7 +1387,7 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <label htmlFor="confirm_password" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="confirm_password" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Repetir Contraseña *
               </label>
               <input
@@ -1159,7 +1399,7 @@ export default function RegistroInstitucion() {
                 onChange={handleInputChange}
                 autoComplete="new-password"
                   disabled={!isEmailVerified}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
                   formData.confirm_password && formData.password !== formData.confirm_password
                     ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                     : ''
@@ -1188,7 +1428,7 @@ export default function RegistroInstitucion() {
               </p>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+            <div className="bg-[var(--color-surface-nested)] rounded-xl p-4 border border-[var(--color-border-light)] flex flex-wrap items-center justify-between gap-4">
               <label htmlFor="tiene_sedes" className="group flex items-center gap-3 cursor-pointer flex-1 min-w-0">
                 <input
                   id="tiene_sedes"
@@ -1199,10 +1439,10 @@ export default function RegistroInstitucion() {
                   className="sr-only"
                   aria-hidden
                 />
-                <span className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${formData.tiene_sedes ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition duration-200 translate-x-0.5 mt-0.5 ${formData.tiene_sedes ? 'translate-x-5' : ''}`} />
+                <span className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${formData.tiene_sedes ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-border-light)]'}`}>
+                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-[var(--color-surface)] shadow ring-0 transition duration-200 translate-x-0.5 mt-0.5 ${formData.tiene_sedes ? 'translate-x-5' : ''}`} />
                 </span>
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-sm font-medium text-[var(--color-text-secondary)]">
                   El instituto tiene más de una sede; active el interruptor para sí y complete los campos de las sedes del instituto.
                 </span>
               </label>
@@ -1214,48 +1454,48 @@ export default function RegistroInstitucion() {
                 <h4 className="text-sm font-semibold text-slate-800">Jornadas de la Institución</h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
+                  <label className="flex items-center p-3 bg-[var(--color-surface-nested)] rounded-xl border border-[var(--color-border-light)] hover:bg-[var(--color-surface-nested)] transition-colors duration-200">
                     <input
                       type="checkbox"
                       checked={formData.jornadas.includes('única')}
                       onChange={(e) => handleJornadaChange('única', e.target.checked)}
                       disabled={formData.jornadas.some(j => j !== 'única')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
+                      className="h-4 w-4 text-[var(--color-primary)] focus-visible:ring-[var(--color-primary-focus)] border-[var(--color-border)] rounded disabled:opacity-50"
                     />
-                    <span className={`ml-3 text-sm text-slate-700 ${formData.jornadas.some(j => j !== 'única') ? 'line-through' : ''}`}>Jornada Única</span>
+                    <span className={`ml-3 text-sm text-[var(--color-text-secondary)] ${formData.jornadas.some(j => j !== 'única') ? 'line-through' : ''}`}>Jornada Única</span>
                   </label>
 
-                  <label className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
+                  <label className="flex items-center p-3 bg-[var(--color-surface-nested)] rounded-xl border border-[var(--color-border-light)] hover:bg-[var(--color-surface-nested)] transition-colors duration-200">
                     <input
                       type="checkbox"
                       checked={formData.jornadas.includes('mañana')}
                       onChange={(e) => handleJornadaChange('mañana', e.target.checked)}
                       disabled={formData.jornadas.includes('única')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
+                      className="h-4 w-4 text-[var(--color-primary)] focus-visible:ring-[var(--color-primary-focus)] border-[var(--color-border)] rounded disabled:opacity-50"
                     />
-                    <span className={`ml-3 text-sm text-slate-700 ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Mañana</span>
+                    <span className={`ml-3 text-sm text-[var(--color-text-secondary)] ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Mañana</span>
                   </label>
 
-                  <label className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
+                  <label className="flex items-center p-3 bg-[var(--color-surface-nested)] rounded-xl border border-[var(--color-border-light)] hover:bg-[var(--color-surface-nested)] transition-colors duration-200">
                     <input
                       type="checkbox"
                       checked={formData.jornadas.includes('tarde')}
                       onChange={(e) => handleJornadaChange('tarde', e.target.checked)}
                       disabled={formData.jornadas.includes('única')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
+                      className="h-4 w-4 text-[var(--color-primary)] focus-visible:ring-[var(--color-primary-focus)] border-[var(--color-border)] rounded disabled:opacity-50"
                     />
-                    <span className={`ml-3 text-sm text-slate-700 ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Tarde</span>
+                    <span className={`ml-3 text-sm text-[var(--color-text-secondary)] ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Tarde</span>
                   </label>
 
-                  <label className="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
+                  <label className="flex items-center p-3 bg-[var(--color-surface-nested)] rounded-xl border border-[var(--color-border-light)] hover:bg-[var(--color-surface-nested)] transition-colors duration-200">
                     <input
                       type="checkbox"
                       checked={formData.jornadas.includes('nocturna')}
                       onChange={(e) => handleJornadaChange('nocturna', e.target.checked)}
                       disabled={formData.jornadas.includes('única')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
+                      className="h-4 w-4 text-[var(--color-primary)] focus-visible:ring-[var(--color-primary-focus)] border-[var(--color-border)] rounded disabled:opacity-50"
                     />
-                    <span className={`ml-3 text-sm text-slate-700 ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Nocturna</span>
+                    <span className={`ml-3 text-sm text-[var(--color-text-secondary)] ${formData.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Nocturna</span>
                   </label>
                 </div>
               </div>
@@ -1269,16 +1509,16 @@ export default function RegistroInstitucion() {
                   <button
                     type="button"
                     onClick={addSede}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-lg text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus-visible:ring-[var(--color-primary-focus)] transition-colors"
                   >
                     + Agregar Sede
                   </button>
                 </div>
 
                 {sedes.map((sede, index) => (
-                  <div key={sede.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
+                  <div key={sede.id} className="bg-[var(--color-surface-nested)] border border-[var(--color-border-light)] rounded-xl p-4 space-y-4">
                     <div className="flex justify-between items-center">
-                      <h5 className="text-sm font-medium text-slate-700">Sede {index + 1}</h5>
+                      <h5 className="text-sm font-medium text-[var(--color-text-secondary)]">Sede {index + 1}</h5>
                       <button
                         type="button"
                         onClick={() => removeSede(String(sede.id))}
@@ -1289,66 +1529,66 @@ export default function RegistroInstitucion() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                         Nombre de la Sede *
                       </label>
                       <input
                         type="text"
                         value={sede.nombre}
                         onChange={(e) => updateSede(String(sede.id), 'nombre', e.target.value)}
-                        className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                        className="w-full px-4 py-2.5 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)]"
                         placeholder="Nombre de la sede"
                         required
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-3">
+                      <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-3">
                         Jornadas de la Sede *
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <label className="flex items-center p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200">
+                        <label className="flex items-center p-2 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border-light)] hover:bg-[var(--color-surface-nested)] transition-colors duration-200">
                           <input
                             type="checkbox"
                             checked={sede.jornadas.includes('única')}
                             onChange={(e) => handleSedeJornadaChange(String(sede.id), 'única', e.target.checked)}
                             disabled={sede.jornadas.some(j => j !== 'única')}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
+                            className="h-4 w-4 text-[var(--color-primary)] focus-visible:ring-[var(--color-primary-focus)] border-[var(--color-border)] rounded disabled:opacity-50"
                           />
-                          <span className={`ml-2 text-sm text-slate-700 ${sede.jornadas.some(j => j !== 'única') ? 'line-through' : ''}`}>Jornada Única</span>
+                          <span className={`ml-2 text-sm text-[var(--color-text-secondary)] ${sede.jornadas.some(j => j !== 'única') ? 'line-through' : ''}`}>Jornada Única</span>
                         </label>
                         
-                        <label className="flex items-center p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200">
+                        <label className="flex items-center p-2 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border-light)] hover:bg-[var(--color-surface-nested)] transition-colors duration-200">
                           <input
                             type="checkbox"
                             checked={sede.jornadas.includes('mañana')}
                             onChange={(e) => handleSedeJornadaChange(String(sede.id), 'mañana', e.target.checked)}
                             disabled={sede.jornadas.includes('única')}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
+                            className="h-4 w-4 text-[var(--color-primary)] focus-visible:ring-[var(--color-primary-focus)] border-[var(--color-border)] rounded disabled:opacity-50"
                           />
-                          <span className={`ml-2 text-sm text-slate-700 ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Mañana</span>
+                          <span className={`ml-2 text-sm text-[var(--color-text-secondary)] ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Mañana</span>
                         </label>
                         
-                        <label className="flex items-center p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200">
+                        <label className="flex items-center p-2 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border-light)] hover:bg-[var(--color-surface-nested)] transition-colors duration-200">
                           <input
                             type="checkbox"
                             checked={sede.jornadas.includes('tarde')}
                             onChange={(e) => handleSedeJornadaChange(String(sede.id), 'tarde', e.target.checked)}
                             disabled={sede.jornadas.includes('única')}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
+                            className="h-4 w-4 text-[var(--color-primary)] focus-visible:ring-[var(--color-primary-focus)] border-[var(--color-border)] rounded disabled:opacity-50"
                           />
-                          <span className={`ml-2 text-sm text-slate-700 ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Tarde</span>
+                          <span className={`ml-2 text-sm text-[var(--color-text-secondary)] ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Tarde</span>
                         </label>
                         
-                        <label className="flex items-center p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors duration-200">
+                        <label className="flex items-center p-2 bg-[var(--color-surface)] rounded-lg border border-[var(--color-border-light)] hover:bg-[var(--color-surface-nested)] transition-colors duration-200">
                           <input
                             type="checkbox"
                             checked={sede.jornadas.includes('nocturna')}
                             onChange={(e) => handleSedeJornadaChange(String(sede.id), 'nocturna', e.target.checked)}
                             disabled={sede.jornadas.includes('única')}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded disabled:opacity-50"
+                            className="h-4 w-4 text-[var(--color-primary)] focus-visible:ring-[var(--color-primary-focus)] border-[var(--color-border)] rounded disabled:opacity-50"
                           />
-                          <span className={`ml-2 text-sm text-slate-700 ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Nocturna</span>
+                          <span className={`ml-2 text-sm text-[var(--color-text-secondary)] ${sede.jornadas.includes('única') ? 'line-through' : ''}`}>Jornada Nocturna</span>
                         </label>
                       </div>
                     </div>
@@ -1356,8 +1596,8 @@ export default function RegistroInstitucion() {
                 ))}
 
                 {sedes.length === 0 && (
-                  <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-dashed border-slate-300">
-                    <p className="text-sm text-slate-500">
+                  <div className="text-center py-8 bg-[var(--color-surface-nested)] rounded-xl border-2 border-dashed border-[var(--color-border)]">
+                    <p className="text-sm text-[var(--color-text-secondary)]">
                       No hay sedes agregadas. Haga clic en &quot;Agregar Sede&quot; para comenzar.
                     </p>
                   </div>
@@ -1371,17 +1611,17 @@ export default function RegistroInstitucion() {
         return (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Logo institucional *
               </label>
               <input
                 type="file"
-                accept="image/png,image/svg+xml"
+                accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
                 onChange={(e) => handleFileChange(e, 'logo')}
-                className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="w-full text-sm text-[var(--color-text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[var(--color-primary-light)] file:text-[var(--color-primary-text)] hover:file:bg-[var(--color-primary-light)]"
               />
               {logoFile && (
-                <p className="mt-2 text-xs text-slate-500">Archivo seleccionado: {logoFile.name}</p>
+                <p className="mt-2 text-xs text-[var(--color-text-secondary)]">Archivo seleccionado: {logoFile.name}</p>
               )}
               {fileErrors.logo && (
                 <p className="mt-2 text-xs text-red-600">{fileErrors.logo}</p>
@@ -1389,17 +1629,17 @@ export default function RegistroInstitucion() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Banner institucional *
               </label>
               <input
                 type="file"
-                accept="image/png,image/svg+xml"
+                accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
                 onChange={(e) => handleFileChange(e, 'banner')}
-                className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="w-full text-sm text-[var(--color-text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[var(--color-primary-light)] file:text-[var(--color-primary-text)] hover:file:bg-[var(--color-primary-light)]"
               />
               {bannerFile && (
-                <p className="mt-2 text-xs text-slate-500">Archivo seleccionado: {bannerFile.name}</p>
+                <p className="mt-2 text-xs text-[var(--color-text-secondary)]">Archivo seleccionado: {bannerFile.name}</p>
               )}
               {fileErrors.banner && (
                 <p className="mt-2 text-xs text-red-600">{fileErrors.banner}</p>
@@ -1422,7 +1662,7 @@ export default function RegistroInstitucion() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                   Color primario *
                 </label>
                 <div className="flex items-center gap-3">
@@ -1431,7 +1671,7 @@ export default function RegistroInstitucion() {
                     name="color_primario"
                     value={formData.color_primario}
                     onChange={handleInputChange}
-                    className="h-10 w-14 rounded border border-slate-300 bg-white"
+                    className="h-10 w-14 rounded border border-[var(--color-border)] bg-[var(--color-surface)]"
                   />
                   <input
                     type="text"
@@ -1439,13 +1679,13 @@ export default function RegistroInstitucion() {
                     value={formData.color_primario}
                     onChange={handleInputChange}
                     maxLength={7}
-                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                   Color secundario *
                 </label>
                 <div className="flex items-center gap-3">
@@ -1454,7 +1694,7 @@ export default function RegistroInstitucion() {
                     name="color_secundario"
                     value={formData.color_secundario}
                     onChange={handleInputChange}
-                    className="h-10 w-14 rounded border border-slate-300 bg-white"
+                    className="h-10 w-14 rounded border border-[var(--color-border)] bg-[var(--color-surface)]"
                   />
                   <input
                     type="text"
@@ -1462,7 +1702,7 @@ export default function RegistroInstitucion() {
                     value={formData.color_secundario}
                     onChange={handleInputChange}
                     maxLength={7}
-                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-slate-900 focus:outline-none focus:ring-2 focus-visible:ring-[var(--color-primary-focus)] focus:border-[var(--color-primary)]"
                   />
                 </div>
               </div>
@@ -1476,13 +1716,21 @@ export default function RegistroInstitucion() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col">
+    <div className="min-h-screen bg-[var(--color-background)] flex flex-col">
       <Header />
       <main className="flex-1">
+        {(checkingAccess || accessBlocked) && (
+          <div className="max-w-md mx-auto px-4 py-24 text-center">
+            <p className="text-[var(--color-text-secondary)]">
+              {checkingAccess ? 'Validando acceso seguro...' : 'Redirigiendo...'}
+            </p>
+          </div>
+        )}
+        {!checkingAccess && !accessBlocked && (
         <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[var(--color-primary)] rounded-2xl mb-4">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
@@ -1490,17 +1738,17 @@ export default function RegistroInstitucion() {
           <h1 className="text-3xl font-bold text-slate-800 mb-2">
             Registrar Institución
           </h1>
-          <p className="text-slate-600 mb-3">
+          <p className="text-[var(--color-text-secondary)] mb-3">
             Complete los datos paso a paso
           </p>
         </div>
 
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Vertical Progress Bar */}
-          <div className="w-full lg:w-72 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+          <div className="w-full lg:w-72 bg-[var(--color-surface)]/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-slate-800 mb-2">Progreso</h3>
-              <div className="text-xs text-slate-500 bg-slate-100 rounded-full px-3 py-1 inline-block">
+              <div className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-nested)] rounded-full px-3 py-1 inline-block">
                 Paso {currentStep} de {steps.length}
               </div>
             </div>
@@ -1514,8 +1762,8 @@ export default function RegistroInstitucion() {
                       currentStep > step.id
                         ? 'bg-emerald-500 text-white shadow-lg'
                         : currentStep === step.id
-                        ? 'bg-blue-500 text-white shadow-lg ring-4 ring-blue-200'
-                        : 'bg-slate-100 text-slate-400 border-2 border-slate-200'
+                        ? 'bg-[var(--color-primary-light)]0 text-white shadow-lg ring-4 ring-[var(--color-primary-light)]'
+                        : 'bg-[var(--color-surface-nested)] text-[var(--color-text-tertiary)] border-2 border-[var(--color-border-light)]'
                     }`}>
                       {currentStep > step.id ? (
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -1527,18 +1775,18 @@ export default function RegistroInstitucion() {
                     </div>
                     {index < steps.length - 1 && (
                       <div className={`w-1 h-8 mt-2 rounded-full transition-all duration-300 ${
-                        currentStep > step.id ? 'bg-emerald-500' : 'bg-slate-200'
+                        currentStep > step.id ? 'bg-emerald-500' : 'bg-[var(--color-border-light)]'
                       }`} />
                     )}
                   </div>
                   <div className="flex-1 pt-2 min-w-0">
                     <div className={`text-sm font-medium transition-colors duration-200 ${
-                      currentStep >= step.id ? 'text-slate-800' : 'text-slate-500'
+                      currentStep >= step.id ? 'text-slate-800' : 'text-[var(--color-text-secondary)]'
                     }`}>
                       <span className="break-words">{step.name}</span>
                     </div>
                     <div className={`text-xs mt-1 transition-colors duration-200 ${
-                      currentStep >= step.id ? 'text-slate-600' : 'text-slate-400'
+                      currentStep >= step.id ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-text-tertiary)]'
                     }`}>
                       <span className="break-words">{step.description}</span>
                     </div>
@@ -1549,14 +1797,14 @@ export default function RegistroInstitucion() {
 
             {/* Progress Bar */}
             <div className="mt-8">
-              <div className="text-xs font-medium text-slate-700 mb-2">Progreso General</div>
-              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div className="text-xs font-medium text-[var(--color-text-secondary)] mb-2">Progreso General</div>
+              <div className="w-full bg-[var(--color-border-light)] rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-700 ease-out"
+                  className="bg-[var(--color-primary)] h-2 rounded-full transition-all duration-700 ease-out motion-safe:transition-all"
                   style={{ width: `${(currentStep / steps.length) * 100}%` }}
                 />
               </div>
-              <div className="text-xs text-slate-500 mt-2 text-center">
+              <div className="text-xs text-[var(--color-text-secondary)] mt-2 text-center">
                 {Math.round((currentStep / steps.length) * 100)}% completado
               </div>
             </div>
@@ -1566,12 +1814,12 @@ export default function RegistroInstitucion() {
           <div className="flex-1">
             <form onSubmit={handleSubmit}>
               {/* Step Content */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden">
-                <div className="px-6 py-4 bg-blue-50 border-b border-slate-200">
+              <div className="bg-[var(--color-surface)]/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden">
+                <div className="px-6 py-4 bg-[var(--color-primary-light)] border-b border-[var(--color-border-light)]">
                   <h3 className="text-lg font-semibold text-slate-800">
                     {steps[currentStep - 1].name}
                   </h3>
-                  <p className="text-sm text-slate-600 mt-1">
+                  <p className="text-sm text-[var(--color-text-secondary)] mt-1">
                     {steps[currentStep - 1].description}
                   </p>
                 </div>
@@ -1587,7 +1835,7 @@ export default function RegistroInstitucion() {
                   <button
                     type="button"
                     onClick={prevStep}
-                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] bg-[var(--color-surface)]/80 backdrop-blur-sm border border-[var(--color-border-light)] rounded-xl shadow-sm hover:bg-[var(--color-surface)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus-visible:ring-[var(--color-primary-focus)] transition-all duration-200"
                   >
                     ← Anterior
                   </button>
@@ -1600,7 +1848,7 @@ export default function RegistroInstitucion() {
                       type="button"
                       onClick={nextStep}
                       disabled={!validateStep(currentStep)}
-                      className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-xl shadow-lg hover:shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full sm:w-auto min-h-11 px-6 py-2 text-sm font-medium text-white bg-[var(--color-primary)] border border-transparent rounded-xl shadow-lg hover:bg-[var(--color-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-primary-focus)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       Siguiente →
                     </button>
@@ -1620,44 +1868,30 @@ export default function RegistroInstitucion() {
         </div>
 
         {/* Modal de registro exitoso */}
-        {showSuccessModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-            <div className="bg-white shadow-2xl rounded-2xl max-w-md w-full overflow-hidden border border-green-200">
-              <div className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="h-6 w-6 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-green-800">¡Registro exitoso!</h3>
-                    <p className="text-sm text-green-700 mt-2">{successModalMessage}</p>
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-xs text-blue-800">
-                        📧 Revise su bandeja de entrada y carpeta de spam para confirmar su cuenta antes de iniciar sesión.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={closeSuccessModalAndRedirect}
-                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                  >
-                    Cerrar e ir a iniciar sesión
-                  </button>
-                </div>
-              </div>
-            </div>
+        <Modal
+          open={showSuccessModal}
+          onClose={closeSuccessModalAndRedirect}
+          title="Registro exitoso"
+          size="md"
+          closeOnOverlayClick={false}
+        >
+          <p className="text-sm text-[var(--color-text-secondary)]">{successModalMessage}</p>
+          <div className="mt-4 p-3 bg-[var(--color-primary-light)] rounded-lg border border-[var(--color-border-light)]">
+            <p className="text-xs text-[var(--color-primary-text)]">
+              Revise su bandeja de entrada y carpeta de spam para confirmar su cuenta antes de iniciar sesión.
+            </p>
           </div>
-        )}
+          <div className="mt-6 flex justify-end">
+            <Button type="button" variant="success" onClick={closeSuccessModalAndRedirect}>
+              Ir a iniciar sesión
+            </Button>
+          </div>
+        </Modal>
 
         {/* Toast Notification (solo errores) */}
         {showToast && (
           <div className="fixed top-4 right-4 z-50 max-w-md w-full">
-            <div className="w-full bg-white shadow-2xl rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border border-red-200 bg-red-50">
+            <div className="w-full bg-[var(--color-surface)] shadow-2xl rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border border-red-200 bg-red-50">
               <div className="p-6">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -1690,6 +1924,7 @@ export default function RegistroInstitucion() {
           </div>
         )}
         </div>
+        )}
       </main>
       <Footer />
     </div>

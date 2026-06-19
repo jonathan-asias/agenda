@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { verifyInstitutionAccess } from '@/lib/security';
+import InstitutionSubscriptionShell from '@/components/subscription/InstitutionSubscriptionShell';
 
 interface InstitucionAuthGuardProps {
   children: React.ReactNode;
 }
 
 export default function InstitucionAuthGuard({ children }: InstitucionAuthGuardProps) {
-  const { user, loading, institutionId } = useAuth();
+  const { user, loading, institutionId, signOut } = useAuth();
   const router = useRouter();
   const params = useParams();
   const [isMounted, setIsMounted] = useState(false);
@@ -34,7 +35,6 @@ export default function InstitucionAuthGuard({ children }: InstitucionAuthGuardP
       return;
     }
 
-    // CRÍTICO SaaS: nunca permitir acceso cruzado. params.id debe ser la institución del usuario.
     if (institutionId !== Number(routeId) || !verifyInstitutionAccess(institutionId, routeId)) {
       if (institutionId != null) {
         router.replace(`/institucion/${institutionId}`);
@@ -44,8 +44,35 @@ export default function InstitucionAuthGuard({ children }: InstitucionAuthGuardP
       return;
     }
 
-    setIsAuthorized(true);
-  }, [isMounted, user, loading, institutionId, params?.id, router]);
+    let cancelled = false;
+
+    const verifySubscription = async () => {
+      try {
+        const res = await fetch(`/api/instituciones/${routeId}/subscription-access`);
+        if (!res.ok) {
+          if (!cancelled) setIsAuthorized(true);
+          return;
+        }
+        const data = await res.json();
+        if (!data.canLogin) {
+          await signOut();
+          router.push(
+            `/login?subscription=blocked&message=${encodeURIComponent(data.message ?? '')}`
+          );
+          return;
+        }
+        if (!cancelled) setIsAuthorized(true);
+      } catch {
+        if (!cancelled) setIsAuthorized(true);
+      }
+    };
+
+    verifySubscription();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isMounted, user, loading, institutionId, params?.id, router, signOut]);
 
   if (!isMounted || loading) {
     return (
@@ -58,7 +85,11 @@ export default function InstitucionAuthGuard({ children }: InstitucionAuthGuardP
     );
   }
 
-  if (!isAuthorized) return null;
+  if (!isAuthorized || institutionId == null) return null;
 
-  return <>{children}</>;
+  return (
+    <InstitutionSubscriptionShell institutionId={institutionId}>
+      {children}
+    </InstitutionSubscriptionShell>
+  );
 }

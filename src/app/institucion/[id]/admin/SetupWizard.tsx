@@ -6,7 +6,10 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError } from '@/lib/notifications';
 import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import type { Docente, Estudiante } from '@/types';
+import { GRADOS_PREDETERMINADOS } from '@/lib/grados-predeterminados';
 
 interface SetupWizardProps {
   institucionId: number;
@@ -108,6 +111,8 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   
   // Estados para docentes
   const [docentes, setDocentes] = useState<Docente[]>([]);
+  /** Contraseñas definidas en el wizard (no se persisten en el tipo Docente). */
+  const [passwordsPorDocente, setPasswordsPorDocente] = useState<Record<number, string>>({});
   const [docenteActual, setDocenteActual] = useState<DocenteForm>({
     nombres: '',
     apellidos: '',
@@ -248,24 +253,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   const [cursosGuardados, setCursosGuardados] = useState<any[]>([]);
   const [gradosCargados, setGradosCargados] = useState<any[]>([]);
 
-  // Grados predeterminados
-  const gradosPredeterminados = [
-    { id: 1, nombre: 'PÁRVULOS', nivel: 'Educación Inicial', orden: 1 },
-    { id: 2, nombre: 'PRE-JARDÍN', nivel: 'Educación Inicial', orden: 2 },
-    { id: 3, nombre: 'JARDÍN', nivel: 'Educación Inicial', orden: 3 },
-    { id: 4, nombre: 'TRANSICIÓN', nivel: 'Educación Inicial', orden: 4 },
-    { id: 5, nombre: '1°', nivel: 'Primaria', orden: 5 },
-    { id: 6, nombre: '2°', nivel: 'Primaria', orden: 6 },
-    { id: 7, nombre: '3°', nivel: 'Primaria', orden: 7 },
-    { id: 8, nombre: '4°', nivel: 'Primaria', orden: 8 },
-    { id: 9, nombre: '5°', nivel: 'Primaria', orden: 9 },
-    { id: 10, nombre: '6°', nivel: 'Secundaria', orden: 10 },
-    { id: 11, nombre: '7°', nivel: 'Secundaria', orden: 11 },
-    { id: 12, nombre: '8°', nivel: 'Secundaria', orden: 12 },
-    { id: 13, nombre: '9°', nivel: 'Secundaria', orden: 13 },
-    { id: 14, nombre: '10°', nivel: 'Media', orden: 14 },
-    { id: 15, nombre: '11°', nivel: 'Media', orden: 15 }
-  ];
+  const gradosPredeterminados = [...GRADOS_PREDETERMINADOS];
 
   // Áreas predefinidas según Ley 115 de 1994
   const areasPredeterminadas = [
@@ -631,6 +619,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     
     // Limpiar datos de docentes
     setDocentes([]);
+    setPasswordsPorDocente({});
     setDocenteActual({
       nombres: '',
       apellidos: '',
@@ -865,26 +854,39 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   // Función para validar si una sección está completa
   const validarSeccion = (seccion: string) => {
     switch (seccion) {
-      case 'datos':
+      case 'datos': {
+        const passwordReqs = getPasswordRequirementsDocente(docenteActual.password);
+        const passwordOk = Object.values(passwordReqs).every(Boolean);
         return (
           docenteActual.nombres.trim() !== '' &&
           docenteActual.apellidos.trim() !== '' &&
           docenteActual.telefono.trim() !== '' &&
           docenteActual.email.trim() !== '' &&
           docenteActual.password.trim() !== '' &&
+          passwordOk &&
           emailVerificado &&
           Object.keys(erroresValidacion).length === 0
         );
+      }
       case 'grados':
-        // Debe haber al menos una asignación grado-curso
         return asignacionesGradoCurso.length > 0;
       case 'materias':
-        // Debe haber al menos una materia seleccionada en alguna asignación grado-curso
-        return asignacionesGradoCurso.some(asignacion => asignacion.materiasSeleccionadas.length > 0);
+        return (
+          asignacionesGradoCurso.length > 0 &&
+          asignacionesGradoCurso.every(
+            (asignacion) => asignacion.materiasSeleccionadas.length > 0
+          )
+        );
       default:
         return false;
     }
   };
+
+  const docenteSubpasosCompletos =
+    seccionesCompletadas.datos &&
+    seccionesCompletadas.grados &&
+    seccionesCompletadas.materias &&
+    Object.keys(erroresValidacion).length === 0;
 
   // Función para actualizar el estado de las secciones
   const actualizarEstadoSecciones = () => {
@@ -1274,6 +1276,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
   // Función para agregar docente
   const handleAgregarDocente = () => {
+    if (!docenteSubpasosCompletos) {
+      setModalDocenteAccion({
+        tipo: 'error',
+        titulo: 'Formulario incompleto',
+        mensaje:
+          'Completa los tres subpasos: datos personales, grados/cursos y materias por asignación.',
+      });
+      return;
+    }
+
     // Validaciones básicas
     if (!docenteActual.nombres.trim() || !docenteActual.apellidos.trim() || !docenteActual.telefono.trim() || !docenteActual.email.trim() || !docenteActual.password.trim()) {
       setModalDocenteAccion({
@@ -1356,7 +1368,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     };
 
     setDocentes([...docentes, nuevoDocente]);
-    
+    setPasswordsPorDocente((prev) => ({
+      ...prev,
+      [nuevoDocente.id]: docenteActual.password,
+    }));
+
     // Guardar asignaciones del docente (nueva estructura)
     console.log('=== GUARDANDO ASIGNACIONES PARA DOCENTE:', nuevoDocente.id, '===');
     console.log('Asignaciones grado-curso:', asignacionesGradoCurso);
@@ -1382,7 +1398,12 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     if (confirm('¿Estás seguro de que quieres eliminar este docente?')) {
       // Remover de la lista de docentes
       setDocentes(prev => prev.filter(d => d.id !== docenteId));
-      
+      setPasswordsPorDocente((prev) => {
+        const next = { ...prev };
+        delete next[docenteId];
+        return next;
+      });
+
       // Remover sus asignaciones
       setAsignacionesPorDocente(prev => {
         const nuevasAsignaciones = { ...prev };
@@ -1525,6 +1546,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
   // Función para guardar docentes directamente
   const guardarDocentes = async () => {
+    if (saving) {
+      return;
+    }
     setMostrarConfirmacionGuardado(false);
     setSaving(true);
     try {
@@ -1543,8 +1567,13 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         console.log(`=== PROCESANDO DOCENTE ${i + 1}/${docentes.length} ===`);
         console.log('Docente:', docente);
         
-        // Generar contraseña aleatoria
-        const password = generarPasswordAleatoria();
+        const password = passwordsPorDocente[docente.id];
+        if (!password) {
+          erroresDocentes.push(
+            `Error guardando ${docente.nombres} ${docente.apellidos}: falta la contraseña definida en el wizard.`
+          );
+          continue;
+        }
         
         // Obtener asignaciones del docente desde las asignaciones guardadas
         const asignacionesRaw = asignacionesPorDocente[docente.id] || { asignaciones: [] };
@@ -2039,398 +2068,245 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   };
 
   return (
-    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <>
+    <Modal
+      open
+      onClose={onClose}
+      size="full"
+      className="max-w-5xl"
+      closeOnOverlayClick={false}
+      showCloseButton={false}
+      contentClassName="overflow-hidden flex flex-col flex-1 min-h-0"
+    >
           {duplicadosCursos !== null && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">Cursos duplicados</h3>
-                  <button
-                    type="button"
-                    onClick={() => setDuplicadosCursos(null)}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Cerrar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="px-6 py-4 text-sm text-slate-600">
-                  <p className="text-slate-800 font-medium">
-                    No se pueden crear cursos con nombres duplicados.
-                  </p>
-                  {duplicadosCursos.length > 0 ? (
-                    <div className="mt-3 space-y-2">
-                      {duplicadosCursos.map((nombre) => (
-                        <div
-                          key={nombre}
-                          className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-                        >
-                          <span className="font-medium">{nombre}</span>
-                          <span className="text-xs font-semibold text-red-600">Duplicado</span>
-                        </div>
-                      ))}
+            <Modal
+              open
+              onClose={() => setDuplicadosCursos(null)}
+              title="Cursos duplicados"
+              size="md"
+              zIndex={60}
+            >
+              <p className="text-sm text-[var(--color-text-secondary)] font-medium">
+                No se pueden crear cursos con nombres duplicados.
+              </p>
+              {duplicadosCursos.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {duplicadosCursos.map((nombre) => (
+                    <div
+                      key={nombre}
+                      className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                    >
+                      <span className="font-medium">{nombre}</span>
+                      <span className="text-xs font-semibold text-red-600">Duplicado</span>
                     </div>
-                  ) : (
-                    <p className="mt-2">Revisa los nombres de los cursos.</p>
-                  )}
+                  ))}
                 </div>
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setDuplicadosCursos(null)}
-                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    Entendido
-                  </button>
-                </div>
+              ) : (
+                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Revisa los nombres de los cursos.</p>
+              )}
+              <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex justify-end">
+                <Button type="button" variant="primary" onClick={() => setDuplicadosCursos(null)}>
+                  Entendido
+                </Button>
               </div>
-            </div>
+            </Modal>
           )}
           {mostrarExitoGradosCursos && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">Configuración guardada</h3>
-                  <button
-                    type="button"
-                    onClick={() => setMostrarExitoGradosCursos(null)}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Cerrar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="px-6 py-4 text-sm text-slate-600">
-                  {mostrarExitoGradosCursos.cursosCreados > 0 ? (
-                    <>
-                      <p className="text-slate-800 font-medium">
-                        ✅ Grados y cursos guardados correctamente.
-                      </p>
-                      <div className="mt-2">
-                        Grados creados: <span className="font-semibold">{mostrarExitoGradosCursos.gradosCreados}</span>
-                      </div>
-                      <div>
-                        Cursos creados: <span className="font-semibold">{mostrarExitoGradosCursos.cursosCreados}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-slate-800 font-medium">
-                        No hay cursos nuevos para guardar.
-                      </p>
-                      <p className="mt-2">Agrega un curso nuevo y vuelve a intentar.</p>
-                    </>
-                  )}
-                </div>
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setMostrarExitoGradosCursos(null)}
-                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    Entendido
-                  </button>
-                </div>
+            <Modal
+              open
+              onClose={() => setMostrarExitoGradosCursos(null)}
+              title="Configuración guardada"
+              size="md"
+              zIndex={60}
+            >
+              <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
+                {mostrarExitoGradosCursos.cursosCreados > 0 ? (
+                  <>
+                    <p className="font-medium text-[var(--color-text-primary)]">
+                      Grados y cursos guardados correctamente.
+                    </p>
+                    <p>Grados creados: <span className="font-semibold">{mostrarExitoGradosCursos.gradosCreados}</span></p>
+                    <p>Cursos creados: <span className="font-semibold">{mostrarExitoGradosCursos.cursosCreados}</span></p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium text-[var(--color-text-primary)]">No hay cursos nuevos para guardar.</p>
+                    <p>Agrega un curso nuevo y vuelve a intentar.</p>
+                  </>
+                )}
               </div>
-            </div>
+              <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex justify-end">
+                <Button type="button" variant="primary" onClick={() => setMostrarExitoGradosCursos(null)}>
+                  Entendido
+                </Button>
+              </div>
+            </Modal>
           )}
           {mostrarExitoAreasMaterias && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">Configuración guardada</h3>
-                  <button
-                    type="button"
-                    onClick={() => setMostrarExitoAreasMaterias(null)}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Cerrar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="px-6 py-4 text-sm text-slate-600">
-                  <p className="text-slate-800 font-medium">
-                    ✅ Áreas y materias guardadas correctamente.
-                  </p>
-                  <div className="mt-2">
-                    Áreas activas: <span className="font-semibold">{mostrarExitoAreasMaterias.areasCreadas}</span>
-                  </div>
-                  <div>
-                    Materias creadas: <span className="font-semibold">{mostrarExitoAreasMaterias.materiasCreadas}</span>
-                  </div>
-                </div>
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setMostrarExitoAreasMaterias(null)}
-                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                  >
-                    Entendido
-                  </button>
-                </div>
+            <Modal
+              open
+              onClose={() => setMostrarExitoAreasMaterias(null)}
+              title="Configuración guardada"
+              size="md"
+              zIndex={60}
+            >
+              <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
+                <p className="font-medium text-[var(--color-text-primary)]">Áreas y materias guardadas correctamente.</p>
+                <p>Áreas activas: <span className="font-semibold">{mostrarExitoAreasMaterias.areasCreadas}</span></p>
+                <p>Materias creadas: <span className="font-semibold">{mostrarExitoAreasMaterias.materiasCreadas}</span></p>
               </div>
-            </div>
+              <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex justify-end">
+                <Button type="button" variant="primary" onClick={() => setMostrarExitoAreasMaterias(null)}>
+                  Entendido
+                </Button>
+              </div>
+            </Modal>
           )}
           {modalEmailDocente && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">{modalEmailDocente.titulo}</h3>
-                  <button
-                    type="button"
-                    onClick={() => setModalEmailDocente(null)}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Cerrar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="px-6 py-4 text-sm text-slate-600">
-                  <p
-                    className={`font-medium ${
-                      modalEmailDocente.tipo === 'success'
-                        ? 'text-green-700'
-                        : modalEmailDocente.tipo === 'error'
-                        ? 'text-red-700'
-                        : 'text-slate-800'
-                    }`}
-                  >
-                    {modalEmailDocente.mensaje}
-                  </p>
-                </div>
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setModalEmailDocente(null)}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      modalEmailDocente.tipo === 'success'
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : modalEmailDocente.tipo === 'error'
-                        ? 'bg-red-600 text-white hover:bg-red-700'
-                        : 'bg-slate-600 text-white hover:bg-slate-700'
-                    }`}
-                  >
-                    Entendido
-                  </button>
-                </div>
+            <Modal
+              open
+              onClose={() => setModalEmailDocente(null)}
+              title={modalEmailDocente.titulo}
+              size="md"
+              zIndex={60}
+            >
+              <p className={`text-sm font-medium ${
+                modalEmailDocente.tipo === 'success' ? 'text-green-700' : modalEmailDocente.tipo === 'error' ? 'text-red-700' : 'text-[var(--color-text-primary)]'
+              }`}>
+                {modalEmailDocente.mensaje}
+              </p>
+              <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex justify-end">
+                <Button
+                  type="button"
+                  variant={modalEmailDocente.tipo === 'error' ? 'destructive' : 'primary'}
+                  onClick={() => setModalEmailDocente(null)}
+                >
+                  Entendido
+                </Button>
               </div>
-            </div>
+            </Modal>
           )}
           {modalDocenteAccion && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">{modalDocenteAccion.titulo}</h3>
-                  <button
-                    type="button"
-                    onClick={() => setModalDocenteAccion(null)}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Cerrar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="px-6 py-4 text-sm text-slate-600">
-                  <p
-                    className={`font-medium ${
-                      modalDocenteAccion.tipo === 'success'
-                        ? 'text-green-700'
-                        : modalDocenteAccion.tipo === 'error'
-                        ? 'text-red-700'
-                        : 'text-slate-800'
-                    }`}
-                  >
-                    {modalDocenteAccion.mensaje}
-                  </p>
-                </div>
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setModalDocenteAccion(null)}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      modalDocenteAccion.tipo === 'success'
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : modalDocenteAccion.tipo === 'error'
-                        ? 'bg-red-600 text-white hover:bg-red-700'
-                        : 'bg-slate-600 text-white hover:bg-slate-700'
-                    }`}
-                  >
-                    Entendido
-                  </button>
-                </div>
+            <Modal
+              open
+              onClose={() => setModalDocenteAccion(null)}
+              title={modalDocenteAccion.titulo}
+              size="md"
+              zIndex={60}
+            >
+              <p className={`text-sm font-medium ${
+                modalDocenteAccion.tipo === 'success' ? 'text-green-700' : modalDocenteAccion.tipo === 'error' ? 'text-red-700' : 'text-[var(--color-text-primary)]'
+              }`}>
+                {modalDocenteAccion.mensaje}
+              </p>
+              <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex justify-end">
+                <Button
+                  type="button"
+                  variant={modalDocenteAccion.tipo === 'error' ? 'destructive' : 'primary'}
+                  onClick={() => setModalDocenteAccion(null)}
+                >
+                  Entendido
+                </Button>
               </div>
-            </div>
+            </Modal>
           )}
           {modalEstudianteAccion && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">{modalEstudianteAccion.titulo}</h3>
-                  <button
-                    type="button"
-                    onClick={() => setModalEstudianteAccion(null)}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Cerrar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="px-6 py-4 text-sm text-slate-600">
-                  <p
-                    className={`font-medium ${
-                      modalEstudianteAccion.tipo === 'success'
-                        ? 'text-green-700'
-                        : modalEstudianteAccion.tipo === 'error'
-                        ? 'text-red-700'
-                        : 'text-slate-800'
-                    }`}
-                  >
-                    {modalEstudianteAccion.mensaje}
-                  </p>
-                </div>
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setModalEstudianteAccion(null)}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
-                      modalEstudianteAccion.tipo === 'success'
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : modalEstudianteAccion.tipo === 'error'
-                        ? 'bg-red-600 text-white hover:bg-red-700'
-                        : 'bg-slate-600 text-white hover:bg-slate-700'
-                    }`}
-                  >
-                    Entendido
-                  </button>
-                </div>
+            <Modal
+              open
+              onClose={() => setModalEstudianteAccion(null)}
+              title={modalEstudianteAccion.titulo}
+              size="md"
+              zIndex={60}
+            >
+              <p className={`text-sm font-medium ${
+                modalEstudianteAccion.tipo === 'success' ? 'text-green-700' : modalEstudianteAccion.tipo === 'error' ? 'text-red-700' : 'text-[var(--color-text-primary)]'
+              }`}>
+                {modalEstudianteAccion.mensaje}
+              </p>
+              <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex justify-end">
+                <Button
+                  type="button"
+                  variant={modalEstudianteAccion.tipo === 'error' ? 'destructive' : 'primary'}
+                  onClick={() => setModalEstudianteAccion(null)}
+                >
+                  Entendido
+                </Button>
               </div>
-            </div>
+            </Modal>
           )}
           {estudianteParaEliminar && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">Eliminar estudiante</h3>
-                  <button
-                    type="button"
-                    onClick={() => setEstudianteParaEliminar(null)}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Cerrar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="px-6 py-4 text-sm text-slate-600">
-                  <p className="text-slate-800 font-medium">
-                    ¿Eliminar al estudiante &quot;{estudianteParaEliminar.nombre}&quot;?
-                  </p>
-                  <p className="mt-2">Esta acción lo removerá de la lista actual.</p>
-                </div>
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setEstudianteParaEliminar(null)}
-                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEstudiantes(prev =>
-                        prev.filter(e => e.id !== estudianteParaEliminar.estudianteId)
-                      );
-                      console.log(`🗑️ Estudiante eliminado: ${estudianteParaEliminar.estudianteId}`);
-                      setEstudianteParaEliminar(null);
-                      setModalEstudianteAccion({
-                        tipo: 'success',
-                        titulo: 'Estudiante eliminado',
-                        mensaje: 'Estudiante eliminado correctamente.'
-                      });
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    Eliminar
-                  </button>
-                </div>
+            <Modal
+              open
+              onClose={() => setEstudianteParaEliminar(null)}
+              title="Eliminar estudiante"
+              size="md"
+              zIndex={60}
+            >
+              <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
+                <p className="font-medium text-[var(--color-text-primary)]">
+                  ¿Eliminar al estudiante &quot;{estudianteParaEliminar.nombre}&quot;?
+                </p>
+                <p>Esta acción lo removerá de la lista actual.</p>
               </div>
-            </div>
+              <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+                <Button type="button" variant="outline" onClick={() => setEstudianteParaEliminar(null)}>
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    setEstudiantes((prev) => prev.filter((e) => e.id !== estudianteParaEliminar.estudianteId));
+                    setEstudianteParaEliminar(null);
+                    setModalEstudianteAccion({
+                      tipo: 'success',
+                      titulo: 'Estudiante eliminado',
+                      mensaje: 'Estudiante eliminado correctamente.',
+                    });
+                  }}
+                >
+                  Eliminar
+                </Button>
+              </div>
+            </Modal>
           )}
           {cursoParaEliminar && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">Confirmar eliminación</h3>
-                  <button
-                    type="button"
-                    onClick={() => !eliminandoCurso && setCursoParaEliminar(null)}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Cerrar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="px-6 py-4 text-sm text-slate-600">
-                  <p className="text-slate-800 font-medium">
-                    ¿Eliminar el curso &quot;{cursoParaEliminar.nombre}&quot;?
-                  </p>
-                  <p className="mt-2">
-                    Ten en cuenta que se eliminará toda la información relacionada: estudiantes,
-                    asignaciones y recordatorios.
-                  </p>
-                </div>
-                <div className="px-6 py-4 border-t border-slate-200 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setCursoParaEliminar(null)}
-                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                    disabled={eliminandoCurso}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setEliminandoCurso(true);
-                      await eliminarCursoGuardado(cursoParaEliminar.cursoId, cursoParaEliminar.gradoId);
-                      setEliminandoCurso(false);
-                      setCursoParaEliminar(null);
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center"
-                    disabled={eliminandoCurso}
-                  >
-                    {eliminandoCurso ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Eliminando...
-                      </>
-                    ) : (
-                      'Eliminar'
-                    )}
-                  </button>
-                </div>
+            <Modal
+              open
+              onClose={() => !eliminandoCurso && setCursoParaEliminar(null)}
+              title="Confirmar eliminación"
+              size="md"
+              zIndex={60}
+              closeOnOverlayClick={!eliminandoCurso}
+            >
+              <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
+                <p className="font-medium text-[var(--color-text-primary)]">
+                  ¿Eliminar el curso &quot;{cursoParaEliminar.nombre}&quot;?
+                </p>
+                <p>
+                  Ten en cuenta que se eliminará toda la información relacionada: estudiantes,
+                  asignaciones y recordatorios.
+                </p>
               </div>
-            </div>
+              <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+                <Button type="button" variant="outline" onClick={() => setCursoParaEliminar(null)} disabled={eliminandoCurso}>
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={eliminandoCurso}
+                  onClick={async () => {
+                    setEliminandoCurso(true);
+                    await eliminarCursoGuardado(cursoParaEliminar.cursoId, cursoParaEliminar.gradoId);
+                    setEliminandoCurso(false);
+                    setCursoParaEliminar(null);
+                  }}
+                >
+                  {eliminandoCurso ? 'Eliminando…' : 'Eliminar'}
+                </Button>
+              </div>
+            </Modal>
           )}
         {/* Header: color fijo (no usa branding de la institución) */}
         <div className="px-4 sm:px-6 py-3 sm:py-4 relative bg-slate-700 text-white">
@@ -2713,29 +2589,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
           )}
 
           {/* Modal de Resumen */}
-          {mostrarResumen && (
-            <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                <div className="bg-green-600 text-white px-6 py-4">
-                  <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h2 className="text-xl sm:text-2xl font-bold break-words">📋 Resumen - Grados y Cursos</h2>
-                      <p className="text-green-100 text-sm mt-1">
-                        Revisa los datos antes de guardar
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setMostrarResumen(false)}
-                      className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-6 overflow-y-auto max-h-[70vh]">
+          <Modal
+            open={mostrarResumen}
+            onClose={() => setMostrarResumen(false)}
+            title="Resumen — grados y cursos"
+            size="full"
+            className="max-w-4xl"
+            zIndex={60}
+            contentClassName="overflow-y-auto flex-1 px-6 py-4 max-h-[70vh]"
+          >
+            <p className="text-sm text-[var(--color-text-secondary)] mb-4">Revisa los datos antes de guardar.</p>
                   {/* Resumen de Grados */}
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
@@ -2817,69 +2680,30 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Botones de acción */}
-                <div className="border-t border-slate-200 px-6 py-4 bg-slate-50">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <button
-                      onClick={() => setMostrarResumen(false)}
-                      className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleSaveGradosYCursos}
-                      disabled={saving}
-                      className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center"
-                    >
-                      {saving ? (
-                        <>
-                          <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          ✅ Confirmar y Guardar
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setMostrarResumen(false)}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="primary" onClick={handleSaveGradosYCursos} disabled={saving}>
+                {saving ? 'Guardando…' : 'Confirmar y guardar'}
+              </Button>
             </div>
-          )}
+          </Modal>
 
           {/* Modal de Resumen para Áreas y Materias */}
-          {mostrarResumenAreas && (
-            <div className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                <div className="bg-purple-600 text-white px-6 py-4">
-                  <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h2 className="text-xl sm:text-2xl font-bold break-words">📚 Resumen - Áreas y Materias</h2>
-                      <p className="text-purple-100 text-sm mt-1">
-                        Revisa las áreas, materias y asignaciones antes de guardar
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setMostrarResumenAreas(false)}
-                      className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-6 overflow-y-auto max-h-[70vh]">
+          <Modal
+            open={mostrarResumenAreas}
+            onClose={() => setMostrarResumenAreas(false)}
+            title="Resumen — áreas y materias"
+            size="full"
+            className="max-w-4xl"
+            zIndex={60}
+            contentClassName="overflow-y-auto flex-1 px-6 py-4 max-h-[70vh]"
+          >
+            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+              Revisa las áreas, materias y asignaciones antes de guardar.
+            </p>
                   {/* Resumen de Áreas */}
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
@@ -2994,44 +2818,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Botones de acción */}
-                <div className="border-t border-slate-200 px-6 py-4 bg-slate-50">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <button
-                      onClick={() => setMostrarResumenAreas(false)}
-                      className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleSaveAreasYMaterias}
-                      disabled={saving}
-                      className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center"
-                    >
-                      {saving ? (
-                        <>
-                          <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          ✅ Confirmar y Guardar
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setMostrarResumenAreas(false)}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="primary" onClick={handleSaveAreasYMaterias} disabled={saving}>
+                {saving ? 'Guardando…' : 'Confirmar y guardar'}
+              </Button>
             </div>
-          )}
+          </Modal>
 
           {currentStep === 2 && (
             <div>
@@ -3981,20 +3777,34 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               >
                 Limpiar formulario
               </button>
-              <button
-                onClick={handleAgregarDocente}
-                disabled={Object.keys(erroresValidacion).length > 0}
-                className={`w-full sm:w-auto px-6 py-2 rounded-lg transition-colors flex items-center justify-center ${
-                  Object.keys(erroresValidacion).length > 0
-                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Agregar Docente
-              </button>
+              <div className="flex flex-col items-stretch sm:items-end gap-2">
+                {!docenteSubpasosCompletos && (
+                  <p className="text-xs text-amber-700 text-right">
+                    Completa:{' '}
+                    {[
+                      !seccionesCompletadas.datos && 'datos personales',
+                      !seccionesCompletadas.grados && 'grados y cursos',
+                      !seccionesCompletadas.materias && 'materias por grado-curso',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                )}
+                <button
+                  onClick={handleAgregarDocente}
+                  disabled={!docenteSubpasosCompletos}
+                  className={`w-full sm:w-auto px-6 py-2 rounded-lg transition-colors flex items-center justify-center ${
+                    !docenteSubpasosCompletos
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Agregar Docente
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -4727,7 +4537,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     // Limpiar todos los datos en caché
                     limpiarDatosCompletos();
                     
-                    showSuccess('¡Configuración completada!', 'Tu institución está lista para comenzar a usar el sistema de agenda virtual.');
+                    showSuccess('Configuración completada', 'Tu institución está lista para enviar recordatorios.');
                     onClose();
                   }}
                   className="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-base sm:text-lg font-medium"
@@ -4773,99 +4583,50 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             </button>
           </div>
         </div>
-      </div>
+    </Modal>
 
-      {/* Modal de Confirmación de Guardado */}
-      {mostrarConfirmacionGuardado && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-            <div className="bg-blue-600 text-white px-6 py-4">
-              <div className="flex items-center">
-                <svg className="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <h2 className="text-xl font-bold">Confirmar Guardado</h2>
-                  <p className="text-blue-100 text-sm">¿Estás seguro de guardar los docentes?</p>
-                </div>
-              </div>
+      <Modal
+        open={mostrarConfirmacionGuardado}
+        onClose={() => !saving && setMostrarConfirmacionGuardado(false)}
+        title="Confirmar guardado"
+        size="md"
+        zIndex={70}
+        closeOnOverlayClick={!saving}
+      >
+        <p className="text-sm text-[var(--color-text-secondary)] mb-4">¿Estás seguro de guardar los docentes?</p>
+        <div className="bg-[var(--color-surface-nested)] rounded-lg p-4 mb-4 border border-[var(--color-border-light)]">
+          <h3 className="font-medium text-[var(--color-text-primary)] mb-2">Resumen a guardar</h3>
+          <div className="space-y-1 text-sm text-[var(--color-text-secondary)]">
+            <div className="flex justify-between">
+              <span>Docentes:</span>
+              <span className="font-medium">{docentes.length}</span>
             </div>
-            
-            <div className="p-6">
-              <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                <h3 className="font-medium text-blue-900 mb-2">📋 Resumen a guardar:</h3>
-                <div className="space-y-1 text-sm text-blue-700">
-                  <div className="flex justify-between">
-                    <span>Docentes:</span>
-                    <span className="font-medium">{docentes.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Asignaciones totales:</span>
-                    <span className="font-medium">
-                      {Object.values(asignacionesPorDocente).reduce((total, asign) => total + asign.asignaciones.length, 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Materias asignadas:</span>
-                    <span className="font-medium">
-                      {Object.values(asignacionesPorDocente).reduce((total, asign) => total + asign.asignaciones.reduce((subtotal, a) => subtotal + a.materiasSeleccionadas.length, 0), 0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm text-yellow-800">
-                      <strong>Importante:</strong> Una vez guardados, los docentes recibirán un email con sus credenciales de acceso.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setMostrarConfirmacionGuardado(false)}
-                  disabled={saving}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={guardarDocentes}
-                  disabled={saving}
-                  className={`px-6 py-2 rounded-lg transition-colors flex items-center ${
-                    saving
-                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700'
-                  }`}
-                >
-                  {saving ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Confirmar y Guardar
-                    </>
-                  )}
-                </button>
-              </div>
+            <div className="flex justify-between">
+              <span>Asignaciones totales:</span>
+              <span className="font-medium">
+                {Object.values(asignacionesPorDocente).reduce((total, asign) => total + asign.asignaciones.length, 0)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Materias asignadas:</span>
+              <span className="font-medium">
+                {Object.values(asignacionesPorDocente).reduce((total, asign) => total + asign.asignaciones.reduce((subtotal, a) => subtotal + a.materiasSeleccionadas.length, 0), 0)}
+              </span>
             </div>
           </div>
         </div>
-      )}
+        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+          <strong>Importante:</strong> Una vez guardados, los docentes recibirán un email con sus credenciales de acceso.
+        </p>
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+          <Button type="button" variant="outline" onClick={() => setMostrarConfirmacionGuardado(false)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button type="button" variant="primary" onClick={guardarDocentes} disabled={saving}>
+            {saving ? 'Guardando…' : 'Confirmar y guardar'}
+          </Button>
+        </div>
+      </Modal>
 
       {/* Modal eliminado - ya no se necesita */}
       {false && (
@@ -5073,6 +4834,6 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

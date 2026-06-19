@@ -8,6 +8,7 @@ import PricingSection from '@/components/landing/PricingSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import CTASection from '@/components/landing/CTASection';
 import Footer from '@/components/landing/Footer';
+import LegacyPaymentSuccessRedirect from '@/components/payments/LegacyPaymentSuccessRedirect';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://agenda-lilac-sigma.vercel.app';
 
@@ -55,6 +56,7 @@ export default function Home() {
         <CTASection />
       </main>
       <Footer />
+      <LegacyPaymentSuccessRedirect />
     </div>
   );
 }

@@ -3,6 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { showSuccess } from '@/lib/notifications';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import ErrorBanner from '@/components/ui/ErrorBanner';
+import Input from '@/components/ui/Input';
 
 interface AddMateriaModalProps {
   isOpen: boolean;
@@ -141,7 +145,7 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
       if (response.ok) {
         const data = await response.json();
         
-        await showSuccess('¡Materia Creada!', `La materia "${formData.nombre}" se ha creado exitosamente`);
+        await showSuccess('Materia creada', `Se creó la materia "${formData.nombre}".`);
         onSuccess();
         onClose();
       } else {
@@ -158,60 +162,40 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 overflow-x-hidden">
-        <form onSubmit={handleSubmit}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-slate-900">Agregar Materia</h2>
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+    <Modal open={isOpen} onClose={onClose} title="Agregar materia" size="lg">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <ErrorBanner title={error} />}
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Área *
-                </label>
-                <select
-                  value={formData.area_nombre}
-                  onChange={(e) => {
-                    const areaNombre = e.target.value;
-                    const normalizar = (texto: string) => texto.trim().toLowerCase();
-                    // Usar áreas predeterminadas para el ID: la API acepta IDs 1-13 y crea el área en la institución si no existe
-                    const areaPredeterminada = areasPredeterminadas.find(
-                      (a) => normalizar(a.nombre) === normalizar(areaNombre)
-                    );
-                    setFormData({
-                      ...formData,
-                      area_nombre: areaNombre,
-                      area_id: areaPredeterminada ? String(areaPredeterminada.id) : '0'
-                    });
-                  }}
-                  className="w-full max-w-full min-w-0 px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 placeholder:text-slate-400 truncate"
-                  required
-                >
-                  <option value="" className="text-slate-900">Seleccionar área</option>
-                  {areasPredeterminadas.map((area) => (
-                    <option key={area.id} value={area.nombre} className="text-slate-900">
-                      {area.nombre} {area.es_opcional ? '(Opcional)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+        <div className="min-w-0">
+          <label htmlFor="materia-area" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+            Área *
+          </label>
+          <select
+            id="materia-area"
+            value={formData.area_nombre}
+            onChange={(e) => {
+              const areaNombre = e.target.value;
+              const normalizar = (texto: string) => texto.trim().toLowerCase();
+              const areaPredeterminada = areasPredeterminadas.find(
+                (a) => normalizar(a.nombre) === normalizar(areaNombre)
+              );
+              setFormData({
+                ...formData,
+                area_nombre: areaNombre,
+                area_id: areaPredeterminada ? String(areaPredeterminada.id) : '0',
+              });
+            }}
+            className="w-full max-w-full min-w-0 px-4 py-2.5 text-base border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-focus)] truncate"
+            required
+          >
+            <option value="">Seleccionar área</option>
+            {areasPredeterminadas.map((area) => (
+              <option key={area.id} value={area.nombre}>
+                {area.nombre} {area.es_opcional ? '(Opcional)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
 
               {formData.area_nombre && (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -235,65 +219,23 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                  Nombre de la Materia *
-                  <span className="relative group ml-2">
-                    <button
-                      type="button"
-                      aria-label="Información para nombrar materias"
-                      className="text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
-                      </svg>
-                    </button>
-                    <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                      <div className="font-semibold text-slate-700">Ejemplo:</div>
-                      <div>Álgebra, Cálculo, Matemáticas básicas, Geometría</div>
-                      <div className="mt-2 text-[11px] text-orange-600">
-                        Ten en cuenta las políticas del instituto: usa nombres claros, sin abreviaturas y con la nomenclatura oficial.
-                      </div>
-                    </div>
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-slate-900 bg-white placeholder-slate-500"
-                  placeholder="Ej: Matemáticas, Español, Ciencias"
-                  required
-                />
-              </div>
-            </div>
+              <Input
+                label="Nombre de la materia"
+                value={formData.nombre}
+                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                placeholder="Ej: Matemáticas, Español, Ciencias"
+                required
+              />
 
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-400 transition-colors flex items-center"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creando...
-                  </>
-                ) : (
-                  'Crear Materia'
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-[var(--color-border-light)]">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? 'Guardando…' : 'Guardar materia'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

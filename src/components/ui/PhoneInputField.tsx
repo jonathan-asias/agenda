@@ -2,6 +2,7 @@
 
 import PhoneInput from 'react-phone-number-input';
 import { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
+import flags from 'react-phone-number-input/flags';
 import es from 'react-phone-number-input/locale/es.json';
 import 'react-phone-number-input/style.css';
 
@@ -14,10 +15,20 @@ const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries(
   (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
 );
 
+/** Recorta el valor E.164 para no superar `maxDigits` dígitos. */
+function limitPhoneDigits(phone: string, maxDigits: number): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length <= maxDigits) return phone;
+  const truncated = digits.slice(0, maxDigits);
+  return phone.startsWith('+') ? `+${truncated}` : truncated;
+}
+
 export interface PhoneInputFieldProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  /** Máximo de dígitos (indicativo + número). Por defecto 12 (ej. +57 + 10 dígitos). */
+  maxDigits?: number;
   /** Mensaje cuando el número es inválido (valor con indicativo). */
   invalidMessage?: string;
   /** Mostrar borde verde cuando el número es válido. */
@@ -37,6 +48,7 @@ export default function PhoneInputField({
   value,
   onChange,
   disabled = false,
+  maxDigits = 12,
   invalidMessage = defaultInvalidMessage,
   showValidState = false,
   id,
@@ -47,6 +59,11 @@ export default function PhoneInputField({
 }: PhoneInputFieldProps) {
   const invalid = !!value && !isPhoneValid(value);
   const valid = showValidState && !!value && isPhoneValid(value);
+
+  const handleChange = (next: string | undefined) => {
+    const raw = next ?? '';
+    onChange(maxDigits != null ? limitPhoneDigits(raw, maxDigits) : raw);
+  };
 
   const inputClassName = [
     'flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 min-w-0',
@@ -77,10 +94,12 @@ export default function PhoneInputField({
         international
         defaultCountry="CO"
         countries={COUNTRY_OPTIONS_ORDER}
+        flags={flags}
         labels={es}
         placeholder={placeholder}
         value={value || undefined}
-        onChange={(v) => onChange(v || '')}
+        onChange={handleChange}
+        limitMaxLength
         disabled={disabled}
         className={wrapperClassName}
         numberInputProps={{

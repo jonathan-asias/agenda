@@ -1,11 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
-
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
+import {
+  assertRecordBelongsToSede,
+  sedeDataForCreate,
+  sedeErrorToResponse,
+} from '@/lib/sede-scope';
 type EstudianteInput = {
   nombres: string;
   apellidos: string;
@@ -19,28 +23,14 @@ type EstudianteInput = {
 
 export async function POST(request: NextRequest) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
-    console.log('=== INICIANDO CREACIÓN DE ESTUDIANTES ===');
-    
-    const body = await request.json() as {
-      institucionId: number;
+    const body = await request.json() as {      institucionId: number;
       estudiantes: EstudianteInput[];
     };
-    console.log('Datos recibidos:', JSON.stringify(body, null, 2));
     
     const { institucionId, estudiantes } = body;
     
-    console.log('institucionId extraído:', institucionId);
-    console.log('estudiantes extraídos:', estudiantes);
-    console.log('Tipo de estudiantes:', typeof estudiantes);
-    console.log('Es array:', Array.isArray(estudiantes));
-    console.log('Longitud de estudiantes:', estudiantes?.length);
     
-    // Validaciones básicas
+    // Validaciones bÃ¡sicas
     if (!institucionId) {
       return NextResponse.json(
         { success: false, error: 'institucionId es requerido' },
@@ -55,9 +45,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar que la institución existe
-    const institucion = await prisma.instituciones.findUnique({
-      where: { id: institucionId }
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+    const institucion = await tx.instituciones.findUnique({      where: { id: institucionId }
     });
     
     if (!institucion) {
@@ -67,7 +56,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    enforceTenant(userInstitutionId, institucionId);
+    enforceTenant(institutionId, institucionId);
+
+    const sedeData = sedeDataForCreate(scope);
     
     type EstudianteCreadoResumen = {
       id: number;
@@ -91,32 +82,29 @@ export async function POST(request: NextRequest) {
     const errores: ErrorRegistro[] = [];
     
     // Crear cada estudiante
-    console.log('Iniciando bucle de creación de estudiantes...');
     for (let i = 0; i < estudiantes.length; i++) {
       const estudiante = estudiantes[i];
       
-      console.log(`=== PROCESANDO ESTUDIANTE ${i + 1}/${estudiantes.length} ===`);
-      console.log('Datos del estudiante:', JSON.stringify(estudiante, null, 2));
       
       try {
-        console.log(`Creando estudiante ${i + 1}/${estudiantes.length}:`, estudiante.codigo_estudiantil);
         
-        // Crear estudiante en la base de datos
-        console.log('Creando estudiante en BD con datos:', {
-          nombres: estudiante.nombres,
-          apellidos: estudiante.apellidos,
-          codigo_estudiantil: estudiante.codigo_estudiantil,
-          nombre_acudiente: estudiante.nombre_acudiente,
-          correo_acudiente: estudiante.correo_acudiente,
-          telefono_acudiente: estudiante.telefono_acudiente,
-          grado_id: estudiante.grado_id,
-          curso_id: estudiante.curso_id,
-          institucion_id: institucionId,
-          activo: true
+        const curso = await tx.cursos.findFirst({
+          where: { id: estudiante.curso_id, institucion_id: institucionId },
         });
+        if (!curso) {
+          throw new Error(`Curso con ID ${estudiante.curso_id} no encontrado`);
+        }
+        assertRecordBelongsToSede(curso.sede_id, scope);
 
-        const estudianteCreado = await prisma.estudiantes.create({
-          data: {
+        const grado = await tx.grados.findFirst({
+          where: { id: estudiante.grado_id, institucion_id: institucionId },
+        });
+        if (!grado) {
+          throw new Error(`Grado con ID ${estudiante.grado_id} no encontrado`);
+        }
+        assertRecordBelongsToSede(grado.sede_id, scope);
+
+        const estudianteCreado = await tx.estudiantes.create({          data: {
             nombres: estudiante.nombres,
             apellidos: estudiante.apellidos,
             codigo_estudiantil: estudiante.codigo_estudiantil,
@@ -126,12 +114,11 @@ export async function POST(request: NextRequest) {
             grado_id: estudiante.grado_id,
             curso_id: estudiante.curso_id,
             institucion_id: institucionId,
+            ...sedeData,
             activo: true
           }
         });
         
-        console.log('Estudiante creado en BD:', estudianteCreado.id);
-        console.log('Estudiante creado completo:', JSON.stringify(estudianteCreado, null, 2));
         
         estudiantesCreados.push({
           id: estudianteCreado.id,
@@ -156,9 +143,6 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    console.log('=== RESULTADO FINAL ===');
-    console.log('Estudiantes creados:', estudiantesCreados.length);
-    console.log('Errores:', errores.length);
     
     return NextResponse.json({
       success: true,
@@ -171,8 +155,12 @@ export async function POST(request: NextRequest) {
         fallidos: errores.length
       }
     });
-    
+    });    
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error en endpoint estudiantes:', error);

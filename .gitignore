@@ -13,6 +13,7 @@ dist/
 # Environment variables
 .env
 .env.local
+.env.pentest
 .env.development.local
 .env.test.local
 .env.production
@@ -100,3 +101,18 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+
+# Documentation and local reports (no subir a GitHub)
+docs/
+*.md
+!README.md
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# Local dev / E2E script artifacts
+scripts/**/*.png
+scripts/**/*.jpg
+scripts/**/*.jpeg
+scripts/**/*.webp
+scripts/e2e-*.png

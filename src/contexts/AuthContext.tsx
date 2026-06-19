@@ -52,12 +52,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [role, setRole] = useState<UserRole | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  const getUserInfo = async (userEmail: string): Promise<{ institutionId: number | null; role: UserRole | null }> => {
+  const getUserInfo = async (_userEmail: string): Promise<{ institutionId: number | null; role: UserRole | null }> => {
     try {
       const resp = await fetch('/api/auth/get-user-institution', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail })
+        body: JSON.stringify({}),
       });
       if (!resp.ok) return { institutionId: null, role: null };
       const data = await resp.json();

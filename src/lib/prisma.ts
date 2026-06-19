@@ -1,12 +1,22 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { serverEnv } from '@/lib/env';
+import {
+  extractSupabaseProjectRef,
+  normalizePoolerConnectionUrl,
+} from '@/lib/db/connection-url';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const connectionString = serverEnv.DATABASE_URL;
+function getTenantConnectionString(): string {
+  const raw = serverEnv.DATABASE_URL;
+  const ref = extractSupabaseProjectRef(serverEnv.DATABASE_BYPASS_URL);
+  return normalizePoolerConnectionUrl(raw, ref);
+}
+
+const connectionString = getTenantConnectionString();
 const adapter = new PrismaPg({ connectionString });
 
 export const prisma =

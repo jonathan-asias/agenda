@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import type { Recordatorio } from '@/types/recordatorio';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import ErrorBanner from '@/components/ui/ErrorBanner';
 
 interface EditRecordatorioModalProps {
   isOpen: boolean;
@@ -132,37 +135,13 @@ export default function EditRecordatorioModal({
     onClose();
   };
 
-  if (!isOpen || !recordatorio) return null;
+  if (!recordatorio) return null;
 
-  // Obtener la fecha mínima (hoy)
   const hoy = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] flex flex-col">
-        <div className="bg-white border-b border-slate-200 p-6 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">✏️ Editar Recordatorio</h2>
-              <p className="text-slate-600">Actualiza la información del recordatorio</p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
+    <Modal open={isOpen} onClose={handleClose} title="Editar recordatorio" size="lg">
+      <form onSubmit={handleSubmit} className="space-y-6">
           {/* Información no editable (solo lectura) */}
           <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 space-y-3">
             <p className="text-sm font-semibold text-slate-700 mb-3">Información del recordatorio (no editable)</p>
@@ -249,48 +228,18 @@ export default function EditRecordatorioModal({
             </p>
           </div>
           
-          {error && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-              <div className="flex items-center">
-                <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <p className="text-red-700 font-medium">{error}</p>
-              </div>
-            </div>
-          )}
+          {error && <ErrorBanner title={error} />}
 
-          <div className="flex space-x-4 pt-4 border-t border-slate-200 mt-6 flex-shrink-0">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                  Actualizando...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Actualizar Recordatorio
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-6 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-all duration-200 border-2 border-slate-200"
-            >
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-[var(--color-border-light)]">
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancelar
-            </button>
+            </Button>
+            <Button type="submit" variant="primary" disabled={submitting} className="flex-1 sm:ml-auto">
+              {submitting ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }
 

@@ -6,12 +6,23 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Institucion, Sede, InstitucionAdministrador } from '@/types';
 import { Button } from '@/components/ui';
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
 import InstitucionAuthGuard from '@/components/auth/InstitucionAuthGuard';
 import AddAdministradorModal from './AddAdministradorModal';
 import Footer from './Footer';
 import Header from './Header';
+import { useSubscriptionAccess } from '@/contexts/SubscriptionAccessContext';
 
 export default function InstitucionPage() {
+  return (
+    <InstitucionAuthGuard>
+      <InstitucionPageContent />
+    </InstitucionAuthGuard>
+  );
+}
+
+function InstitucionPageContent() {
   const params = useParams();
   const [institucion, setInstitucion] = useState<Institucion | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,6 +42,7 @@ export default function InstitucionPage() {
   });
   const [isUpdatingAdmin, setIsUpdatingAdmin] = useState(false);
   const primaryColor = institucion?.color_primario || '#2563eb';
+  const { canWrite } = useSubscriptionAccess();
 
   const fetchInstitucion = useCallback(async () => {
     try {
@@ -174,7 +186,7 @@ export default function InstitucionPage() {
   }
 
   return (
-    <InstitucionAuthGuard>
+    <>
       <Header title={institucion.nombre} />
       <div className="min-h-screen bg-blue-50 flex flex-col">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
@@ -211,6 +223,8 @@ export default function InstitucionPage() {
               variant="primary"
               onClick={() => setShowAddAdminModal(true)}
               className="w-full sm:w-auto"
+              disabled={!canWrite}
+              title={!canWrite ? 'Suscripción cancelada: solo lectura' : undefined}
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -245,7 +259,8 @@ export default function InstitucionPage() {
                     <button
                       type="button"
                       onClick={() => handleEditAdmin(admin)}
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100"
+                      disabled={!canWrite}
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1 0v14m-7-7h14" />
@@ -255,7 +270,8 @@ export default function InstitucionPage() {
                     <button
                       type="button"
                       onClick={() => handleDeleteAdmin(admin)}
-                      className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100"
+                      disabled={!canWrite}
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -277,7 +293,7 @@ export default function InstitucionPage() {
               <p className="text-slate-600 text-sm max-w-md mx-auto mb-6">
                 Los administradores tendrán la función de crear y gestionar docentes, estudiantes, materias y cursos de la sede a la cual estén vinculados.
               </p>
-              <Button type="button" variant="primary" onClick={() => setShowAddAdminModal(true)}>
+              <Button type="button" variant="primary" onClick={() => setShowAddAdminModal(true)} disabled={!canWrite}>
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
@@ -298,198 +314,128 @@ export default function InstitucionPage() {
         }}
         institucionId={parseInt(params.id as string)}
       />
-      {showViewAdminModal && selectedAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div
-              className="flex items-center justify-between px-6 py-4 text-white"
-              style={{ backgroundColor: primaryColor }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A4 4 0 0110 15h4a4 4 0 014.879 2.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Administrador</h3>
-                  <p className="text-sm text-white/80">Detalles completos</p>
-                </div>
+      <Modal
+        open={showViewAdminModal && !!selectedAdmin}
+        onClose={() => setShowViewAdminModal(false)}
+        title="Administrador"
+        size="md"
+      >
+        {selectedAdmin && (
+          <>
+            <p className="text-sm text-[var(--color-text-secondary)] mb-4">Detalles completos del administrador.</p>
+            <div className="mb-5">
+              <p className="text-lg font-semibold text-[var(--color-text-primary)]">
+                {selectedAdmin.nombre} {selectedAdmin.apellido}
+              </p>
+              <p className="text-sm text-[var(--color-text-secondary)]">{selectedAdmin.cargo}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 text-sm">
+              <div className="bg-[var(--color-surface-nested)] border border-[var(--color-border-light)] rounded-xl p-3">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">Correo</p>
+                <p className="text-[var(--color-text-primary)] font-medium">{selectedAdmin.correo || selectedAdmin.email}</p>
               </div>
-              <button
+              <div className="bg-[var(--color-surface-nested)] border border-[var(--color-border-light)] rounded-xl p-3">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">Teléfono</p>
+                <p className="text-[var(--color-text-primary)] font-medium">{selectedAdmin.telefono || 'No registrado'}</p>
+              </div>
+              <div className="bg-[var(--color-surface-nested)] border border-[var(--color-border-light)] rounded-xl p-3">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-text-secondary)] mb-1">Cargo</p>
+                <p className="text-[var(--color-text-primary)] font-medium">{selectedAdmin.cargo}</p>
+              </div>
+            </div>
+            <div className="pt-4 mt-4 border-t border-[var(--color-border-light)]">
+              <Button type="button" variant="primary" fullWidth onClick={() => setShowViewAdminModal(false)}>
+                Cerrar
+              </Button>
+            </div>
+          </>
+        )}
+      </Modal>
+      <Modal
+        open={showEditAdminModal && !!selectedAdmin}
+        onClose={() => setShowEditAdminModal(false)}
+        title="Editar administrador"
+        size="lg"
+      >
+        {selectedAdmin && (
+          <>
+            <p className="text-sm text-[var(--color-text-secondary)] mb-4">Actualiza los datos del administrador.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Nombre"
+                value={editAdminData.nombre}
+                onChange={(e) => setEditAdminData((prev) => ({ ...prev, nombre: e.target.value }))}
+              />
+              <Input
+                label="Apellido"
+                value={editAdminData.apellido}
+                onChange={(e) => setEditAdminData((prev) => ({ ...prev, apellido: e.target.value }))}
+              />
+              <div className="md:col-span-2">
+                <Input
+                  label="Correo"
+                  type="email"
+                  value={editAdminData.correo}
+                  onChange={(e) => setEditAdminData((prev) => ({ ...prev, correo: e.target.value }))}
+                />
+              </div>
+              <Input
+                label="Teléfono"
+                value={editAdminData.telefono}
+                onChange={(e) => setEditAdminData((prev) => ({ ...prev, telefono: e.target.value }))}
+              />
+              <Input
+                label="Cargo"
+                value={editAdminData.cargo}
+                onChange={(e) => setEditAdminData((prev) => ({ ...prev, cargo: e.target.value }))}
+              />
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1.5">Sede</label>
+                <select
+                  className="w-full min-h-11 px-3 py-2 text-sm text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-focus)]"
+                  value={editAdminData.sede_id}
+                  onChange={(e) => setEditAdminData((prev) => ({ ...prev, sede_id: e.target.value }))}
+                >
+                  <option value="">Seleccione una sede</option>
+                  {institucion?.sedes && institucion.sedes.length > 0 ? (
+                    institucion.sedes.map((sede) => (
+                      <option key={sede.id} value={String(sede.id)}>
+                        {sede.nombre}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="principal">Sede Principal</option>
+                  )}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <Input
+                  label="Nueva contraseña (opcional)"
+                  type="password"
+                  value={editAdminData.password}
+                  onChange={(e) => setEditAdminData((prev) => ({ ...prev, password: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 mt-4 border-t border-[var(--color-border-light)]">
+              <Button type="button" variant="outline" onClick={() => setShowEditAdminModal(false)}>
+                Cancelar
+              </Button>
+              <Button
                 type="button"
-                onClick={() => setShowViewAdminModal(false)}
-                className="text-white/80 hover:text-white"
-                aria-label="Cerrar"
+                variant="primary"
+                onClick={handleUpdateAdmin}
+                disabled={isUpdatingAdmin}
+                className="sm:ml-auto"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                {isUpdatingAdmin ? 'Guardando…' : 'Guardar cambios'}
+              </Button>
             </div>
-            <div className="p-6">
-              <div className="mb-5">
-                <p className="text-lg font-semibold text-slate-800">
-                  {selectedAdmin.nombre} {selectedAdmin.apellido}
-                </p>
-                <p className="text-sm text-slate-500">{selectedAdmin.cargo}</p>
-              </div>
-              <div className="grid grid-cols-1 gap-3 text-sm">
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Correo</p>
-                  <p className="text-slate-800 font-medium">{selectedAdmin.correo || selectedAdmin.email}</p>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Teléfono</p>
-                  <p className="text-slate-800 font-medium">{selectedAdmin.telefono || 'No registrado'}</p>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Cargo</p>
-                  <p className="text-slate-800 font-medium">{selectedAdmin.cargo}</p>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowViewAdminModal(false)}
-                  className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showEditAdminModal && selectedAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
-            <div
-              className="flex items-center justify-between px-6 py-4 text-white"
-              style={{ backgroundColor: primaryColor }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1 0v14m-7-7h14" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Editar Administrador</h3>
-                  <p className="text-sm text-white/80">Actualiza los datos del administrador</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowEditAdminModal(false)}
-                className="text-white/80 hover:text-white"
-                aria-label="Cerrar"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nombre</label>
-                  <input
-                    className="w-full px-3 py-2 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="Nombre"
-                    value={editAdminData.nombre}
-                    onChange={(e) => setEditAdminData(prev => ({ ...prev, nombre: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Apellido</label>
-                  <input
-                    className="w-full px-3 py-2 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="Apellido"
-                    value={editAdminData.apellido}
-                    onChange={(e) => setEditAdminData(prev => ({ ...prev, apellido: e.target.value }))}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Correo</label>
-                  <input
-                    className="w-full px-3 py-2 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="Correo"
-                    value={editAdminData.correo}
-                    onChange={(e) => setEditAdminData(prev => ({ ...prev, correo: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Teléfono</label>
-                  <input
-                    className="w-full px-3 py-2 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="Teléfono"
-                    value={editAdminData.telefono}
-                    onChange={(e) => setEditAdminData(prev => ({ ...prev, telefono: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Cargo</label>
-                  <input
-                    className="w-full px-3 py-2 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="Cargo"
-                    value={editAdminData.cargo}
-                    onChange={(e) => setEditAdminData(prev => ({ ...prev, cargo: e.target.value }))}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Sede</label>
-                  <select
-                    className="w-full px-3 py-2 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    value={editAdminData.sede_id}
-                    onChange={(e) => setEditAdminData(prev => ({ ...prev, sede_id: e.target.value }))}
-                  >
-                    <option value="">Seleccione una sede</option>
-                    {institucion?.sedes && institucion.sedes.length > 0 ? (
-                      institucion.sedes.map((sede) => (
-                        <option key={sede.id} value={String(sede.id)}>
-                          {sede.nombre}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="principal">Sede Principal</option>
-                    )}
-                  </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Nueva contraseña (opcional)</label>
-                  <input
-                    className="w-full px-3 py-2 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="Nueva contraseña (opcional)"
-                    type="password"
-                    value={editAdminData.password}
-                    onChange={(e) => setEditAdminData(prev => ({ ...prev, password: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowEditAdminModal(false)}
-                  className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUpdateAdmin}
-                  disabled={isUpdatingAdmin}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50"
-                >
-                  {isUpdatingAdmin ? 'Guardando...' : 'Guardar cambios'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
       <Footer />
     </div>
-    </InstitucionAuthGuard>
+    </>
   );
 }

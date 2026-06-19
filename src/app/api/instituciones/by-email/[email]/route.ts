@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getAuthUserEmail } from '@/lib/tenant';
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit';
+import { withSystemDb } from '@/lib/db/with-tenant-request';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ email: string }> }
 ) {
   try {
+    const rate = checkRateLimit(request, 'instituciones-by-email', { max: 30, windowSec: 60 });
+    if (!rate.ok) {
+      return rateLimitResponse(rate.retryAfterSec ?? 60);
+    }
+
     const { email } = await params;
     const decodedEmail = decodeURIComponent(email || '').trim().toLowerCase();
 
@@ -13,15 +20,25 @@ export async function GET(
       return NextResponse.json({ exists: false, error: 'Email requerido' }, { status: 200 });
     }
 
-    const institucion = await prisma.instituciones.findFirst({
-      where: { email: decodedEmail },
-      select: { id: true }
-    });
+    return await withSystemDb(async (tx) => {
+      const sessionEmail = await getAuthUserEmail(request);
 
-    return NextResponse.json(
-      { exists: Boolean(institucion), id: institucion?.id ?? null },
-      { status: 200 }
-    );
+      // Solo la sesión autenticada con el mismo correo puede obtener el id (PT-27).
+      if (!sessionEmail || sessionEmail !== decodedEmail) {
+        return NextResponse.json({ exists: false }, { status: 200 });
+      }
+
+      const institucion = await tx.instituciones.findFirst({
+        where: { email: decodedEmail },
+        select: { id: true },
+      });
+
+      if (institucion) {
+        return NextResponse.json({ exists: true, id: institucion.id }, { status: 200 });
+      }
+
+      return NextResponse.json({ exists: false }, { status: 200 });
+    });
   } catch (error) {
     console.error('Error al verificar email de institución:', error);
     return NextResponse.json({ exists: false, error: 'Error interno del servidor' }, { status: 200 });

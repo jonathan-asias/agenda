@@ -266,6 +266,12 @@ input[type="reset"] {
   color: black;
 }
 
+/* Evita que la regla global `svg { height: auto }` deforme las banderas locales */
+.PhoneInputCountryIconImg {
+  max-width: none;
+  height: 100%;
+}
+
 .PhoneInputCountrySelect,
 .PhoneInputCountrySelect option {
   color: #000;
@@ -284,4 +290,39 @@ input[type="reset"] {
 .PhoneInputCountrySelect:focus + .PhoneInputCountryIcon + .PhoneInputCountrySelectArrow {
   border-color: #000 !important;
   opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-safe\:animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .motion-safe\:animate-in {
+    animation-duration: 200ms;
+    animation-fill-mode: both;
+  }
+  .motion-safe\:slide-in-from-bottom-2 {
+    animation-name: slide-in-from-bottom;
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

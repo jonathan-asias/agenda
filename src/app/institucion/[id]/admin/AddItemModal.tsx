@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import AddCursoModal from './modals/AddCursoModal';
 import AddMateriaModal from './modals/AddMateriaModal';
 import AddDocenteModal from './modals/AddDocenteModal';
 import AddEstudianteModal from './modals/AddEstudianteModal';
+import BulkUploadEstudiantesModal from './modals/BulkUploadEstudiantesModal';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -13,7 +16,7 @@ interface AddItemModalProps {
   onSuccess: () => void;
 }
 
-type ModalType = 'materia' | 'curso' | 'docente' | 'estudiante' | null;
+type ModalType = 'materia' | 'curso' | 'docente' | 'estudiante' | 'estudiantes_masivo' | null;
 
 export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess }: AddItemModalProps) {
   const [selectedType, setSelectedType] = useState<ModalType>(null);
@@ -30,7 +33,6 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
     onSuccess();
   };
 
-  // Si hay un tipo seleccionado, mostrar el modal específico
   if (selectedType) {
     switch (selectedType) {
       case 'materia':
@@ -41,39 +43,33 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
         return <AddDocenteModal isOpen={true} onClose={handleClose} institucionId={institucionId} onSuccess={handleSuccess} />;
       case 'estudiante':
         return <AddEstudianteModal isOpen={true} onClose={handleClose} institucionId={institucionId} onSuccess={handleSuccess} />;
+      case 'estudiantes_masivo':
+        return (
+          <BulkUploadEstudiantesModal
+            isOpen={true}
+            onClose={handleClose}
+            institucionId={institucionId}
+            onSuccess={handleSuccess}
+          />
+        );
       default:
         return null;
     }
   }
 
-  // Modal de selección de tipo
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 md:p-8">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-semibold text-slate-900">Agregar Nuevo Elemento</h2>
-            <button
-              onClick={handleClose}
-              className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+    <Modal open={isOpen} onClose={handleClose} title="Agregar elemento" size="lg">
+      <div className="rounded-lg bg-[var(--color-primary-light)] border border-[var(--color-border-light)] p-4 mb-6">
+        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+          Desde aquí puedes crear nuevos elementos para tu institución. Cada opción abre un formulario donde podrás registrar la información necesaria.
+        </p>
+      </div>
 
-          <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 mb-6">
-            <p className="text-sm text-slate-700 leading-relaxed">
-              Desde aquí puedes crear nuevos elementos para tu institución. Cada opción abre un formulario donde podrás registrar la información necesaria. El objetivo es mantener actualizado el catálogo de materias, cursos, docentes y estudiantes para poder asignar docentes a materias y gestionar recordatorios.
-            </p>
-          </div>
+      <p className="text-[var(--color-text-secondary)] mb-4">
+        Selecciona el tipo de elemento que deseas agregar:
+      </p>
 
-          <p className="text-slate-600 mb-4">
-            Selecciona el tipo de elemento que deseas agregar:
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               onClick={() => setSelectedType('materia')}
               className="w-full p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors group h-full"
@@ -143,16 +139,34 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
             </button>
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className="mt-4 pt-4 border-t border-slate-200">
             <button
-              onClick={handleClose}
-              className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+              type="button"
+              onClick={() => setSelectedType('estudiantes_masivo')}
+              className="w-full p-4 text-left bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 transition-colors group"
             >
-              Cancelar
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center group-hover:bg-teal-700 transition-colors flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-slate-900 mb-1">Subir masivamente estudiantes</h3>
+                  <p className="text-sm text-slate-600 leading-snug">
+                    Descargue una plantilla Excel con los grados, cursos y materias de su sede, complete
+                    los datos de los estudiantes y cárguela para registrarlos de una sola vez.
+                  </p>
+                </div>
+              </div>
             </button>
           </div>
-        </div>
+
+      <div className="mt-8 flex justify-end pt-4 border-t border-[var(--color-border-light)]">
+        <Button type="button" variant="outline" onClick={handleClose}>
+          Cancelar
+        </Button>
       </div>
-    </div>
+    </Modal>
   );
 }

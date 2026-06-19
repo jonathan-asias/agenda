@@ -26,9 +26,11 @@ function ActivarNotificacionesContent() {
     acudienteId: number;
     institucionId: number;
     publicKey: string;
+    subscribeToken: string;
   } | null>(null);
 
-  const token = searchParams.get('acudienteId') ?? searchParams.get('estudianteId') ?? searchParams.get('token');
+  const estudianteIdParam = searchParams.get('estudianteId');
+  const sigParam = searchParams.get('sig');
 
   const urlBase64ToUint8Array = useCallback((base64String: string): Uint8Array => {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -42,16 +44,16 @@ function ActivarNotificacionesContent() {
   }, []);
 
   const fetchActivate = useCallback(async () => {
-    if (!token) {
-      setError('Falta el token de activación. Use el enlace del correo.');
+    if (!estudianteIdParam || !sigParam) {
+      setError('Enlace inválido. Use el enlace del correo de recordatorio.');
       setStatus('error');
       return;
     }
 
     try {
       const params = new URLSearchParams();
-      if (searchParams.get('acudienteId')) params.set('acudienteId', searchParams.get('acudienteId') ?? '');
-      else if (searchParams.get('estudianteId')) params.set('estudianteId', searchParams.get('estudianteId') ?? '');
+      params.set('estudianteId', estudianteIdParam);
+      params.set('sig', sigParam);
 
       const res = await fetch(`/api/push/activate?${params.toString()}`);
       const data = await res.json();
@@ -66,6 +68,7 @@ function ActivarNotificacionesContent() {
         acudienteId: data.acudienteId,
         institucionId: data.institucionId,
         publicKey: data.publicKey,
+        subscribeToken: data.subscribeToken,
       });
 
       const permission = (Notification.permission ?? 'default') as PermissionStatus;
@@ -93,7 +96,7 @@ function ActivarNotificacionesContent() {
       setError('Error de conexión');
       setStatus('error');
     }
-  }, [token, searchParams]);
+  }, [estudianteIdParam, sigParam]);
 
   useEffect(() => {
     fetchActivate();
@@ -130,6 +133,7 @@ function ActivarNotificacionesContent() {
         body: JSON.stringify({
           institucionId: activateData.institucionId,
           acudienteId: activateData.acudienteId,
+          subscribeToken: activateData.subscribeToken,
           subscription: subscription.toJSON(),
         }),
       });

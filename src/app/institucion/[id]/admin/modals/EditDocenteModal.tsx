@@ -5,6 +5,9 @@
 
 import { useState, useEffect } from 'react';
 import { showSuccess } from '@/lib/notifications';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import ErrorBanner from '@/components/ui/ErrorBanner';
 import type { Docente, Grado } from '@/types';
 
 interface Area {
@@ -295,7 +298,7 @@ export default function EditDocenteModal({
       });
 
       if (response.ok) {
-        await showSuccess('¡Docente Actualizado!', `El docente "${formData.nombres} ${formData.apellidos}" se ha actualizado exitosamente`);
+        await showSuccess('Docente actualizado', `Se actualizó a ${formData.nombres} ${formData.apellidos}.`);
         onSuccess();
         onClose();
       } else {
@@ -309,30 +312,11 @@ export default function EditDocenteModal({
     }
   };
 
-  if (!isOpen || !docente) return null;
+  if (!docente) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="p-6 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Editar Docente
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+    <Modal open={isOpen} onClose={onClose} title="Editar docente" size="xl">
+      <form onSubmit={handleSubmit} className="space-y-6">
           {/* Información Personal */}
           <div>
             <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center">
@@ -537,39 +521,17 @@ export default function EditDocenteModal({
             </div>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm">{error}</p>
-            </div>
-          )}
+          {error && <ErrorBanner title={error} />}
 
-          {/* Footer */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
-            >
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-[var(--color-border-light)]">
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-orange-400 transition-colors flex items-center"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Actualizando...
-                </>
-              ) : (
-                'Actualizar Docente'
-              )}
-            </button>
+            </Button>
+            <Button type="submit" variant="primary" disabled={loading}>
+              {loading ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }

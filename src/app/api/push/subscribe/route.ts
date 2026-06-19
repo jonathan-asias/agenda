@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { withDbBypass } from '@/lib/db/rls-context';
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit';import { verifyPushSubscribeToken } from '@/lib/security/push-activation-token';
 
 export interface SubscribeBody {
   institucionId: number;
   acudienteId: number;
+  subscribeToken: string;
   subscription: {
     endpoint: string;
     keys: {
@@ -15,18 +17,17 @@ export interface SubscribeBody {
 
 /**
  * POST /api/push/subscribe
- *
- * Guarda la push subscription del acudiente.
- * - Validación: institucionId y acudienteId deben existir y pertenecer a la misma institución.
- * - Evita duplicados por (institucion_id, acudiente_id, endpoint).
- *
- * Multi-tenant: institucion_id en push_subscriptions.
- * Futuro: validar que institucion.push_enabled y plan plus antes de permitir.
+ * Requiere subscribeToken emitido por /api/push/activate tras validar firma del enlace.
  */
 export async function POST(request: NextRequest) {
   try {
+    const rate = checkRateLimit(request, 'push-subscribe', { max: 15, windowSec: 60 });
+    if (!rate.ok) {
+      return rateLimitResponse(rate.retryAfterSec ?? 60);
+    }
+
     const body = (await request.json()) as SubscribeBody;
-    const { institucionId, acudienteId, subscription } = body;
+    const { institucionId, acudienteId, subscribeToken, subscription } = body;
 
     if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
       return NextResponse.json(
@@ -35,50 +36,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!institucionId || !acudienteId) {
+    if (!institucionId || !acudienteId || !subscribeToken) {
       return NextResponse.json(
-        { error: 'institucionId y acudienteId son requeridos' },
+        { error: 'institucionId, acudienteId y subscribeToken son requeridos' },
         { status: 400 }
       );
     }
 
-    const instId = parseInt(String(institucionId));
-    const acudId = parseInt(String(acudienteId));
+    const instId = Number.parseInt(String(institucionId), 10);
+    const acudId = Number.parseInt(String(acudienteId), 10);
 
-    const acudiente = await prisma.acudientes.findFirst({
-      where: { id: acudId, institucion_id: instId },
+    try {
+      if (!verifyPushSubscribeToken(subscribeToken, acudId, instId)) {
+        return NextResponse.json(
+          { error: 'Token de suscripción inválido o expirado' },
+          { status: 403 }
+        );
+      }
+    } catch {
+      return NextResponse.json({ error: 'Push no configurado' }, { status: 503 });
+    }
+
+    await withDbBypass(async (tx) => {
+      const acudiente = await tx.acudientes.findFirst({
+        where: { id: acudId, institucion_id: instId },
+      });
+
+      if (!acudiente) {
+        throw new Error('ACUDIENTE_NOT_FOUND');
+      }
+
+      await tx.pushSubscriptions.upsert({
+        where: {
+          institucion_id_acudiente_id_endpoint: {
+            institucion_id: instId,
+            acudiente_id: acudId,
+            endpoint: subscription.endpoint,
+          },
+        },
+        create: {
+          institucion_id: instId,
+          acudiente_id: acudId,
+          endpoint: subscription.endpoint,
+          p256dh: subscription.keys.p256dh,
+          auth: subscription.keys.auth,
+        },
+        update: {
+          p256dh: subscription.keys.p256dh,
+          auth: subscription.keys.auth,
+        },
+      });
     });
 
-    if (!acudiente) {
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'ACUDIENTE_NOT_FOUND') {
       return NextResponse.json(
         { error: 'Acudiente no encontrado o no pertenece a la institución' },
         { status: 404 }
       );
     }
-
-    await prisma.pushSubscriptions.upsert({
-      where: {
-        institucion_id_acudiente_id_endpoint: {
-          institucion_id: instId,
-          acudiente_id: acudId,
-          endpoint: subscription.endpoint,
-        },
-      },
-      create: {
-        institucion_id: instId,
-        acudiente_id: acudId,
-        endpoint: subscription.endpoint,
-        p256dh: subscription.keys.p256dh,
-        auth: subscription.keys.auth,
-      },
-      update: {
-        p256dh: subscription.keys.p256dh,
-        auth: subscription.keys.auth,
-      },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
     console.error('Error en /api/push/subscribe:', error);
     return NextResponse.json(
       { error: 'Error al guardar la suscripción' },

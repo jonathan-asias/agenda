@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { withDbBypass } from '@/lib/db/rls-context';
+import bcrypt from 'bcryptjs';
+import { isPaymentRequiredForRegistration } from '@/lib/env';
+import { sanitizeInstitucionResponse } from '@/lib/security/sanitize-response';
+import { verifyRegistroAccessToken } from '@/lib/security/registro-access-token';
+import { writeAuditLog } from '@/lib/security/audit-log';
 
 interface SedeInput {
   nombre: string;
@@ -14,6 +19,7 @@ interface CreateInstitucionPayload {
   telefono_contacto: string;
   email: string;
   password: string;
+  registroToken?: string;
   logo_url?: string | null;
   banner_url?: string | null;
   color_primario?: string;
@@ -34,6 +40,7 @@ export async function POST(request: NextRequest) {
       telefono_contacto,
       email,
       password,
+      registroToken,
       logo_url,
       banner_url,
       color_primario,
@@ -141,9 +148,69 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Crear la institución en la base de datos con transacción
-    const result = await prisma.$transaction(async (tx) => {
-      // Crear la institución
+    const emailNormalized = email.trim().toLowerCase();
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const requirePayment = isPaymentRequiredForRegistration();
+
+    const result = await withDbBypass(async (tx) => {
+      let planId: number | null = null;
+      let suscripcionId: number | null = null;
+      let pushEnabled = false;
+
+      if (requirePayment) {
+        const token = registroToken?.trim();
+        if (!token) {
+          return { tokenError: 'missing' as const };
+        }
+
+        let verified;
+        try {
+          verified = verifyRegistroAccessToken(token);
+        } catch {
+          return { tokenError: 'misconfigured' as const };
+        }
+
+        if (!verified.ok) {
+          return { tokenError: verified.reason as 'expired' | 'invalid' };
+        }
+
+        if (verified.email !== emailNormalized) {
+          return { tokenError: 'invalid' as const };
+        }
+
+        const pagoAprobado = await tx.pago.findUnique({
+          where: { referencia: verified.referencia },
+          include: { plan: true },
+        });
+
+        if (
+          !pagoAprobado ||
+          pagoAprobado.email !== emailNormalized ||
+          pagoAprobado.estado !== 'APPROVED' ||
+          !pagoAprobado.procesado
+        ) {
+          return { paymentRequired: true as const };
+        }
+
+        const suscripcion = await tx.suscripcion.findFirst({
+          where: {
+            email: emailNormalized,
+            estado: 'ACTIVA',
+            institucion_id: null,
+            plan_id: pagoAprobado.plan_id,
+          },
+          orderBy: { created_at: 'desc' },
+        });
+
+        if (!suscripcion) {
+          return { paymentRequired: true as const };
+        }
+
+        planId = pagoAprobado.plan_id;
+        suscripcionId = suscripcion.id;
+        pushEnabled = Boolean(pagoAprobado.plan.push);
+      }
+
       const institucion = await tx.instituciones.create({
         data: {
           nombre: nombre.trim(),
@@ -152,17 +219,19 @@ export async function POST(request: NextRequest) {
           nombre_contacto: nombre_contacto.trim(),
           telefono_contacto: telefono_contacto.trim(),
           email: email.trim(),
-          password: password, // En producción, aquí deberías hashear la contraseña
+          password: hashedPassword,
           logo_url: logo_url ?? null,
           banner_url: banner_url ?? null,
           color_primario: color_primario?.trim() || '#2563eb',
           color_secundario: color_secundario?.trim() || '#0f172a',
           tiene_sedes: Boolean(tiene_sedes),
           jornadas: tiene_sedes ? [] : jornadas,
+          plan_id: planId,
+          suscripcion_id: suscripcionId,
+          push_enabled: pushEnabled,
         },
       });
 
-      // Crear las sedes si existen
       if (tiene_sedes && sedes.length > 0) {
         await tx.sedes.createMany({
           data: sedes.map((sede) => ({
@@ -173,13 +242,59 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      return institucion;
+      if (suscripcionId) {
+        await tx.suscripcion.update({
+          where: { id: suscripcionId },
+          data: { institucion_id: institucion.id },
+        });
+      }
+
+      return { paymentRequired: false as const, institucion };
+    });
+
+    if ('tokenError' in result && result.tokenError) {
+      const messages: Record<string, string> = {
+        missing:
+          'Enlace de registro no válido. Use el enlace del correo de confirmación de pago.',
+        expired:
+          'El enlace de registro expiró. Realice el pago nuevamente o contacte a soporte.',
+        invalid:
+          'El enlace de registro no es válido. Use el enlace del correo de confirmación de pago.',
+        misconfigured: 'Servicio de registro no disponible. Intente más tarde.',
+      };
+      return NextResponse.json(
+        {
+          error: messages[result.tokenError] ?? messages.invalid,
+          code:
+            result.tokenError === 'expired'
+              ? 'REGISTRO_TOKEN_EXPIRED'
+              : 'REGISTRO_TOKEN_INVALID',
+        },
+        { status: 403 }
+      );
+    }
+
+    if (result.paymentRequired) {
+      return NextResponse.json(
+        {
+          error: 'Debe tener un pago aprobado para registrar la institución. Realice el pago desde la landing y vuelva a intentar.',
+          code: 'PAYMENT_REQUIRED',
+        },
+        { status: 403 }
+      );
+    }
+
+    await writeAuditLog({
+      usuario: emailNormalized,
+      accion: 'INSTITUCION_CREADA',
+      metadata: { institucionId: result.institucion.id },
+      request,
     });
 
     return NextResponse.json(
-      { 
+      {
         message: 'Institución registrada exitosamente',
-        data: result 
+        data: sanitizeInstitucionResponse(result.institucion),
       },
       { status: 201 }
     );
@@ -193,23 +308,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/** Listado global deshabilitado por seguridad multi-tenant (usar GET /api/instituciones/[id] autenticado). */
 export async function GET() {
-  try {
-    const instituciones = await prisma.instituciones.findMany({
-      include: {
-        sedes: true
-      },
-      orderBy: {
-        created_at: 'desc'
-      }
-    });
-
-    return NextResponse.json(instituciones);
-  } catch (error) {
-    console.error('Error al obtener instituciones:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    { error: 'Método no permitido' },
+    { status: 405 }
+  );
 }

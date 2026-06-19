@@ -29,6 +29,11 @@ export interface Recordatorio {
     id: number;
     nombre: string;
   };
+  docente?: {
+    nombres: string;
+    apellidos: string;
+    email: string;
+  };
   estudiantes?: Array<{
     estudiante: {
       id: number;

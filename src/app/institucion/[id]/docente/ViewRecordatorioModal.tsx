@@ -1,6 +1,8 @@
 'use client';
 
 import type { Recordatorio } from '@/types/recordatorio';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 
 interface ViewRecordatorioModalProps {
   isOpen: boolean;
@@ -13,7 +15,7 @@ export default function ViewRecordatorioModal({
   onClose,
   recordatorio
 }: ViewRecordatorioModalProps) {
-  if (!isOpen || !recordatorio) return null;
+  if (!recordatorio) return null;
 
   const fechaRecordatorio = new Date(recordatorio.fecha);
   const hoy = new Date();
@@ -36,31 +38,8 @@ export default function ViewRecordatorioModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] flex flex-col">
-        <div className="bg-white border-b border-slate-200 p-6 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">Información del Recordatorio</h2>
-              <p className="text-slate-600">Detalles completos del recordatorio</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+    <Modal open={isOpen} onClose={onClose} title="Información del recordatorio" size="xl" className="max-w-3xl">
+      <div className="space-y-6">
           {/* Nombre y Tipo */}
           <div className="space-y-3">
             <div className="flex items-center gap-3 flex-wrap">
@@ -86,6 +65,18 @@ export default function ViewRecordatorioModal({
               )}
             </div>
           </div>
+
+          {recordatorio.docente && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Docente</label>
+              <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4">
+                <p className="font-medium text-slate-900">
+                  {recordatorio.docente.nombres} {recordatorio.docente.apellidos}
+                </p>
+                <p className="text-sm text-slate-600 mt-1">{recordatorio.docente.email}</p>
+              </div>
+            </div>
+          )}
 
           {/* Descripción */}
           <div className="space-y-2">
@@ -292,19 +283,14 @@ export default function ViewRecordatorioModal({
               </div>
             )}
           </div>
-        </div>
-
-        {/* Botón de cerrar */}
-        <div className="border-t border-slate-200 p-6 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            Cerrar
-          </button>
-        </div>
       </div>
-    </div>
+
+      <div className="pt-4 mt-4 border-t border-[var(--color-border-light)]">
+        <Button type="button" variant="primary" fullWidth onClick={onClose}>
+          Cerrar
+        </Button>
+      </div>
+    </Modal>
   );
 }
 

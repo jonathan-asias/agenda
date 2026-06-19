@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { withSystemDb } from '@/lib/db/with-tenant-request';
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const rate = checkRateLimit(request, 'auth-reset-validate', { max: 30, windowSec: 60 });
+    if (!rate.ok) {
+      return rateLimitResponse(rate.retryAfterSec ?? 60);
+    }
+
     const { token } = await params;
 
     if (!token) {
@@ -15,48 +21,33 @@ export async function GET(
       );
     }
 
-    // Buscar el token en la base de datos
-    const resetToken = await prisma.passwordResetTokens.findUnique({
-      where: { token },
-      select: {
-        email: true,
-        expiresAt: true,
-        userType: true,
-        used: true
-      }
-    });
+    const resetToken = await withSystemDb(async (tx) =>
+      tx.passwordResetTokens.findUnique({
+        where: { token },
+        select: {
+          expiresAt: true,
+          userType: true,
+          used: true,
+        },
+      })
+    );
 
     if (!resetToken) {
-      return NextResponse.json(
-        { error: 'Token no válido' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Token no válido o expirado' }, { status: 400 });
     }
 
-    // Verificar si el token ha expirado
-    if (new Date() > resetToken.expiresAt) {
-      // Eliminar el token expirado
-      await prisma.passwordResetTokens.delete({
-        where: { token }
-      });
-      return NextResponse.json(
-        { error: 'Token expirado' },
-        { status: 410 }
-      );
-    }
-
-    // Verificar si el token ya fue usado
-    if (resetToken.used) {
-      return NextResponse.json(
-        { error: 'Token ya utilizado' },
-        { status: 410 }
-      );
+    if (new Date() > resetToken.expiresAt || resetToken.used) {
+      if (new Date() > resetToken.expiresAt) {
+        await withSystemDb(async (tx) => {
+          await tx.passwordResetTokens.delete({ where: { token } });
+        });
+      }
+      return NextResponse.json({ error: 'Token no válido o expirado' }, { status: 400 });
     }
 
     return NextResponse.json({
       valid: true,
-      email: resetToken.email,
-      userType: resetToken.userType
+      userType: resetToken.userType,
     });
   } catch (error) {
     console.error('Error validando token:', error);

@@ -74,13 +74,6 @@ export function applyBranding(branding: BrandingColors | null | undefined): void
     setVar('--color-primary-light', lightenHex(primary, 2.2));
     setVar('--color-primary-lighter', lightenHex(primary, 2.2));
     setVar('--color-primary-text', darkenHex(primary, 0.55));
-  } else if (primary) {
-    setVar('--color-primary', primary);
-    setVar('--color-primary-hover', primary);
-    setVar('--color-primary-focus', primary);
-    setVar('--color-primary-light', primary);
-    setVar('--color-primary-lighter', primary);
-    setVar('--color-primary-text', primary);
   }
 
   if (secondary && /^#[0-9A-Fa-f]{6}$/.test(secondary)) {
@@ -90,13 +83,6 @@ export function applyBranding(branding: BrandingColors | null | undefined): void
     setVar('--color-secondary-light', lightenHex(secondary, 2.2));
     setVar('--color-secondary-text', darkenHex(secondary, 0.6));
     setVar('--color-background', lightenHex(secondary, 2.8));
-  } else if (secondary) {
-    setVar('--color-secondary', secondary);
-    setVar('--color-secondary-hover', secondary);
-    setVar('--color-secondary-focus', secondary);
-    setVar('--color-secondary-light', secondary);
-    setVar('--color-secondary-text', secondary);
-    setVar('--color-background', secondary);
   }
 }
 

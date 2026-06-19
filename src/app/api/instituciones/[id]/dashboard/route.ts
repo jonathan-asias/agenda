@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import {
+  institutionSedeWhere,
+  cursosSedeWhere,
+  sedeErrorToResponse,
+  sedeFilter,
+} from '@/lib/sede-scope';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const institucionIdFromUrl = parseInt(id);
 
@@ -27,12 +28,14 @@ export async function GET(
       );
     }
 
+    return await withAdminSedeDb(request, async (prisma, { institutionId: userInstitutionId, scope }) => {
     enforceTenant(userInstitutionId, institucionIdFromUrl);
 
-    // Datos SIEMPRE filtrados por sesión autenticada, nunca por parámetro de URL
-    console.log('Fetching dashboard data for institution (from session):', userInstitutionId);
+    const baseWhere = institutionSedeWhere(userInstitutionId, scope);
+    const cursoWhere = cursosSedeWhere(userInstitutionId, scope);
+    const cursoNestedFilter = scope.allSedes ? undefined : { where: sedeFilter(scope) };
 
-    // Obtener estadísticas básicas primero (solo institución del usuario autenticado)
+    // Obtener estadísticas básicas primero (solo institución/sede del usuario autenticado)
     const estadisticas = {
       areas: 0,
       materias: 0,
@@ -43,44 +46,48 @@ export async function GET(
     };
 
     try {
-      estadisticas.areas = await prisma.areas.count({ where: { institucion_id: userInstitutionId } });
+      estadisticas.areas = await prisma.areas.count({ where: baseWhere });
     } catch (error) {
       console.error('Error counting areas:', error);
     }
 
     try {
-      estadisticas.materias = await prisma.materias.count({ where: { institucion_id: userInstitutionId } });
+      estadisticas.materias = await prisma.materias.count({ where: baseWhere });
     } catch (error) {
       console.error('Error counting materias:', error);
     }
 
     try {
-      estadisticas.grados = await prisma.grados.count({ where: { institucion_id: userInstitutionId } });
+      estadisticas.grados = await prisma.grados.count({ where: baseWhere });
     } catch (error) {
       console.error('Error counting grados:', error);
     }
 
     try {
-      estadisticas.cursos = await prisma.cursos.count({ where: { institucion_id: userInstitutionId } });
+      estadisticas.cursos = await prisma.cursos.count({ where: cursoWhere });
     } catch (error) {
       console.error('Error counting cursos:', error);
     }
 
     try {
-      estadisticas.docentes = await prisma.docentes.count({ where: { institucion_id: userInstitutionId, activo: true } });
+      estadisticas.docentes = await prisma.docentes.count({
+        where: { ...baseWhere, activo: true },
+      });
     } catch (error) {
       console.error('Error counting docentes:', error);
     }
 
     try {
-      estadisticas.estudiantes = await prisma.estudiantes.count({ where: { institucion_id: userInstitutionId, activo: true } });
+      estadisticas.estudiantes = await prisma.estudiantes.count({
+        where: { ...baseWhere, activo: true },
+      });
     } catch (error) {
       console.error('Error counting estudiantes:', error);
     }
 
     type AreasWithMaterias = Awaited<ReturnType<typeof prisma.areas.findMany>>;
     const materiasQuery = prisma.materias.findMany({
-      where: { institucion_id: userInstitutionId },
+      where: baseWhere,
       include: {
         area: {
           select: {
@@ -128,7 +135,7 @@ export async function GET(
 
     try {
       areas = await prisma.areas.findMany({
-        where: { institucion_id: userInstitutionId },
+        where: baseWhere,
         include: {
           materias: {
             select: {
@@ -139,29 +146,22 @@ export async function GET(
         },
         orderBy: { orden: 'asc' }
       });
-      console.log('Areas encontradas:', areas.length, areas);
     } catch (error) {
       console.error('Error fetching areas:', error);
     }
 
     try {
       materias = await materiasQuery;
-      console.log('Materias encontradas:', materias.length);
-      console.log('Detalles de materias:', materias.map(m => ({
-        id: m.id,
-        nombre: m.nombre,
-        area: m.area?.nombre,
-        gradosCount: m._count?.materiaGrados
-      })));
     } catch (error) {
       console.error('Error fetching materias:', error);
     }
 
     try {
       grados = await prisma.grados.findMany({
-        where: { institucion_id: userInstitutionId },
+        where: baseWhere,
         include: {
           cursos: {
+            ...(cursoNestedFilter ?? {}),
             select: {
               id: true,
               nombre: true,
@@ -176,14 +176,13 @@ export async function GET(
         },
         orderBy: { orden: 'asc' }
       });
-      console.log('Grados encontrados:', grados.length, grados);
     } catch (error) {
       console.error('Error fetching grados:', error);
     }
 
     try {
       cursos = await prisma.cursos.findMany({
-        where: { institucion_id: userInstitutionId },
+        where: cursoWhere,
         include: {
           grado: {
             select: {
@@ -205,7 +204,7 @@ export async function GET(
 
     try {
       docentes = await prisma.docentes.findMany({
-        where: { institucion_id: userInstitutionId, activo: true },
+        where: { ...baseWhere, activo: true },
         include: {
           sede: {
             select: {
@@ -244,24 +243,13 @@ export async function GET(
         },
         orderBy: { nombres: 'asc' }
       });
-      console.log('Docentes encontrados:', docentes.length);
-      console.log('Detalles de docentes con asignaciones:', docentes.map(d => ({
-        id: d.id,
-        nombre: `${d.nombres} ${d.apellidos}`,
-        asignaciones: d.docenteAsignaciones.length,
-        asignacionesDetalle: d.docenteAsignaciones.map(a => ({
-          grado: a.grado.nombre,
-          curso: a.curso.nombre,
-          materia: a.materia.nombre
-        }))
-      })));
     } catch (error) {
       console.error('Error fetching docentes:', error);
     }
 
     try {
       estudiantes = await prisma.estudiantes.findMany({
-        where: { institucion_id: userInstitutionId, activo: true },
+        where: { ...baseWhere, activo: true },
         include: {
           grado: {
             select: {
@@ -284,6 +272,7 @@ export async function GET(
 
     const response = {
       estadisticas,
+      sedeScope: scope.allSedes ? 'all' : scope.sedeId,
       datos: {
         areas,
         materias,
@@ -298,17 +287,14 @@ export async function GET(
       }
     };
 
-    console.log('Respuesta completa del dashboard:', {
-      estadisticas,
-      gradosCount: grados.length,
-      areasCount: areas.length,
-      cursosCount: cursos.length,
-      materiasCount: materias.length
+    return NextResponse.json(response);
     });
 
-    return NextResponse.json(response);
-
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error fetching dashboard data:', error);

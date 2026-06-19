@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
+import { institutionSedeWhere, sedeErrorToResponse } from '@/lib/sede-scope';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ institucionId: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { institucionId } = await params;
     const idFromUrl = parseInt(institucionId);
 
@@ -26,17 +22,21 @@ export async function GET(
       );
     }
 
-    enforceTenant(userInstitutionId, idFromUrl);
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+      enforceTenant(institutionId, idFromUrl);
 
-    // Listado SIEMPRE por sesión autenticada; no se confía en el parámetro de URL para los datos
-    const areas = await prisma.areas.findMany({
-      where: { institucion_id: userInstitutionId },
-      orderBy: { orden: 'asc' }
+      const areas = await tx.areas.findMany({
+        where: institutionSedeWhere(institutionId, scope),
+        orderBy: { orden: 'asc' }
+      });
+
+      return NextResponse.json({ areas });
     });
-
-    return NextResponse.json({ areas });
-
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error fetching areas:', error);

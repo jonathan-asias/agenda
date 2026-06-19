@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { sendPushNotification } from '@/lib/notifications/push';
 
 /**
- * GET /api/push/test
- *
- * Endpoint temporal de prueba: busca una subscription activa y envía un push manual.
- * Útil para verificar que el sistema push funciona sin depender del flujo de recordatorios.
+ * GET /api/push/test — deshabilitado en producción por seguridad.
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+  }
+
+  const { prisma } = await import('@/lib/prisma');
+  const { sendPushNotification } = await import('@/lib/notifications/push');
+
   try {
     const subscription = await prisma.pushSubscriptions.findFirst({
       orderBy: { created_at: 'desc' },
@@ -17,7 +19,11 @@ export async function GET() {
 
     if (!subscription) {
       return NextResponse.json(
-        { success: false, error: 'No hay ninguna subscription activa para probar. Active notificaciones desde el correo o /activar-notificaciones.' },
+        {
+          success: false,
+          error:
+            'No hay ninguna subscription activa para probar. Active notificaciones desde el correo o /activar-notificaciones.',
+        },
         { status: 404 }
       );
     }

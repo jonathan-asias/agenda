@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import type { Institucion, Sede, BrandingData } from '@/types';
 import InstitucionAuthGuard from '@/components/auth/InstitucionAuthGuard';
-import Swal from 'sweetalert2';
-import { showSuccess, showError } from '@/lib/notifications';
+import { showSuccess, showError, showLoading, closeLoading, showWarning, showConfirm } from '@/lib/notifications';
+import { useAuth } from '@/contexts/AuthContext';
 import AddAdministradorModal from '../AddAdministradorModal';
 import Footer from '../Footer';
 import Header from '../Header';
+import InstitutionPlanSection from './InstitutionPlanSection';
 
 interface PerfilFormData {
   email: string;
@@ -21,12 +22,15 @@ interface PerfilFormData {
 
 export default function PerfilPage() {
   const params = useParams();
+  const router = useRouter();
+  const { signOut } = useAuth();
   const [institucion, setInstitucion] = useState<Institucion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [headerRefreshKey, setHeaderRefreshKey] = useState(0);
   const [formData, setFormData] = useState<PerfilFormData>({
     email: '',
@@ -56,11 +60,11 @@ export default function PerfilPage() {
           telefono_contacto: data.telefono_contacto || ''
         });
       } else {
-        setError('Institución no encontrada');
+        setError('Instituci?n no encontrada');
       }
     } catch (error) {
-      console.error('Error al cargar la institución:', error);
-      setError('Error al cargar la institución');
+      console.error('Error al cargar la instituci?n:', error);
+      setError('Error al cargar la instituci?n');
     } finally {
       setLoading(false);
     }
@@ -92,7 +96,7 @@ export default function PerfilPage() {
 
   const obtainSupabaseClient = () => {
     if (!isSupabaseConfigured()) {
-      showError('Error', 'Supabase no está configurado.');
+      showError('Error', 'Supabase no est? configurado.');
       return null;
     }
     try {
@@ -182,10 +186,9 @@ export default function PerfilPage() {
       });
 
       if (!brandingResponse.ok) {
-        Swal.fire(
-          'Actualización parcial',
-          'Se guardó la información, pero no se pudo actualizar el branding.',
-          'warning'
+        showWarning(
+          'Actualizaci?n parcial',
+          'Se guard? la informaci?n, pero no se pudo actualizar el branding.'
         );
         return;
       }
@@ -197,12 +200,94 @@ export default function PerfilPage() {
       setLogoFile(null);
       setBannerFile(null);
       setIsEditing(false);
-      showSuccess('Actualización exitosa', 'Los datos de la institución y la personalización fueron guardados.');
+      showSuccess('Actualizaci?n exitosa', 'Los datos de la instituci?n y la personalizaci?n fueron guardados.');
     } catch (saveError) {
       console.error('Error al guardar cambios:', saveError);
-      showError('Error inesperado', 'Ocurrió un problema al guardar los cambios. Intenta nuevamente.');
+      showError('Error inesperado', 'Ocurri? un problema al guardar los cambios. Intenta nuevamente.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!institucion || isDeletingAccount) return;
+
+    const warning = await showConfirm({
+      icon: 'warning',
+      title: '?Eliminar cuenta de la instituci?n?',
+      html: `
+        <div class="text-left space-y-3 text-sm">
+          <p class="font-semibold text-red-700">Esta acci?n es permanente e irreversible.</p>
+          <p>Se eliminar?n de la base de datos todos los datos relacionados con <strong>${institucion.nombre}</strong>, incluyendo:</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li>Administradores y sus accesos</li>
+            <li>Docentes, estudiantes y acudientes</li>
+            <li>Grados, cursos, ?reas y materias</li>
+            <li>Recordatorios y suscripciones push</li>
+            <li>Suscripci?n, pagos y personalizaci?n (logo/banner)</li>
+            <li>Cuentas de acceso en el sistema de autenticaci?n</li>
+          </ul>
+          <p class="text-slate-600">No podr? recuperar esta informaci?n despu?s.</p>
+        </div>
+      `,
+      confirmButtonText: 'Continuar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+
+    if (!warning) return;
+
+    const confirmInput = await showConfirm({
+      icon: 'error',
+      title: 'Confirmaci?n final',
+      html: '<p class="text-sm text-slate-600">Escriba <strong>ELIMINAR</strong> para confirmar la eliminaci?n permanente de la cuenta.</p>',
+      inputPlaceholder: 'ELIMINAR',
+      confirmButtonText: 'Eliminar cuenta permanentemente',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      reverseButtons: true,
+      focusCancel: true,
+      inputValidator: (value) => {
+        if (value?.trim().toUpperCase() !== 'ELIMINAR') {
+          return 'Debe escribir ELIMINAR exactamente';
+        }
+        return null;
+      },
+    });
+
+    if (!confirmInput) return;
+
+    setIsDeletingAccount(true);
+    showLoading(
+      'Eliminando cuenta',
+      'Estamos eliminando todos los datos de la instituci?n. Por favor espere?'
+    );
+
+    try {
+      const response = await fetch(`/api/instituciones/${institucion.id}/delete-account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmation: 'ELIMINAR' }),
+      });
+      const data = await response.json();
+      closeLoading();
+
+      if (!response.ok) {
+        await showError('No se pudo eliminar', data.error ?? 'Intente de nuevo.');
+        return;
+      }
+
+      await signOut();
+      await showSuccess('Cuenta eliminada', 'La instituci?n y todos sus datos fueron eliminados permanentemente.');
+      router.push('/');
+    } catch (deleteError) {
+      closeLoading();
+      console.error('Error eliminando cuenta:', deleteError);
+      await showError('Error', 'No se pudo eliminar la cuenta. Intente de nuevo o contacte soporte.');
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -232,7 +317,7 @@ export default function PerfilPage() {
             href="/registro-institucion"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Registrar Nueva Institución
+            Registrar Nueva Instituci?n
           </Link>
         </div>
       </div>
@@ -244,19 +329,21 @@ export default function PerfilPage() {
       <Header
         key={`institucion-header-${headerRefreshKey}`}
         title={`Perfil de ${institucion.nombre}`}
-        subtitle="Información detallada de la institución"
+        subtitle="Informaci?n detallada de la instituci?n"
       />
       <div className="min-h-screen bg-blue-50 flex flex-col">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
 
-        {/* Información Principal */}
+        <InstitutionPlanSection institucionId={institucion.id} />
+
+        {/* Informaci?n Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Información Básica */}
+          {/* Informaci?n B?sica */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Información Básica</h2>
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Informaci?n B?sica</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">Nombre de la Institución</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Nombre de la Instituci?n</label>
                 <p className="text-slate-800 font-medium text-lg">{institucion.nombre}</p>
               </div>
               <div>
@@ -277,7 +364,7 @@ export default function PerfilPage() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">Dirección Principal</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Direcci?n Principal</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -294,9 +381,9 @@ export default function PerfilPage() {
             </div>
           </div>
 
-          {/* Información de Contacto */}
+          {/* Informaci?n de Contacto */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Información de Contacto</h2>
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Informaci?n de Contacto</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Nombre de Contacto</label>
@@ -314,7 +401,7 @@ export default function PerfilPage() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">Teléfono de Contacto</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Tel?fono de Contacto</label>
                 {isEditing ? (
                   <input
                     type="tel"
@@ -348,7 +435,7 @@ export default function PerfilPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Jornadas */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Jornadas de la Institución</h2>
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Jornadas de la Instituci?n</h2>
             {(institucion.jornadas ?? []).length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {(institucion.jornadas ?? []).map((jornada, index) => (
@@ -405,7 +492,7 @@ export default function PerfilPage() {
         </div>
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-8">
-          <h2 className="text-xl font-semibold text-slate-800 mb-4">Personalización</h2>
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Personalizaci?n</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -505,7 +592,22 @@ export default function PerfilPage() {
           )}
         </div>
 
-        {/* Acciones Rápidas */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-red-200 p-6 mb-8">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Zona de peligro</h2>
+          <p className="text-sm text-slate-600 mb-4">
+            Eliminar la cuenta borrar? permanentemente la instituci?n y todos los datos asociados
+            (administradores, docentes, estudiantes, recordatorios, suscripci?n y accesos de
+            autenticaci?n). Esta acci?n no se puede deshacer.
+          </p>
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            disabled={isDeletingAccount || isEditing || isSaving}
+            className="inline-flex items-center px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isDeletingAccount ? 'Eliminando cuenta...' : 'Eliminar cuenta'}
+          </button>
+        </div>
         
       </div>
 
@@ -514,11 +616,11 @@ export default function PerfilPage() {
         isOpen={showAddAdminModal}
         onClose={() => setShowAddAdminModal(false)}
         onSuccess={() => {
-          // Recargar la información de la institución
+          // Recargar la informaci?n de la instituci?n
           fetch(`/api/instituciones/${params.id}`)
             .then(res => res.json())
             .then(data => setInstitucion(data))
-            .catch(err => console.error('Error al recargar institución:', err));
+            .catch(err => console.error('Error al recargar instituci?n:', err));
         }}
         institucionId={parseInt(params.id as string)}
       />

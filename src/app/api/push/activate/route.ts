@@ -1,104 +1,110 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { withDbBypass } from '@/lib/db/rls-context';
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit';
+import {
+  createPushSubscribeToken,
+  verifyPushActivationSig,
+} from '@/lib/security/push-activation-token';
 
 /**
- * GET /api/push/activate?estudianteId=X
- *
- * Valida estudianteId (temporalmente solo simular validación) y devuelve
- * acudienteId, institucionId, publicKey para la página de activación.
- * Si el acudiente no existe en tabla Acudientes, lo crea desde los datos del estudiante.
+ * GET /api/push/activate?estudianteId=X&sig=...
+ * Requiere firma HMAC en enlaces de email para evitar IDOR.
  */
 export async function GET(request: NextRequest) {
   try {
+    const rate = checkRateLimit(request, 'push-activate', { max: 20, windowSec: 60 });
+    if (!rate.ok) {
+      return rateLimitResponse(rate.retryAfterSec ?? 60);
+    }
+
     const { searchParams } = new URL(request.url);
     const estudianteId = searchParams.get('estudianteId');
-    const acudienteIdParam = searchParams.get('acudienteId');
+    const sig = searchParams.get('sig');
 
     const publicKey = process.env.WEB_PUSH_PUBLIC_KEY;
     if (!publicKey) {
-      return NextResponse.json(
-        { error: 'Push no configurado' },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: 'Push no configurado' }, { status: 503 });
     }
 
-    if (acudienteIdParam) {
-      const acudId = parseInt(acudienteIdParam, 10);
-      if (Number.isNaN(acudId)) {
-        return NextResponse.json({ error: 'acudienteId inválido' }, { status: 400 });
-      }
-      const acudiente = await prisma.acudientes.findUnique({
-        where: { id: acudId },
-        select: { id: true, institucion_id: true },
-      });
-      if (!acudiente) {
-        return NextResponse.json({ error: 'Acudiente no encontrado' }, { status: 404 });
-      }
-      return NextResponse.json({
-        acudienteId: acudiente.id,
-        institucionId: acudiente.institucion_id,
-        publicKey,
-      });
-    }
-
-    if (!estudianteId) {
+    if (!estudianteId || !sig) {
       return NextResponse.json(
-        { error: 'estudianteId o acudienteId es requerido' },
+        { error: 'estudianteId y sig son requeridos' },
         { status: 400 }
       );
     }
 
-    const estId = parseInt(estudianteId, 10);
+    const estId = Number.parseInt(estudianteId, 10);
     if (Number.isNaN(estId)) {
       return NextResponse.json({ error: 'estudianteId inválido' }, { status: 400 });
     }
 
-    const estudiante = await prisma.estudiantes.findFirst({
-      where: { id: estId, activo: true },
-      include: { institucion: true },
+    try {
+      if (!verifyPushActivationSig(sig, estId)) {
+        return NextResponse.json({ error: 'Enlace inválido o expirado' }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'Push no configurado' }, { status: 503 });
+    }
+
+    const result = await withDbBypass(async (tx) => {
+      const estudiante = await tx.estudiantes.findFirst({
+        where: { id: estId, activo: true },
+      });
+
+      if (!estudiante || !estudiante.correo_acudiente?.trim()) {
+        return null;
+      }
+
+      const email = estudiante.correo_acudiente.trim();
+      const nombre = estudiante.nombre_acudiente || 'Acudiente';
+      const telefono = estudiante.telefono_acudiente || null;
+
+      let acudiente = await tx.acudientes.findUnique({
+        where: {
+          institucion_id_email: {
+            institucion_id: estudiante.institucion_id,
+            email,
+          },
+        },
+      });
+
+      if (!acudiente) {
+        acudiente = await tx.acudientes.create({
+          data: {
+            institucion_id: estudiante.institucion_id,
+            email,
+            nombre,
+            telefono,
+          },
+        });
+      }
+
+      return {
+        acudienteId: acudiente.id,
+        institucionId: acudiente.institucion_id,
+      };
     });
 
-    if (!estudiante || !estudiante.correo_acudiente?.trim()) {
+    if (!result) {
       return NextResponse.json(
         { error: 'Estudiante no encontrado o sin correo de acudiente' },
         { status: 404 }
       );
     }
 
-    const email = estudiante.correo_acudiente.trim();
-    const nombre = estudiante.nombre_acudiente || 'Acudiente';
-    const telefono = estudiante.telefono_acudiente || null;
-
-    let acudiente = await prisma.acudientes.findUnique({
-      where: {
-        institucion_id_email: {
-          institucion_id: estudiante.institucion_id,
-          email,
-        },
-      },
-    });
-
-    if (!acudiente) {
-      acudiente = await prisma.acudientes.create({
-        data: {
-          institucion_id: estudiante.institucion_id,
-          email,
-          nombre,
-          telefono,
-        },
-      });
-    }
+    const subscribeToken = createPushSubscribeToken(
+      result.acudienteId,
+      result.institucionId
+    );
 
     return NextResponse.json({
-      acudienteId: acudiente.id,
-      institucionId: acudiente.institucion_id,
+      acudienteId: result.acudienteId,
+      institucionId: result.institucionId,
       publicKey,
+      subscribeToken,
     });
   } catch (error) {
     console.error('Error en /api/push/activate:', error);
-    return NextResponse.json(
-      { error: 'Error al activar' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error al activar' }, { status: 500 });
   }
 }

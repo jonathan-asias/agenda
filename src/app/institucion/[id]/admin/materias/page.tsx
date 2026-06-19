@@ -7,6 +7,8 @@ import Header from '../../Header';
 import Footer from '../../Footer';
 import AddMateriaModal from '../modals/AddMateriaModal';
 import Skeleton from '@/components/ui/Skeleton';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 
 interface MateriaResumen {
   id: number;
@@ -136,19 +138,23 @@ export default function AdminMateriasPage() {
           onSuccess={handleRefetch}
         />
         {showViewModal && selectedMateria && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-slate-900">Detalle de la materia</h3>
-                <button type="button" onClick={() => { setShowViewModal(false); setSelectedMateria(null); }} className="text-slate-500 hover:text-slate-700">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-              <p className="text-slate-700"><span className="font-medium">Nombre:</span> {selectedMateria.nombre}</p>
-              <p className="text-slate-700 mt-2"><span className="font-medium">Área:</span> {selectedMateria.area?.nombre || 'Sin área'}</p>
-              <p className="text-slate-700 mt-2"><span className="font-medium">Grados asignados:</span> {selectedMateria._count?.materiaGrados ?? 0}</p>
+          <Modal
+            open={showViewModal}
+            onClose={() => { setShowViewModal(false); setSelectedMateria(null); }}
+            title="Detalle de la materia"
+            size="md"
+          >
+            <div className="space-y-2 text-sm text-[var(--color-text-secondary)]">
+              <p><span className="font-medium text-[var(--color-text-primary)]">Nombre:</span> {selectedMateria.nombre}</p>
+              <p><span className="font-medium text-[var(--color-text-primary)]">Área:</span> {selectedMateria.area?.nombre || 'Sin área'}</p>
+              <p><span className="font-medium text-[var(--color-text-primary)]">Grados asignados:</span> {selectedMateria._count?.materiaGrados ?? 0}</p>
             </div>
-          </div>
+            <div className="pt-4 mt-4 border-t border-[var(--color-border-light)]">
+              <Button type="button" variant="primary" fullWidth onClick={() => { setShowViewModal(false); setSelectedMateria(null); }}>
+                Cerrar
+              </Button>
+            </div>
+          </Modal>
         )}
         <Footer />
       </div>

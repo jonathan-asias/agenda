@@ -7,6 +7,8 @@ import Header from '../../Header';
 import Footer from '../../Footer';
 import AddCursoModal from '../modals/AddCursoModal';
 import Skeleton from '@/components/ui/Skeleton';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 
 interface CursoResumen {
   id: number;
@@ -169,20 +171,24 @@ export default function AdminCursosPage() {
           onSuccess={handleRefetch}
         />
         {showViewModal && selectedCurso && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-slate-900">Detalle del curso</h3>
-                <button type="button" onClick={() => { setShowViewModal(false); setSelectedCurso(null); }} className="text-slate-500 hover:text-slate-700">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-              <p className="text-slate-700"><span className="font-medium">Nombre:</span> {selectedCurso.nombre}</p>
-              <p className="text-slate-700 mt-2"><span className="font-medium">Grado:</span> {selectedCurso.grado?.nombre} ({selectedCurso.grado?.nivel})</p>
-              <p className="text-slate-700 mt-2"><span className="font-medium">Jornada:</span> {selectedCurso.jornada || 'No especificada'}</p>
-              <p className="text-slate-700 mt-2"><span className="font-medium">Estudiantes:</span> {selectedCurso._count?.estudiantes ?? 0}</p>
+          <Modal
+            open={showViewModal}
+            onClose={() => { setShowViewModal(false); setSelectedCurso(null); }}
+            title="Detalle del curso"
+            size="md"
+          >
+            <div className="space-y-2 text-sm text-[var(--color-text-secondary)]">
+              <p><span className="font-medium text-[var(--color-text-primary)]">Nombre:</span> {selectedCurso.nombre}</p>
+              <p><span className="font-medium text-[var(--color-text-primary)]">Grado:</span> {selectedCurso.grado?.nombre} ({selectedCurso.grado?.nivel})</p>
+              <p><span className="font-medium text-[var(--color-text-primary)]">Jornada:</span> {selectedCurso.jornada || 'No especificada'}</p>
+              <p><span className="font-medium text-[var(--color-text-primary)]">Estudiantes:</span> {selectedCurso._count?.estudiantes ?? 0}</p>
             </div>
-          </div>
+            <div className="pt-4 mt-4 border-t border-[var(--color-border-light)]">
+              <Button type="button" variant="primary" fullWidth onClick={() => { setShowViewModal(false); setSelectedCurso(null); }}>
+                Cerrar
+              </Button>
+            </div>
+          </Modal>
         )}
         <Footer />
       </div>

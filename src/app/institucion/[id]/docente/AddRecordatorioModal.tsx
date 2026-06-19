@@ -2,6 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useMemo, useEffect } from 'react';
+import { showConfirm } from '@/lib/notifications';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import ErrorBanner from '@/components/ui/ErrorBanner';
 import type { AsignacionLike } from '@/types/docente';
 import type { Estudiante } from '@/types/estudiante';
 
@@ -37,6 +41,7 @@ export default function AddRecordatorioModal({
   const [cargandoEstudiantes, setCargandoEstudiantes] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fase, setFase] = useState<'form' | 'preview'>('form');
   const [modoEnvio, setModoEnvio] = useState<string[]>([]);
 
   const opcionesModoEnvio = [
@@ -207,78 +212,48 @@ export default function AddRecordatorioModal({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-
-    // Validaciones
+  const validarFormulario = (): boolean => {
     if (!formData.nombre.trim()) {
       setError('El nombre del recordatorio es requerido');
-      setSubmitting(false);
-      return;
+      return false;
     }
-
     if (!formData.tipo) {
       setError('El tipo de recordatorio es requerido');
-      setSubmitting(false);
-      return;
+      return false;
     }
-
     if (!formData.descripcion.trim()) {
       setError('La descripción es requerida');
-      setSubmitting(false);
-      return;
+      return false;
     }
-
     if (!formData.fecha) {
       setError('La fecha del recordatorio es requerida');
-      setSubmitting(false);
-      return;
+      return false;
     }
-
-    // Validar que se seleccionen grado, curso, área y materia
-    if (!formData.gradoId) {
-      setError('Debes seleccionar un grado');
-      setSubmitting(false);
-      return;
+    if (!formData.gradoId || !formData.cursoId || !formData.areaId || !formData.materiaId) {
+      setError('Selecciona grado, curso, área y materia');
+      return false;
     }
-
-    if (!formData.cursoId) {
-      setError('Debes seleccionar un curso');
-      setSubmitting(false);
-      return;
-    }
-
-    if (!formData.areaId) {
-      setError('Debes seleccionar un área');
-      setSubmitting(false);
-      return;
-    }
-
-    if (!formData.materiaId) {
-      setError('Debes seleccionar una materia');
-      setSubmitting(false);
-      return;
-    }
-
-    // Validar que la fecha no sea en el pasado
     const fechaSeleccionada = new Date(formData.fecha);
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    
     if (fechaSeleccionada < hoy) {
       setError('La fecha no puede ser anterior a hoy');
-      setSubmitting(false);
-      return;
+      return false;
     }
-
     if (modoEnvio.length === 0) {
       setError('Selecciona al menos un método de envío (SMS, WhatsApp o Email)');
-      setSubmitting(false);
-      return;
+      return false;
     }
+    if (estudiantesSeleccionados.length === 0) {
+      setError('Selecciona al menos un estudiante para enviar el recordatorio');
+      return false;
+    }
+    return true;
+  };
 
+  const enviarRecordatorio = async () => {
+    setSubmitting(true);
+    setError('');
     try {
       const response = await fetch('/api/recordatorios', {
         method: 'POST',
@@ -302,7 +277,7 @@ export default function AddRecordatorioModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-        setError(errorData.error || 'Error al crear el recordatorio. Por favor, intenta nuevamente.');
+        setError(errorData.error || 'No pudimos crear el recordatorio. Intenta de nuevo.');
         setSubmitting(false);
         return;
       }
@@ -312,10 +287,45 @@ export default function AddRecordatorioModal({
       onClose();
     } catch (err) {
       console.error('Error al crear recordatorio:', err);
-      setError('Error al crear el recordatorio. Por favor, intenta nuevamente.');
+      setError('No pudimos crear el recordatorio. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!validarFormulario()) {
+      return;
+    }
+
+    if (fase === 'form') {
+      setFase('preview');
+      return;
+    }
+
+    const destinatarios =
+      estudiantesSeleccionados.length === estudiantes.length
+        ? `todos los acudientes del curso (${estudiantesSeleccionados.length})`
+        : `${estudiantesSeleccionados.length} acudiente${estudiantesSeleccionados.length !== 1 ? 's' : ''}`;
+
+    const confirmed = await showConfirm({
+      title: '¿Enviar recordatorio?',
+      text: `Se notificará a ${destinatarios} por ${modoEnvio.join(', ')}.`,
+      confirmButtonText: 'Enviar recordatorio',
+      cancelButtonText: 'Volver a revisar',
+      icon: 'question',
+      confirmButtonColor: '#2563eb',
+    });
+
+    if (!confirmed) {
+      setFase('form');
+      return;
+    }
+
+    await enviarRecordatorio();
   };
 
   const resetForm = () => {
@@ -333,6 +343,7 @@ export default function AddRecordatorioModal({
     setEstudiantes([]);
     setEstudiantesSeleccionados([]);
     setError('');
+    setFase('form');
   };
 
   const toggleModoEnvio = (value: string) => {
@@ -344,41 +355,27 @@ export default function AddRecordatorioModal({
 
   const handleClose = () => {
     resetForm();
+    setFase('form');
     onClose();
   };
 
   if (!isOpen) return null;
 
-  // Obtener la fecha mínima (hoy)
   const hoy = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] flex flex-col">
-        <div className="bg-white border-b border-slate-200 p-6 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">➕ Agregar Recordatorio</h2>
-              <p className="text-slate-600">Crea un nuevo recordatorio para organizar tus actividades</p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-            aria-label="Cerrar"
-          >
-            <svg className="w-7 h-7 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      title="Agregar recordatorio"
+      size="xl"
+      className="max-w-3xl"
+    >
+      <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+        Crea un recordatorio para organizar tareas, exámenes o eventos con tus estudiantes.
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
           {/* Nombre del Recordatorio */}
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-slate-700">
@@ -666,48 +663,34 @@ export default function AddRecordatorioModal({
             </div>
           )}
           
-          {error && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-              <div className="flex items-center">
-                <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <p className="text-red-700 font-medium">{error}</p>
-              </div>
-            </div>
+          {error && <ErrorBanner title={error} />}
+
+          {fase === 'preview' && (
+            <section className="rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-nested)] p-4 space-y-2" aria-label="Vista previa del recordatorio">
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Vista previa</h3>
+              <p className="text-sm"><strong>{formData.nombre}</strong> · {tiposRecordatorio.find(t => t.value === formData.tipo)?.label}</p>
+              <p className="text-sm text-[var(--color-text-secondary)]">{formData.descripcion}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Fecha: {formData.fecha} · Envío: {modoEnvio.join(', ')} · {estudiantesSeleccionados.length} destinatario{estudiantesSeleccionados.length !== 1 ? 's' : ''}
+              </p>
+            </section>
           )}
 
-          <div className="flex space-x-4 pt-4 border-t border-slate-200 mt-6 flex-shrink-0">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                  Creando Recordatorio...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Crear Recordatorio
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-6 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-all duration-200 border-2 border-slate-200"
-            >
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[var(--color-border-light)]">
+            {fase === 'preview' && (
+              <Button type="button" variant="outline" onClick={() => setFase('form')}>
+                Volver a editar
+              </Button>
+            )}
+            <Button type="submit" variant="primary" disabled={submitting} className="flex-1">
+              {submitting ? 'Enviando…' : fase === 'form' ? 'Revisar y enviar' : 'Confirmar envío'}
+            </Button>
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancelar
-            </button>
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }
 

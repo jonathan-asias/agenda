@@ -1,17 +1,31 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Swal from 'sweetalert2';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { applyBranding } from '@/lib/applyBranding';
 import Header from '@/components/landing/Header';
 import Footer from '@/components/landing/Footer';
+import { Button, Card, Input, ErrorBanner, LoaderPage } from '@/components/ui';
 
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
+          <LoaderPage message="Cargando inicio de sesión..." />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const { institutionId } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +35,20 @@ export default function LoginPage() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [userType, setUserType] = useState<'institucion' | 'administrador' | 'docente'>('institucion');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('subscription') === 'blocked') {
+      const message = searchParams.get('message');
+      if (message) {
+        setError(decodeURIComponent(message));
+      } else {
+        setError(
+          'Su suscripción expiró. Contacte a soporte o adquiera un nuevo plan para volver a ingresar.'
+        );
+      }
+    }
+  }, [searchParams]);
 
   // Aplicar branding de la institución en login cuando ya hay sesión (ej. usuario volvió a login)
   useEffect(() => {
@@ -239,13 +267,22 @@ export default function LoginPage() {
         let errorMessage = 'Error al iniciar sesión';
         
         // Mensajes de error más específicos basados en el código de error de Supabase
-        if (supabaseError.message.includes('Invalid login credentials') || 
-            supabaseError.message.includes('Invalid credentials')) {
-          errorMessage = 'Correo o contraseña incorrectos';
-        } else if (supabaseError.message.includes('Email not confirmed')) {
-          errorMessage = 'Por favor, confirma tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.';
+        if (
+          supabaseError.message.includes('Email not confirmed') ||
+          supabaseError.code === 'email_not_confirmed'
+        ) {
+          errorMessage =
+            'Por favor, confirma tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.';
+        } else if (
+          supabaseError.message.includes('Invalid login credentials') ||
+          supabaseError.message.includes('Invalid credentials')
+        ) {
+          errorMessage =
+            userType === 'docente'
+              ? 'Correo o contraseña incorrectos. Usa el tipo "Docente", la contraseña del formulario al crear el docente o restablécela en Recuperar contraseña.'
+              : 'Correo o contraseña incorrectos';
         } else if (supabaseError.message.includes('User not found')) {
-          errorMessage = 'No se encontró una cuenta con este correo electrónico';
+          errorMessage = 'Correo o contraseña incorrectos';
         } else if (supabaseError.message.includes('Too many requests')) {
           errorMessage = 'Demasiados intentos. Por favor, espera un momento antes de intentar nuevamente.';
         } else {
@@ -257,46 +294,56 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Verificar el tipo de usuario seleccionado
-        if (userType === 'administrador') {
-          // Buscar administrador
-          const adminResponse = await fetch(`/api/administradores/by-email/${encodeURIComponent(sanitizedEmail)}`);
-          if (adminResponse.ok) {
-            const adminData = await adminResponse.json();
-            router.push(`/institucion/${adminData.administrador.institucion.id}/admin`);
-          } else {
-            await supabaseClient.auth.signOut();
-            await Swal.fire({
-              icon: 'warning',
-              title: 'Correo no registrado',
-              text: 'El correo ingresado no se encuentra registrado como administrador.'
-            });
-          }
-        } else if (userType === 'docente') {
-          // Buscar docente
-          const docenteResponse = await fetch(`/api/docentes/by-email/${encodeURIComponent(sanitizedEmail)}`);
-          if (docenteResponse.ok) {
-            const docenteData = await docenteResponse.json();
-            router.push(`/institucion/${docenteData.docente.institucion.id}/docente`);
-          } else {
-            setError('No se encontró un docente con este correo');
-            await supabaseClient.auth.signOut();
-          }
-        } else {
-          // Buscar institución
-          const instResponse = await fetch(`/api/instituciones/by-email/${encodeURIComponent(sanitizedEmail)}`);
-          if (instResponse.ok) {
-            const instData = await instResponse.json();
-            if (instData?.exists && instData?.id) {
-              router.push(`/institucion/${instData.id}`);
-            } else {
-              setError('No se encontró una institución con este correo');
+        const verifySubscriptionAccess = async (targetInstitutionId: number): Promise<boolean> => {
+          try {
+            const accessRes = await fetch(
+              `/api/instituciones/${targetInstitutionId}/subscription-access`
+            );
+            if (!accessRes.ok) return true;
+            const accessData = await accessRes.json();
+            if (!accessData.canLogin) {
               await supabaseClient.auth.signOut();
+              setError(
+                accessData.message ||
+                  'Su suscripción expiró. Contacte a soporte o adquiera un nuevo plan.'
+              );
+              return false;
             }
-          } else {
-            setError('No se encontró una institución con este correo');
-            await supabaseClient.auth.signOut();
+            return true;
+          } catch {
+            return true;
           }
+        };
+
+        const roleForUserType: Record<typeof userType, 'institucion' | 'admin' | 'docente'> = {
+          institucion: 'institucion',
+          administrador: 'admin',
+          docente: 'docente',
+        };
+
+        const instRes = await fetch('/api/auth/get-user-institution', { method: 'POST' });
+        if (!instRes.ok) {
+          await supabaseClient.auth.signOut();
+          setError('Correo o contraseña incorrectos');
+          return;
+        }
+
+        const { institutionId, role } = await instRes.json();
+        if (!institutionId || role !== roleForUserType[userType]) {
+          await supabaseClient.auth.signOut();
+          setError('Correo o contraseña incorrectos');
+          return;
+        }
+
+        const allowed = await verifySubscriptionAccess(institutionId);
+        if (!allowed) return;
+
+        if (role === 'admin') {
+          router.push(`/institucion/${institutionId}/admin`);
+        } else if (role === 'docente') {
+          router.push(`/institucion/${institutionId}/docente`);
+        } else {
+          router.push(`/institucion/${institutionId}`);
         }
       }
     } catch (err) {
@@ -308,21 +355,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col">
+    <div className="min-h-screen bg-[var(--color-background)] flex flex-col">
       <Header />
       <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[var(--color-primary)] rounded-2xl mb-4">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">
-            Iniciar Sesión
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">
+            Iniciar sesión
           </h1>
-          <p className="text-slate-600 mb-6">
+          <p className="text-[var(--color-text-secondary)] mb-6">
             Accede a tu cuenta
           </p>
 
@@ -429,40 +476,25 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-8">
+        <Card variant="elevated" padding="lg" className="p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                Correo Electrónico
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => handleSecureInputChange(e.target.value, 'email', setEmail)}
-                  autoComplete="email"
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                  validationErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
-                }`}
-                placeholder="correo@ejemplo.com"
-                maxLength={254}
-              />
-              {validationErrors.email && (
-                <p className="mt-1 text-xs text-red-600 flex items-center">
-                  <svg className="w-3 h-3 mr-1 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {validationErrors.email}
-                </p>
-              )}
-            </div>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              label="Correo electrónico"
+              required
+              value={email}
+              onChange={(e) => handleSecureInputChange(e.target.value, 'email', setEmail)}
+              autoComplete="email"
+              placeholder="correo@ejemplo.com"
+              maxLength={254}
+              error={validationErrors.email}
+            />
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                 Contraseña
               </label>
               <div className="relative">
@@ -484,8 +516,8 @@ export default function LoginPage() {
                       });
                     }
                   }}
-                  className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                    validationErrors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                  className={`w-full px-4 py-2.5 pr-12 text-base border rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-focus)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
+                    validationErrors.password ? 'border-[var(--color-danger-border-input)]' : 'border-[var(--color-border)]'
                   }`}
                   placeholder="Ingrese su contraseña"
                   maxLength={128}
@@ -518,63 +550,35 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-red-800">{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {error && <ErrorBanner title={error} />}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Iniciando sesión...
-                </div>
-              ) : (
-                'Iniciar Sesión'
-              )}
-            </button>
+            <Button type="submit" variant="primary" size="lg" fullWidth disabled={loading}>
+              {loading ? 'Iniciando sesión…' : 'Iniciar sesión'}
+            </Button>
           </form>
 
           {/* Links */}
           <div className="mt-6 text-center space-y-3">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[var(--color-text-secondary)]">
               ¿No tienes una cuenta?{' '}
               <Link
                 href="/registro-institucion"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
               >
                 Regístrate aquí
               </Link>
             </p>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[var(--color-text-secondary)]">
               ¿Olvidaste tu contraseña?{' '}
               <Link
                 href="/recuperar-contrasena"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
               >
                 Recupérala aquí
               </Link>
             </p>
-            
-
           </div>
-        </div>
+        </Card>
 
         {/* Back to Home */}
         <div className="text-center">

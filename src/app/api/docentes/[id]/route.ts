@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import {
-  getAuthInstitutionId,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withTenantFromRequest } from '@/lib/db/with-tenant-request';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
+import {
+  assertRecordBelongsToSede,
+  institutionSedeWhere,
+  sedeErrorToResponse,
+} from '@/lib/sede-scope';
 import {
   getSupabaseAdminClient,
   isSupabaseAdminConfigured,
@@ -23,19 +29,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const docenteId = parseInt(id, 10);
     if (!Number.isFinite(docenteId)) {
       return NextResponse.json({ error: 'ID de docente inválido' }, { status: 400 });
     }
 
-    const docente = await prisma.docentes.findFirst({
-      where: { id: docenteId, institucion_id: userInstitutionId },
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+    const docente = await tx.docentes.findFirst({
+      where: { id: docenteId, ...institutionSedeWhere(institutionId, scope) },
       include: {
         sede: { select: { id: true, nombre: true } },
         docenteAsignaciones: {
@@ -90,7 +92,12 @@ export async function GET(
     };
 
     return NextResponse.json(payload);
+    });
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error al obtener docente:', error);
@@ -106,11 +113,6 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const docenteId = parseInt(id);
 
@@ -121,9 +123,9 @@ export async function DELETE(
       );
     }
 
-    // Verificar que el docente existe y pertenece a la institución del usuario
-    const docente = await prisma.docentes.findFirst({
-      where: { id: docenteId, institucion_id: userInstitutionId },
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+    const docente = await tx.docentes.findFirst({
+      where: { id: docenteId, ...institutionSedeWhere(institutionId, scope) },
       include: {
         docenteAsignaciones: true
       }
@@ -136,53 +138,39 @@ export async function DELETE(
       );
     }
 
-    console.log(`Iniciando eliminación del docente ${docente.nombres} ${docente.apellidos} (ID: ${docenteId})`);
+    assertRecordBelongsToSede(docente.sede_id, scope);
 
-    // Iniciar transacción para eliminar todas las relaciones
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Eliminar asignaciones de docente (DocenteAsignaciones)
-      const deletedAsignaciones = await tx.docenteAsignaciones.deleteMany({
-        where: { docente_id: docenteId }
-      });
-      console.log(`Eliminadas ${deletedAsignaciones.count} asignaciones de docente`);
-
-      // 2. Eliminar relaciones MateriaGrados si existen
-      // Primero obtenemos las materias asignadas al docente
-      const materiasAsignadas = await tx.docenteAsignaciones.findMany({
-        where: { docente_id: docenteId },
-        select: { materia_id: true }
-      });
-
-      const materiaIds = materiasAsignadas.map(a => a.materia_id);
-      
-      if (materiaIds.length > 0) {
-        // Eliminar relaciones MateriaGrados para las materias asignadas
-        const deletedMateriaGrados = await tx.materiaGrados.deleteMany({
-          where: {
-            materia_id: { in: materiaIds }
-          }
-        });
-        console.log(`Eliminadas ${deletedMateriaGrados.count} relaciones MateriaGrados`);
-      }
-
-      // 3. Eliminar el docente de la tabla docentes (solo si pertenece a la institución del usuario)
-      const deletedDocente = await tx.docentes.delete({
-        where: { id: docenteId, institucion_id: userInstitutionId }
-      });
-      console.log(`Docente eliminado: ${deletedDocente.nombres} ${deletedDocente.apellidos}`);
-
-      return {
-        docente: deletedDocente,
-        asignacionesEliminadas: deletedAsignaciones.count,
-        materiaGradosEliminados: materiaIds.length > 0 ? (await tx.materiaGrados.count({
-          where: { materia_id: { in: materiaIds } }
-        })) : 0
-      };
+    // Eliminar relaciones y docente
+    const deletedAsignaciones = await tx.docenteAsignaciones.deleteMany({
+      where: { docente_id: docenteId }
     });
+
+    const materiasAsignadas = await tx.docenteAsignaciones.findMany({
+      where: { docente_id: docenteId },
+      select: { materia_id: true }
+    });
+    const materiaIds = materiasAsignadas.map((a) => a.materia_id);
+
+    let materiaGradosEliminados = 0;
+    if (materiaIds.length > 0) {
+      const deletedMateriaGrados = await tx.materiaGrados.deleteMany({
+        where: { materia_id: { in: materiaIds } }
+      });
+      materiaGradosEliminados = deletedMateriaGrados.count;
+    }
+
+    const deletedDocente = await tx.docentes.delete({
+      where: { id: docenteId, institucion_id: institutionId }
+    });
+
+    const result = {
+      docente: deletedDocente,
+      asignacionesEliminadas: deletedAsignaciones.count,
+      materiaGradosEliminados
+    };
 
     // 4. Eliminar usuario de Supabase Auth si tiene auth_user_id
     if (docente.auth_user_id) {
-      console.log('Eliminando usuario de Supabase Auth con ID:', docente.auth_user_id);
       if (!isSupabaseAdminConfigured()) {
         console.error('Supabase admin no está configurado. No se eliminará el usuario en Auth.');
       } else {
@@ -196,8 +184,6 @@ export async function DELETE(
             console.error('Error al eliminar usuario de Supabase Auth:', authError);
             console.error('Detalles del error:', JSON.stringify(authError, null, 2));
             // Continuamos con la eliminación de la base de datos aunque falle Supabase
-          } else {
-            console.log('Usuario eliminado exitosamente de Supabase Auth');
           }
         } catch (authError) {
           console.error('Error al eliminar usuario de Supabase Auth:', authError);
@@ -205,25 +191,9 @@ export async function DELETE(
           // Continuamos con la eliminación de la base de datos aunque falle Supabase
         }
       }
-    } else {
-      console.log('No se encontró auth_user_id para el docente:', docente.id);
-      console.log('Datos del docente:', {
-        id: docente.id,
-        nombres: docente.nombres,
-        apellidos: docente.apellidos,
-        email: docente.email,
-        auth_user_id: docente.auth_user_id
-      });
     }
 
     const supabaseAuthDeleted = !!docente.auth_user_id;
-    
-    console.log(`✅ Eliminación completada para el docente ${docente.nombres} ${docente.apellidos}`);
-    console.log(`📊 Resumen de eliminaciones:`);
-    console.log(`   - Asignaciones eliminadas: ${result.asignacionesEliminadas}`);
-    console.log(`   - Relaciones MateriaGrados eliminadas: ${result.materiaGradosEliminados}`);
-    console.log(`   - Docente eliminado de base de datos: ✅`);
-    console.log(`   - Usuario eliminado de Supabase Auth: ${supabaseAuthDeleted ? '✅' : '❌ (No tenía auth_user_id)'}`);
 
     return NextResponse.json({
       success: true,
@@ -242,8 +212,13 @@ export async function DELETE(
         }
       }
     });
+    });
 
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error al eliminar docente:', error);
@@ -263,11 +238,6 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const docenteId = parseInt(id);
     const body = await request.json() as {
@@ -285,9 +255,9 @@ export async function PUT(
       );
     }
 
-    // Verificar que el docente existe y pertenece a la institución del usuario
-    const docenteExistente = await prisma.docentes.findFirst({
-      where: { id: docenteId, institucion_id: userInstitutionId }
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+    const docenteExistente = await tx.docentes.findFirst({
+      where: { id: docenteId, ...institutionSedeWhere(institutionId, scope) }
     });
 
     if (!docenteExistente) {
@@ -297,9 +267,10 @@ export async function PUT(
       );
     }
 
-    // Actualizar datos del docente (solo si pertenece a la institución del usuario)
-    const docenteActualizado = await prisma.docentes.update({
-      where: { id: docenteId, institucion_id: userInstitutionId },
+    assertRecordBelongsToSede(docenteExistente.sede_id, scope);
+
+    const docenteActualizado = await tx.docentes.update({
+      where: { id: docenteId, institucion_id: institutionId },
       data: {
         nombres,
         apellidos,
@@ -310,7 +281,7 @@ export async function PUT(
     // Si hay asignaciones, actualizarlas
     if (asignaciones) {
       // Eliminar asignaciones existentes
-      await prisma.docenteAsignaciones.deleteMany({
+      await tx.docenteAsignaciones.deleteMany({
         where: { docente_id: docenteId }
       });
 
@@ -362,7 +333,19 @@ export async function PUT(
       }
 
       if (nuevasAsignaciones.length > 0) {
-        await prisma.docenteAsignaciones.createMany({
+        for (const asignacion of nuevasAsignaciones) {
+          const [grado, curso, materia] = await Promise.all([
+            tx.grados.findFirst({ where: { id: asignacion.grado_id, institucion_id: institutionId } }),
+            tx.cursos.findFirst({ where: { id: asignacion.curso_id, institucion_id: institutionId } }),
+            tx.materias.findFirst({ where: { id: asignacion.materia_id, institucion_id: institutionId } }),
+          ]);
+          if (!grado || !curso || !materia) continue;
+          assertRecordBelongsToSede(grado.sede_id, scope);
+          assertRecordBelongsToSede(curso.sede_id, scope);
+          assertRecordBelongsToSede(materia.sede_id, scope);
+        }
+
+        await tx.docenteAsignaciones.createMany({
           data: nuevasAsignaciones
         });
 
@@ -373,7 +356,7 @@ export async function PUT(
         for (const materiaId of materiasUnicas) {
           for (const gradoId of gradosUnicos) {
             // Verificar si la relación ya existe
-            const existeRelacion = await prisma.materiaGrados.findFirst({
+            const existeRelacion = await tx.materiaGrados.findFirst({
               where: {
                 materia_id: materiaId,
                 grado_id: gradoId
@@ -381,7 +364,7 @@ export async function PUT(
             });
 
             if (!existeRelacion) {
-              await prisma.materiaGrados.create({
+              await tx.materiaGrados.create({
                 data: {
                   materia_id: materiaId,
                   grado_id: gradoId
@@ -398,8 +381,13 @@ export async function PUT(
       message: 'Docente actualizado exitosamente',
       data: docenteActualizado
     });
+    });
 
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error al actualizar docente:', error);

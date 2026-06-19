@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
+import {
+  assertRecordBelongsToSede,
+  institutionSedeWhere,
+  sedeErrorToResponse,
+} from '@/lib/sede-scope';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const estudianteId = parseInt(id);
 
@@ -26,50 +26,48 @@ export async function DELETE(
       );
     }
 
-    console.log(`Iniciando eliminación del estudiante con ID: ${estudianteId}`);
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+      const estudiante = await tx.estudiantes.findFirst({
+        where: { id: estudianteId, ...institutionSedeWhere(institutionId, scope) }
+      });
 
-    // Verificar que el estudiante existe y pertenece a la institución del usuario
-    const estudiante = await prisma.estudiantes.findFirst({
-      where: { id: estudianteId, institucion_id: userInstitutionId }
-    });
-
-    if (!estudiante) {
-      return NextResponse.json(
-        { error: 'Estudiante no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    enforceTenant(userInstitutionId, estudiante.institucion_id);
-
-    console.log(`Estudiante encontrado: ${estudiante.nombres} ${estudiante.apellidos}`);
-
-    // Eliminar el estudiante de la base de datos (solo si pertenece a la institución del usuario)
-    await prisma.estudiantes.delete({
-      where: { id: estudianteId, institucion_id: userInstitutionId }
-    });
-
-    console.log(`✅ Estudiante eliminado exitosamente: ${estudiante.nombres} ${estudiante.apellidos}`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Estudiante eliminado exitosamente',
-      data: {
-        estudiante: {
-          id: estudiante.id,
-          nombres: estudiante.nombres,
-          apellidos: estudiante.apellidos,
-          codigo_estudiantil: estudiante.codigo_estudiantil
-        }
+      if (!estudiante) {
+        return NextResponse.json(
+          { error: 'Estudiante no encontrado' },
+          { status: 404 }
+        );
       }
-    });
 
+      enforceTenant(institutionId, estudiante.institucion_id);
+      assertRecordBelongsToSede(estudiante.sede_id, scope);
+
+      await tx.estudiantes.delete({
+        where: { id: estudianteId, institucion_id: institutionId }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Estudiante eliminado exitosamente',
+        data: {
+          estudiante: {
+            id: estudiante.id,
+            nombres: estudiante.nombres,
+            apellidos: estudiante.apellidos,
+            codigo_estudiantil: estudiante.codigo_estudiantil
+          }
+        }
+      });
+    });
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error al eliminar estudiante:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor al eliminar el estudiante',
         details: error instanceof Error ? error.message : 'Error desconocido'
       },
@@ -83,15 +81,20 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const estudianteId = parseInt(id);
     const body = await request.json();
-    const { nombres, apellidos, codigo_estudiantil, nombre_acudiente, correo_acudiente, telefono_acudiente, grado_id, curso_id, activo } = body;
+    const {
+      nombres,
+      apellidos,
+      codigo_estudiantil,
+      nombre_acudiente,
+      correo_acudiente,
+      telefono_acudiente,
+      grado_id,
+      curso_id,
+      activo
+    } = body;
 
     if (isNaN(estudianteId)) {
       return NextResponse.json(
@@ -100,50 +103,64 @@ export async function PUT(
       );
     }
 
-    // Verificar que el estudiante existe y pertenece a la institución del usuario
-    const estudianteExistente = await prisma.estudiantes.findFirst({
-      where: { id: estudianteId, institucion_id: userInstitutionId }
-    });
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+      const estudianteExistente = await tx.estudiantes.findFirst({
+        where: { id: estudianteId, ...institutionSedeWhere(institutionId, scope) }
+      });
 
-    if (!estudianteExistente) {
-      return NextResponse.json(
-        { error: 'Estudiante no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    console.log(`Actualizando estudiante: ${estudianteExistente.nombres} ${estudianteExistente.apellidos}`);
-
-    // Actualizar datos del estudiante (solo si pertenece a la institución del usuario)
-    const estudianteActualizado = await prisma.estudiantes.update({
-      where: { id: estudianteId, institucion_id: userInstitutionId },
-      data: {
-        nombres,
-        apellidos,
-        codigo_estudiantil,
-        nombre_acudiente,
-        correo_acudiente: correo_acudiente || null,
-        telefono_acudiente,
-        grado_id,
-        curso_id,
-        activo
+      if (!estudianteExistente) {
+        return NextResponse.json(
+          { error: 'Estudiante no encontrado' },
+          { status: 404 }
+        );
       }
+
+      assertRecordBelongsToSede(estudianteExistente.sede_id, scope);
+
+      if (curso_id) {
+        const curso = await tx.cursos.findFirst({
+          where: { id: curso_id, institucion_id: institutionId },
+        });
+        if (curso) assertRecordBelongsToSede(curso.sede_id, scope);
+      }
+      if (grado_id) {
+        const grado = await tx.grados.findFirst({
+          where: { id: grado_id, institucion_id: institutionId },
+        });
+        if (grado) assertRecordBelongsToSede(grado.sede_id, scope);
+      }
+
+      const estudianteActualizado = await tx.estudiantes.update({
+        where: { id: estudianteId, institucion_id: institutionId },
+        data: {
+          nombres,
+          apellidos,
+          codigo_estudiantil,
+          nombre_acudiente,
+          correo_acudiente: correo_acudiente || null,
+          telefono_acudiente,
+          grado_id,
+          curso_id,
+          activo
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Estudiante actualizado exitosamente',
+        data: estudianteActualizado
+      });
     });
-
-    console.log(`✅ Estudiante actualizado exitosamente: ${estudianteActualizado.nombres} ${estudianteActualizado.apellidos}`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Estudiante actualizado exitosamente',
-      data: estudianteActualizado
-    });
-
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error al actualizar estudiante:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor al actualizar el estudiante',
         details: error instanceof Error ? error.message : 'Error desconocido'
       },
@@ -157,11 +174,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const estudianteId = parseInt(id);
 
@@ -172,45 +184,40 @@ export async function GET(
       );
     }
 
-    // Obtener información del estudiante (solo si pertenece a la institución del usuario)
-    const estudiante = await prisma.estudiantes.findFirst({
-      where: { id: estudianteId, institucion_id: userInstitutionId },
-      include: {
-        grado: {
-          select: {
-            nombre: true,
-            nivel: true
-          }
-        },
-        curso: {
-          select: {
-            nombre: true,
-            jornada: true
-          }
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+      const estudiante = await tx.estudiantes.findFirst({
+        where: { id: estudianteId, ...institutionSedeWhere(institutionId, scope) },
+        include: {
+          grado: { select: { nombre: true, nivel: true } },
+          curso: { select: { nombre: true, jornada: true } }
         }
+      });
+
+      if (!estudiante) {
+        return NextResponse.json(
+          { error: 'Estudiante no encontrado' },
+          { status: 404 }
+        );
       }
+
+      enforceTenant(institutionId, estudiante.institucion_id);
+      assertRecordBelongsToSede(estudiante.sede_id, scope);
+
+      return NextResponse.json({
+        success: true,
+        data: estudiante
+      });
     });
-
-    if (!estudiante) {
-      return NextResponse.json(
-        { error: 'Estudiante no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    enforceTenant(userInstitutionId, estudiante.institucion_id);
-
-    return NextResponse.json({
-      success: true,
-      data: estudiante
-    });
-
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error al obtener estudiante:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor al obtener el estudiante',
         details: error instanceof Error ? error.message : 'Error desconocido'
       },

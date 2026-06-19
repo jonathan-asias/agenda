@@ -1,4 +1,5 @@
 import { sendEmail } from './email';
+import { createPushActivationSig } from '@/lib/security/push-activation-token';
 
 export type SendReminderEmailParams = {
   institucionNombre: string;
@@ -46,7 +47,14 @@ function buildReminderHtml(params: SendReminderEmailParams): string {
       ${fechaLimite ? `<p style="margin:20px 0 0;padding:12px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:0.875rem;"><strong>Fecha límite:</strong> ${escapeHtml(fechaTexto)}</p>` : ''}
       <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px;">
         <span style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:8px;font-weight:500;">Ver en la plataforma</span>
-        ${baseUrl && typeof primerEstudianteId === 'number' ? `<a href="${escapeHtml(baseUrl)}/activar-notificaciones?estudianteId=${primerEstudianteId}" style="display:inline-block;padding:12px 24px;background:#0f172a;color:#fff;border-radius:8px;font-weight:500;text-decoration:none;">Activar notificaciones push</a>` : ''}
+        ${baseUrl && typeof primerEstudianteId === 'number' ? (() => {
+          try {
+            const sig = createPushActivationSig(primerEstudianteId);
+            return `<a href="${escapeHtml(baseUrl)}/activar-notificaciones?estudianteId=${primerEstudianteId}&sig=${encodeURIComponent(sig)}" style="display:inline-block;padding:12px 24px;background:#0f172a;color:#fff;border-radius:8px;font-weight:500;text-decoration:none;">Activar notificaciones push</a>`;
+          } catch {
+            return '';
+          }
+        })() : ''}
       </div>
     </div>
   </div>

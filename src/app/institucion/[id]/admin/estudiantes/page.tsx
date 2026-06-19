@@ -9,7 +9,7 @@ import AddEstudianteModal from '../modals/AddEstudianteModal';
 import ViewEstudianteModal from '../modals/ViewEstudianteModal';
 import EditEstudianteModal from '../modals/EditEstudianteModal';
 import DeleteEstudianteModal from '../modals/DeleteEstudianteModal';
-import { Button, Card, LoaderPage, Skeleton } from '@/components/ui';
+import { Button, Card, LoaderPage, EmptyState, ErrorBanner } from '@/components/ui';
 import type { Estudiante, EstudianteGetResponse } from '@/types';
 
 interface EstudianteResumen {
@@ -122,9 +122,20 @@ export default function AdminEstudiantesPage() {
             {loading && (
               <LoaderPage message="Cargando estudiantes..." />
             )}
-            {error && !loading && <div className="text-red-600">{error}</div>}
+            {error && !loading && (
+              <ErrorBanner
+                title="No pudimos cargar los estudiantes"
+                message={error}
+                onRetry={handleRefetch}
+              />
+            )}
             {!loading && !error && estudiantes.length === 0 && (
-              <div className="text-slate-600">No hay estudiantes registrados.</div>
+              <EmptyState
+                title="Aún no hay estudiantes"
+                description="Importa tu primer listado desde Excel o agrega estudiantes uno a uno."
+                actionLabel="Agregar estudiante"
+                onAction={() => setShowAddModal(true)}
+              />
             )}
 
             {!loading && !error && estudiantes.length > 0 && (

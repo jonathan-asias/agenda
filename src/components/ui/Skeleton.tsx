@@ -5,5 +5,10 @@ interface SkeletonProps {
 }
 
 export default function Skeleton({ className = '' }: SkeletonProps) {
-  return <div className={`animate-pulse rounded bg-slate-200 ${className}`} />;
+  return (
+    <div
+      className={`rounded bg-[var(--color-border-light)] motion-safe:animate-pulse ${className}`}
+      aria-hidden
+    />
+  );
 }

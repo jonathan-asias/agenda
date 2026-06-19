@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import SubscriptionAccessBanner from '@/components/subscription/SubscriptionAccessBanner';
 import type { BrandingData } from '@/types';
 
 interface HeaderProps {
@@ -224,6 +225,7 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
 
   return (
     <>
+      <SubscriptionAccessBanner />
       <header
         className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50"
         style={{

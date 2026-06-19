@@ -4,18 +4,20 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { verifyInstitutionAccess } from '@/lib/security';
+import InstitutionSubscriptionShell from '@/components/subscription/InstitutionSubscriptionShell';
 
 interface DocenteAuthGuardProps {
   children: React.ReactNode;
 }
 
 export default function DocenteAuthGuard({ children }: DocenteAuthGuardProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const params = useParams();
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [verifying, setVerifying] = useState(true);
+  const [docenteInstitutionId, setDocenteInstitutionId] = useState<number | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -38,12 +40,14 @@ export default function DocenteAuthGuard({ children }: DocenteAuthGuardProps) {
         }
 
         const data = await response.json();
-        // docente.institucionId (API devuelve institucion.id)
-        const docenteInstitucionId = (data.docente?.institucion_id ?? data.docente?.institucion?.id) as number | undefined;
+        const docenteInstitucionId = (data.docente?.institucion_id ??
+          data.docente?.institucion?.id) as number | undefined;
         const routeId = params?.id as string | undefined;
 
-        // CRÍTICO SaaS: docente solo puede acceder a la ruta de su institución (docente.institucionId === params.id).
-        if (docenteInstitucionId !== Number(routeId) || !verifyInstitutionAccess(docenteInstitucionId, routeId)) {
+        if (
+          docenteInstitucionId !== Number(routeId) ||
+          !verifyInstitutionAccess(docenteInstitucionId, routeId)
+        ) {
           if (docenteInstitucionId != null) {
             router.replace(`/institucion/${docenteInstitucionId}/docente`);
           } else {
@@ -52,6 +56,21 @@ export default function DocenteAuthGuard({ children }: DocenteAuthGuardProps) {
           return;
         }
 
+        const accessRes = await fetch(
+          `/api/instituciones/${docenteInstitucionId}/subscription-access`
+        );
+        if (accessRes.ok) {
+          const accessData = await accessRes.json();
+          if (!accessData.canLogin) {
+            await signOut();
+            router.push(
+              `/login?subscription=blocked&message=${encodeURIComponent(accessData.message ?? '')}`
+            );
+            return;
+          }
+        }
+
+        setDocenteInstitutionId(docenteInstitucionId ?? null);
         setIsAuthorized(true);
       } catch (error) {
         console.error('Error verificando docente:', error);
@@ -62,7 +81,7 @@ export default function DocenteAuthGuard({ children }: DocenteAuthGuardProps) {
     };
 
     verifyDocente();
-  }, [isMounted, user, loading, params?.id, router]);
+  }, [isMounted, user, loading, params?.id, router, signOut]);
 
   if (!isMounted || loading || verifying) {
     return (
@@ -75,7 +94,11 @@ export default function DocenteAuthGuard({ children }: DocenteAuthGuardProps) {
     );
   }
 
-  if (!isAuthorized) return null;
+  if (!isAuthorized || docenteInstitutionId == null) return null;
 
-  return <>{children}</>;
+  return (
+    <InstitutionSubscriptionShell institutionId={docenteInstitutionId}>
+      {children}
+    </InstitutionSubscriptionShell>
+  );
 }

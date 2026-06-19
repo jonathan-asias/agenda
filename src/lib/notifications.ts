@@ -1,31 +1,35 @@
-import Swal from 'sweetalert2';
-
 /**
- * Muestra un mensaje de éxito (toast/modal).
- * @param title - Título o mensaje principal (ej: "¡Docente Eliminado!")
- * @param text - Texto opcional secundario
+ * Notificaciones UI imperativas (toast, confirmación, carga).
+ * Reemplaza SweetAlert2 con el sistema de componentes propio.
  */
-export function showSuccess(title: string, text?: string): Promise<unknown> {
-  return Swal.fire({
-    icon: 'success',
-    title,
-    text,
-    customClass: { popup: 'rounded-2xl' },
-  });
+import {
+  dispatchConfirm,
+  dispatchLoading,
+  dispatchToast,
+  type ConfirmDetail,
+} from '@/components/ui/ui-events';
+
+export function showLoading(title: string, text?: string): void {
+  dispatchLoading({ open: true, title, text });
 }
 
-/**
- * Muestra un mensaje de error.
- * @param title - Título o mensaje principal (ej: "Error", "Error al eliminar")
- * @param text - Texto opcional secundario
- */
-export function showError(title: string, text?: string): Promise<unknown> {
-  return Swal.fire({
-    icon: 'error',
-    title,
-    text,
-    customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-lg' },
-  });
+export function closeLoading(): void {
+  dispatchLoading({ open: false });
+}
+
+export function showSuccess(title: string, text?: string): Promise<void> {
+  dispatchToast({ type: 'success', title, text });
+  return Promise.resolve();
+}
+
+export function showError(title: string, text?: string): Promise<void> {
+  dispatchToast({ type: 'error', title, text, duration: 6000 });
+  return Promise.resolve();
+}
+
+export function showWarning(title: string, text?: string): Promise<void> {
+  dispatchToast({ type: 'warning', title, text });
+  return Promise.resolve();
 }
 
 export interface ShowConfirmOptions {
@@ -36,45 +40,38 @@ export interface ShowConfirmOptions {
   cancelButtonText?: string;
   confirmButtonColor?: string;
   cancelButtonColor?: string;
-  icon?: 'warning' | 'question' | 'info';
+  icon?: 'warning' | 'question' | 'info' | 'error';
   reverseButtons?: boolean;
   focusCancel?: boolean;
+  inputPlaceholder?: string;
+  inputValidator?: (value: string) => string | null;
 }
 
-/**
- * Muestra un diálogo de confirmación (Sí/Cancelar).
- * @returns Promise<true> si el usuario confirma, Promise<false> si cancela
- */
 export function showConfirm(options: ShowConfirmOptions): Promise<boolean> {
-  const {
-    title,
-    text,
-    html,
-    confirmButtonText = 'Sí, eliminar',
-    cancelButtonText = 'Cancelar',
-    confirmButtonColor = '#dc2626',
-    cancelButtonColor = '#64748b',
-    icon = 'warning',
-    reverseButtons = true,
-    focusCancel = true,
-  } = options;
+  if (typeof window === 'undefined') {
+    return Promise.resolve(false);
+  }
 
-  return Swal.fire({
-    icon,
-    title,
-    text,
-    html,
-    showCancelButton: true,
-    confirmButtonColor,
-    cancelButtonColor,
-    confirmButtonText,
-    cancelButtonText,
-    reverseButtons,
-    focusCancel,
-    customClass: {
-      popup: 'rounded-2xl',
-      confirmButton: 'rounded-lg',
-      cancelButton: 'rounded-lg',
-    },
-  }).then((result) => Boolean(result.isConfirmed));
+  const variant =
+    options.icon === 'error' || options.confirmButtonColor === '#dc2626'
+      ? 'danger'
+      : options.icon === 'warning'
+        ? 'warning'
+        : 'default';
+
+  return new Promise((resolve) => {
+    const detail: ConfirmDetail = {
+      title: options.title,
+      text: options.text,
+      html: options.html,
+      confirmButtonText: options.confirmButtonText,
+      cancelButtonText: options.cancelButtonText,
+      variant,
+      icon: options.icon,
+      inputPlaceholder: options.inputPlaceholder,
+      inputValidator: options.inputValidator,
+      resolve,
+    };
+    dispatchConfirm(detail);
+  });
 }

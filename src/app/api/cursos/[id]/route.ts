@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { tenantErrorToResponse } from '@/lib/tenant';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
 import {
-  getAuthInstitutionId,
-  enforceTenant,
-  tenantErrorToResponse
-} from '@/lib/tenant';
+  assertRecordBelongsToSede,
+  cursosSedeWhere,
+  sedeErrorToResponse,
+} from '@/lib/sede-scope';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const cursoId = Number.parseInt(id, 10);
 
@@ -26,31 +23,35 @@ export async function DELETE(
       );
     }
 
-    // Solo permitir eliminar cursos de la institución del usuario autenticado
-    const curso = await prisma.cursos.findFirst({
-      where: { id: cursoId, institucion_id: userInstitutionId }
-    });
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+      const curso = await tx.cursos.findFirst({
+        where: { id: cursoId, ...cursosSedeWhere(institutionId, scope) }
+      });
 
-    if (!curso) {
-      return NextResponse.json(
-        { error: 'Curso no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    await prisma.cursos.delete({
-      where: { id: cursoId, institucion_id: userInstitutionId }
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Curso eliminado exitosamente',
-      data: {
-        id: curso.id,
-        nombre: curso.nombre
+      if (!curso) {
+        return NextResponse.json(
+          { error: 'Curso no encontrado' },
+          { status: 404 }
+        );
       }
+
+      assertRecordBelongsToSede(curso.sede_id, scope);
+
+      await tx.cursos.delete({
+        where: { id: cursoId, institucion_id: institutionId }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Curso eliminado exitosamente',
+        data: { id: curso.id, nombre: curso.nombre }
+      });
     });
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error al eliminar curso:', error);

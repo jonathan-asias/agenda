@@ -1,12 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { APP_URL } from '@/lib/env';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
 import { getSupabaseAdminClient, isSupabaseAdminConfigured } from '@/lib/supabase-admin';
+import { sendSignupConfirmationEmail } from '@/lib/auth/send-signup-confirmation';
+import {
+  assertRecordBelongsToSede,
+  sedeDataForCreate,
+  sedeErrorToResponse,
+} from '@/lib/sede-scope';
 
 type DocenteInput = {
   nombres: string;
@@ -26,21 +31,12 @@ type AsignacionesPayload = {
 
 export async function POST(request: NextRequest) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
-    console.log('=== INICIANDO CREACIÓN DE DOCENTES ===');
-    
     // Verificar variables de entorno
-    console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Configurada' : 'NO CONFIGURADA');
-    console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Configurada' : 'NO CONFIGURADA');
 
     if (!isSupabaseAdminConfigured()) {
-      console.error('Supabase admin no está configurado. No se pueden crear docentes.');
+      console.error('Supabase admin no estÃ¡ configurado. No se pueden crear docentes.');
       return NextResponse.json(
-        { success: false, error: 'El servicio de autenticación no está configurado. Contacta al administrador.' },
+        { success: false, error: 'El servicio de autenticaciÃ³n no estÃ¡ configurado. Contacta al administrador.' },
         { status: 500 }
       );
     }
@@ -52,17 +48,11 @@ export async function POST(request: NextRequest) {
       docentes: DocenteInput[];
       asignaciones?: AsignacionesPayload;
     };
-    console.log('Datos recibidos:', JSON.stringify(body, null, 2));
     
     const { institucionId, docentes, asignaciones } = body;
     
-    console.log('institucionId extraído:', institucionId);
-    console.log('docentes extraídos:', docentes);
-    console.log('Tipo de docentes:', typeof docentes);
-    console.log('Es array:', Array.isArray(docentes));
-    console.log('Longitud de docentes:', docentes?.length);
     
-    // Validaciones básicas
+    // Validaciones bÃ¡sicas
     if (!institucionId) {
       return NextResponse.json(
         { success: false, error: 'institucionId es requerido' },
@@ -77,8 +67,9 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar que la institución existe
-    const institucion = await prisma.instituciones.findUnique({
+    // Verificar que la instituciÃ³n existe
+        return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+const institucion = await tx.instituciones.findUnique({
       where: { id: institucionId }
     });
     
@@ -89,22 +80,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    enforceTenant(userInstitutionId, institucionId);
+    enforceTenant(institutionId, institucionId);
     
-    // Obtener la sede principal o la sede del administrador
-    let sedeId: number | null = null;
-    
-    // Buscar sedes de la institución
-    const sedes = await prisma.sedes.findMany({
-      where: { institucion_id: institucionId }
-    });
-    
-    if (sedes.length > 0) {
-      // Usar la primera sede (principal) o buscar la sede del administrador
-      sedeId = sedes[0].id;
-    }
-    
-    console.log('Sede asignada:', sedeId);
+    const sedeData = sedeDataForCreate(scope);
+    const sedeId = sedeData.sede_id;
     
     type DocenteCreadoResponse = {
       id: number;
@@ -127,21 +106,17 @@ export async function POST(request: NextRequest) {
     const errores: ErrorRegistro[] = [];
     
     // Crear cada docente
-    console.log('Iniciando bucle de creación de docentes...');
     for (let i = 0; i < docentes.length; i++) {
       const docente = docentes[i];
       
-      console.log(`=== PROCESANDO DOCENTE ${i + 1}/${docentes.length} ===`);
-      console.log('Datos del docente:', JSON.stringify(docente, null, 2));
       
       try {
-        console.log(`Creando docente ${i + 1}/${docentes.length}:`, docente.email);
         
                // 1. Crear usuario en Supabase Auth
                const { data: authData, error: authError } = await supabaseAdminClient.auth.admin.createUser({
                  email: docente.email,
                  password: docente.password,
-                 email_confirm: false, // NO confirmar automáticamente para enviar correo
+                 email_confirm: true,
                  user_metadata: {
                    nombres: docente.nombres,
                    apellidos: docente.apellidos,
@@ -156,7 +131,7 @@ export async function POST(request: NextRequest) {
           
           let mensajeError = authError.message;
           if (authError.code === 'email_exists') {
-            mensajeError = `El email ${docente.email} ya está registrado en el sistema`;
+            mensajeError = `El email ${docente.email} ya estÃ¡ registrado en el sistema`;
           }
           
           errores.push({
@@ -168,21 +143,9 @@ export async function POST(request: NextRequest) {
           continue;
         }
         
-        console.log('Usuario creado en Auth:', authData.user?.id);
         
         // 2. Crear docente en la base de datos
-        console.log('Creando docente en BD con datos:', {
-          nombres: docente.nombres,
-          apellidos: docente.apellidos,
-          telefono: docente.telefono,
-          email: docente.email,
-          sede_id: sedeId,
-          institucion_id: institucionId,
-          auth_user_id: authData.user?.id,
-          activo: true
-        });
-
-        const docenteCreado = await prisma.docentes.create({
+        const docenteCreado = await tx.docentes.create({
           data: {
             nombres: docente.nombres,
             apellidos: docente.apellidos,
@@ -195,19 +158,11 @@ export async function POST(request: NextRequest) {
           }
         });
         
-        console.log('Docente creado en BD:', docenteCreado.id);
-        console.log('Docente creado completo:', JSON.stringify(docenteCreado, null, 2));
         
         // 3. Crear asignaciones si existen
         let asignacionesCreadas = 0;
-        console.log('=== VERIFICANDO ASIGNACIONES ===');
-        console.log('asignaciones existe:', !!asignaciones);
-        console.log('asignaciones.grados existe:', !!(asignaciones && asignaciones.grados));
-        console.log('asignaciones.grados.length:', asignaciones?.grados?.length || 0);
         
         if (asignaciones && asignaciones.grados && asignaciones.grados.length > 0) {
-          console.log('Creando asignaciones para docente:', docenteCreado.id);
-          console.log('Asignaciones recibidas:', JSON.stringify(asignaciones, null, 2));
           
           const asignacionesData: Array<{
             docente_id: number;
@@ -227,11 +182,8 @@ export async function POST(request: NextRequest) {
             const cursos = asignaciones.cursos[gradoKey] ?? [];
             const materias = asignaciones.materias[gradoKey] ?? [];
             
-            console.log(`Procesando grado ${gradoId}:`);
-            console.log('- Cursos:', cursos);
-            console.log('- Materias (objetos):', materias);
             
-            // Extraer IDs de materias (pueden ser objetos o números)
+            // Extraer IDs de materias (pueden ser objetos o nÃºmeros)
             const materiaIds = materias
               .map((materia): number | null => {
                 if (typeof materia === 'object' && materia !== null && 'id' in materia) {
@@ -244,7 +196,6 @@ export async function POST(request: NextRequest) {
               })
               .filter((id): id is number => id !== null && Number.isFinite(id));
             
-            console.log('- Materias (IDs):', materiaIds);
             
             // Para cada curso del grado
             cursos.forEach((cursoIdRaw) => {
@@ -252,7 +203,6 @@ export async function POST(request: NextRequest) {
               if (!Number.isFinite(cursoId)) {
                 return;
               }
-              // Para cada materia del grado
               materiaIds.forEach((materiaId) => {
                 asignacionesData.push({
                   docente_id: docenteCreado.id,
@@ -263,21 +213,29 @@ export async function POST(request: NextRequest) {
               });
             });
           });
-          
-          console.log('Asignaciones a crear:', JSON.stringify(asignacionesData, null, 2));
-          
+
           if (asignacionesData.length > 0) {
+            for (const asignacion of asignacionesData) {
+              const [grado, curso, materia] = await Promise.all([
+                tx.grados.findFirst({ where: { id: asignacion.grado_id, institucion_id: institucionId } }),
+                tx.cursos.findFirst({ where: { id: asignacion.curso_id, institucion_id: institucionId } }),
+                tx.materias.findFirst({ where: { id: asignacion.materia_id, institucion_id: institucionId } }),
+              ]);
+              if (!grado || !curso || !materia) continue;
+              assertRecordBelongsToSede(grado.sede_id, scope);
+              assertRecordBelongsToSede(curso.sede_id, scope);
+              assertRecordBelongsToSede(materia.sede_id, scope);
+            }
+
             try {
-              const asignacionesCreadasResult = await prisma.docenteAsignaciones.createMany({
+              const asignacionesCreadasResult = await tx.docenteAsignaciones.createMany({
                 data: asignacionesData,
                 skipDuplicates: true
               });
               
               asignacionesCreadas = asignacionesCreadasResult.count;
-              console.log(`Asignaciones creadas para docente ${docenteCreado.id}: ${asignacionesCreadas}`);
               
               // Crear relaciones MateriaGrados para que las materias aparezcan asignadas a grados
-              console.log('=== CREANDO RELACIONES MATERIA-GRADOS ===');
               const materiaGradosData: Array<{
                 materia_id: number;
                 grado_id: number;
@@ -292,7 +250,6 @@ export async function POST(request: NextRequest) {
                 }
 
                 const materiasPorGrado = asignaciones.materias[gradoKey] ?? [];
-                console.log(`Procesando grado ${gradoId} con materias:`, materiasPorGrado);
                 
                 materiasPorGrado.forEach((materia) => {
                   const materiaId = typeof materia === 'object' && materia !== null && 'id' in materia
@@ -310,16 +267,14 @@ export async function POST(request: NextRequest) {
                 });
               });
               
-              console.log('Relaciones MateriaGrados a crear:', JSON.stringify(materiaGradosData, null, 2));
               
               if (materiaGradosData.length > 0) {
                 try {
-                  const materiaGradosCreadas = await prisma.materiaGrados.createMany({
+                  const materiaGradosCreadas = await tx.materiaGrados.createMany({
                     data: materiaGradosData,
                     skipDuplicates: true
                   });
                   
-                  console.log(`Relaciones MateriaGrados creadas: ${materiaGradosCreadas.count}`);
                 } catch (materiaGradosError) {
                   console.error('Error creando relaciones MateriaGrados:', materiaGradosError);
                   console.error('Stack trace del error de MateriaGrados:', materiaGradosError instanceof Error ? materiaGradosError.stack : 'No stack trace');
@@ -333,9 +288,6 @@ export async function POST(request: NextRequest) {
             }
           }
         } else {
-          console.log('No se crearán asignaciones para este docente');
-          console.log('Razón: asignaciones vacías o sin grados');
-          console.log('asignaciones:', asignaciones);
         }
         
         docentesCreados.push({
@@ -347,44 +299,7 @@ export async function POST(request: NextRequest) {
           asignaciones_creadas: asignacionesCreadas
         });
         
-        // 4. Enviar correo de confirmación usando el cliente público (como los administradores)
-        try {
-          console.log(`Enviando correo de confirmación a: ${docente.email}`);
-          const { error: emailError } = await supabaseAdminClient.auth.resend({
-            type: 'signup',
-            email: docente.email.toLowerCase().trim(),
-            options: {
-              emailRedirectTo: `${APP_URL}/login`
-            }
-          });
-
-          if (emailError) {
-            console.error('Error enviando correo de confirmación:', emailError);
-            console.error('Detalles del error de correo:', JSON.stringify(emailError, null, 2));
-            
-            // Intentar método alternativo con generateLink
-            console.log('Intentando método alternativo con generateLink...');
-            const { error: linkError } = await supabaseAdminClient.auth.admin.generateLink({
-              type: 'signup',
-              email: docente.email.toLowerCase().trim(),
-              password: docente.password,
-              options: {
-                  redirectTo: `${APP_URL}/login`
-              }
-            });
-
-            if (linkError) {
-              console.error('Error con método alternativo:', linkError);
-            } else {
-              console.log(`Correo enviado exitosamente a ${docente.email} (método alternativo)`);
-            }
-          } else {
-            console.log(`Correo de confirmación enviado exitosamente a ${docente.email}`);
-          }
-        } catch (emailErr) {
-          console.error('Error enviando correo de confirmación:', emailErr);
-          console.error('Stack trace del error de correo:', emailErr instanceof Error ? emailErr.stack : 'No stack trace available');
-        }
+        await sendSignupConfirmationEmail(docente.email);
         
       } catch (error) {
         console.error(`Error creando docente ${docente.email}:`, error);
@@ -397,9 +312,6 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    console.log('=== RESULTADO FINAL ===');
-    console.log('Docentes creados:', docentesCreados.length);
-    console.log('Errores:', errores.length);
     
     return NextResponse.json({
       success: true,
@@ -412,8 +324,13 @@ export async function POST(request: NextRequest) {
         fallidos: errores.length
       }
     });
-    
+    });
+
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error en endpoint docentes:', error);

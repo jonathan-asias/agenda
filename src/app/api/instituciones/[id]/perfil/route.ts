@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withTenantFromRequest } from '@/lib/db/with-tenant-request';
+import {
+  rbacErrorToResponse,
+  requireInstitutionOwnerRole,
+} from '@/lib/security/rbac';
 
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -13,11 +16,6 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { id } = await params;
     const institucionId = Number.parseInt(id, 10);
 
@@ -36,42 +34,48 @@ export async function PUT(
       return NextResponse.json({ error: 'Formato de email inválido' }, { status: 400 });
     }
 
-    const institucionExistente = await prisma.instituciones.findUnique({
-      where: { id: institucionId }
-    });
+    await requireInstitutionOwnerRole(request);
 
-    if (!institucionExistente) {
-      return NextResponse.json({ error: 'Institución no encontrada' }, { status: 404 });
-    }
+    return await withTenantFromRequest(request, async (tx, userInstitutionId) => {
+      enforceTenant(userInstitutionId, institucionId);
 
-    enforceTenant(userInstitutionId, institucionId);
+      const institucionExistente = await tx.instituciones.findUnique({
+        where: { id: institucionId }
+      });
 
-    const emailExistente = await prisma.instituciones.findFirst({
-      where: {
-        email: email.trim(),
-        id: { not: institucionId }
+      if (!institucionExistente) {
+        return NextResponse.json({ error: 'Institución no encontrada' }, { status: 404 });
       }
-    });
 
-    if (emailExistente) {
-      return NextResponse.json(
-        { error: 'El correo electrónico ya está en uso por otra institución' },
-        { status: 400 }
-      );
-    }
+      const emailExistente = await tx.instituciones.findFirst({
+        where: {
+          email: email.trim(),
+          id: { not: institucionId }
+        }
+      });
 
-    const institucionActualizada = await prisma.instituciones.update({
-      where: { id: institucionId },
-      data: {
-        email: email.trim(),
-        direccion_principal: direccion_principal.trim(),
-        nombre_contacto: nombre_contacto.trim(),
-        telefono_contacto: telefono_contacto.trim()
+      if (emailExistente) {
+        return NextResponse.json(
+          { error: 'El correo electrónico ya está en uso por otra institución' },
+          { status: 400 }
+        );
       }
-    });
 
-    return NextResponse.json({ data: institucionActualizada });
+      const institucionActualizada = await tx.instituciones.update({
+        where: { id: institucionId },
+        data: {
+          email: email.trim(),
+          direccion_principal: direccion_principal.trim(),
+          nombre_contacto: nombre_contacto.trim(),
+          telefono_contacto: telefono_contacto.trim()
+        }
+      });
+
+      return NextResponse.json({ data: institucionActualizada });
+    });
   } catch (error) {
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error al actualizar perfil de institución:', error);

@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 
 export interface ModalProps {
   open: boolean;
@@ -11,6 +11,8 @@ export interface ModalProps {
   closeOnOverlayClick?: boolean;
   showCloseButton?: boolean;
   className?: string;
+  zIndex?: number;
+  contentClassName?: string;
 }
 
 const sizeClasses = {
@@ -30,17 +32,56 @@ export default function Modal({
   closeOnOverlayClick = true,
   showCloseButton = true,
   className = '',
+  zIndex = 50,
+  contentClassName = 'overflow-y-auto flex-1 px-6 py-4',
 }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
+
+    triggerRef.current = document.activeElement as HTMLElement;
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleEscape);
     document.body.style.overflow = 'hidden';
+
+    const panel = panelRef.current;
+    if (panel) {
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      first?.focus();
+
+      const handleTab = (e: KeyboardEvent) => {
+        if (e.key !== 'Tab' || focusable.length === 0) return;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      };
+      panel.addEventListener('keydown', handleTab);
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.body.style.overflow = '';
+        panel.removeEventListener('keydown', handleTab);
+        triggerRef.current?.focus();
+      };
+    }
+
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
+      triggerRef.current?.focus();
     };
   }, [open, onClose]);
 
@@ -48,7 +89,8 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ zIndex }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
@@ -59,13 +101,14 @@ export default function Modal({
         aria-hidden="true"
       />
       <div
-        className={`relative w-full bg-white rounded-2xl shadow-xl border border-slate-200 max-h-[90vh] flex flex-col ${sizeClasses[size]} ${className}`.trim()}
+        ref={panelRef}
+        className={`relative w-full bg-[var(--color-surface)] rounded-2xl shadow-xl border border-[var(--color-border-light)] max-h-[90vh] flex flex-col ${sizeClasses[size]} ${className}`.trim()}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 flex-shrink-0">
+          <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--color-border-light)] flex-shrink-0">
             {title && (
-              <h2 id="modal-title" className="text-lg font-semibold text-slate-900">
+              <h2 id="modal-title" className="text-lg font-semibold text-[var(--color-text-primary)]">
                 {title}
               </h2>
             )}
@@ -74,7 +117,7 @@ export default function Modal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] hover:text-[var(--color-text-primary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-focus)] min-h-11 min-w-11 flex items-center justify-center"
                   aria-label="Cerrar"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +128,7 @@ export default function Modal({
             </div>
           </div>
         )}
-        <div className="overflow-y-auto flex-1 px-6 py-4">{children}</div>
+        <div className={contentClassName}>{children}</div>
       </div>
     </div>
   );

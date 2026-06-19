@@ -1,18 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { sendReminderEmailNotification } from '@/lib/notifications/reminder';
 import { sendPushNotification } from '@/lib/notifications/push';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withTenantFromRequest } from '@/lib/db/with-tenant-request';
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit';
+import {
+  assertDocenteSelfOrStaff,
+  rbacErrorToResponse,
+  requireInstitutionAuth,
+  resolveSessionDocenteId,
+} from '@/lib/security/rbac';
 
 export async function POST(request: NextRequest) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
+    const rate = checkRateLimit(request, 'recordatorios-create', {
+      max: 15,
+      windowSec: 300,
+    });
+    if (!rate.ok) {
+      return rateLimitResponse(rate.retryAfterSec ?? 300);
     }
 
     const body = await request.json();
@@ -30,7 +39,6 @@ export async function POST(request: NextRequest) {
       estudiantesSeleccionados
     } = body;
 
-    // Validaciones
     if (!nombre || !descripcion || !fecha || !tipo) {
       return NextResponse.json(
         { error: 'Faltan campos requeridos' },
@@ -52,7 +60,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar que el tipo sea válido
     const tiposValidos = ['tarea', 'examen', 'evento', 'otro'];
     if (!tiposValidos.includes(tipo)) {
       return NextResponse.json(
@@ -61,60 +68,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar que el docente existe y traer institución para notificaciones
-    const docente = await prisma.docentes.findUnique({
-      where: { id: parseInt(docenteId) },
-      include: { institucion: true }
-    });
-
-    if (!docente) {
-      return NextResponse.json(
-        { error: 'Docente no encontrado' },
-        { status: 404 }
-      );
+    const docenteRate = checkRateLimit(
+      request,
+      `recordatorios:docente:${String(docenteId)}`,
+      { max: 10, windowSec: 300 }
+    );
+    if (!docenteRate.ok) {
+      return rateLimitResponse(docenteRate.retryAfterSec ?? 300);
     }
 
-    enforceTenant(userInstitutionId, docente.institucion_id);
+    const parsedDocenteId = parseInt(docenteId);
+    const ctx = await requireInstitutionAuth(request);
+    const sessionDocenteId =
+      ctx.role === 'docente' ? await resolveSessionDocenteId(request) : null;
+    assertDocenteSelfOrStaff(ctx, parsedDocenteId, sessionDocenteId);
 
-    // Validar que los estudiantes existen y pertenecen al curso y a la institución
-    const estudiantes = await prisma.estudiantes.findMany({
-      where: {
-        id: { in: estudiantesSeleccionados.map((id: number) => parseInt(id.toString())) },
-        curso_id: parseInt(cursoId),
-        institucion_id: userInstitutionId,
-        activo: true
+    return await withTenantFromRequest(request, async (tx, userInstitutionId) => {
+      const docente = await tx.docentes.findUnique({
+        where: { id: parseInt(docenteId) },
+        include: { institucion: true }
+      });
+
+      if (!docente) {
+        return NextResponse.json(
+          { error: 'Docente no encontrado' },
+          { status: 404 }
+        );
       }
-    });
 
-    if (estudiantes.length !== estudiantesSeleccionados.length) {
-      return NextResponse.json(
-        { error: 'Uno o más estudiantes no existen o no pertenecen al curso seleccionado' },
-        { status: 400 }
-      );
-    }
+      enforceTenant(userInstitutionId, docente.institucion_id);
 
-    // Modo de envío: array a string comma-separated (ej. ["sms","email"] -> "sms,email")
-    const modoEnviosValidos = ['sms', 'whatsapp', 'email'];
-    let modoEnvioStr: string | null = null;
-    if (Array.isArray(modoEnvio) && modoEnvio.length > 0) {
-      const filtrados = modoEnvio.filter((m: string) => modoEnviosValidos.includes(String(m).toLowerCase()));
-      if (filtrados.length > 0) {
-        modoEnvioStr = filtrados.map((m: string) => String(m).toLowerCase()).join(',');
+      const estudiantes = await tx.estudiantes.findMany({
+        where: {
+          id: { in: estudiantesSeleccionados.map((id: number) => parseInt(id.toString())) },
+          curso_id: parseInt(cursoId),
+          institucion_id: userInstitutionId,
+          activo: true
+        }
+      });
+
+      if (estudiantes.length !== estudiantesSeleccionados.length) {
+        return NextResponse.json(
+          { error: 'Uno o más estudiantes no existen o no pertenecen al curso seleccionado' },
+          { status: 400 }
+        );
       }
-    }
 
-    // Convertir la fecha a DateTime
-    const fechaDateTime = new Date(fecha);
+      const modoEnviosValidos = ['sms', 'whatsapp', 'email'];
+      let modoEnvioStr: string | null = null;
+      if (Array.isArray(modoEnvio) && modoEnvio.length > 0) {
+        const filtrados = modoEnvio.filter((m: string) =>
+          modoEnviosValidos.includes(String(m).toLowerCase())
+        );
+        if (filtrados.length > 0) {
+          modoEnvioStr = filtrados.map((m: string) => String(m).toLowerCase()).join(',');
+        }
+      }
 
-    // Crear el recordatorio y sus relaciones con estudiantes en una transacción
-    const recordatorio = await prisma.$transaction(async (tx) => {
-      // Crear el recordatorio
+      const fechaDateTime = new Date(fecha);
+
       const nuevoRecordatorio = await tx.recordatorios.create({
         data: {
           nombre: nombre.trim(),
           descripcion: descripcion.trim(),
           fecha: fechaDateTime,
-          tipo: tipo,
+          tipo,
           modo_envio: modoEnvioStr,
           docente_id: parseInt(docenteId),
           grado_id: parseInt(gradoId),
@@ -124,7 +142,6 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      // Crear las relaciones con estudiantes
       await tx.recordatorioEstudiantes.createMany({
         data: estudiantesSeleccionados.map((estudianteId: number) => ({
           recordatorio_id: nuevoRecordatorio.id,
@@ -132,84 +149,82 @@ export async function POST(request: NextRequest) {
         }))
       });
 
-      return nuevoRecordatorio;
-    });
+      const enviarPorEmail =
+        Array.isArray(modoEnvio) &&
+        modoEnvio.some((m: string) => String(m).toLowerCase() === 'email');
+      if (enviarPorEmail) {
+        const emailsDestino = [
+          ...new Set(
+            estudiantes
+              .map((e) => e.correo_acudiente)
+              .filter((email): email is string => Boolean(email?.trim()))
+          )
+        ];
+        if (emailsDestino.length > 0) {
+          const docenteNombre = `${docente.nombres} ${docente.apellidos}`.trim();
+          const baseUrl =
+            process.env.NEXT_PUBLIC_SITE_URL ??
+            request.nextUrl?.origin ??
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+          sendReminderEmailNotification({
+            institucionNombre: docente.institucion.nombre,
+            docenteNombre,
+            titulo: nombre.trim(),
+            descripcion: descripcion.trim(),
+            fechaLimite: fechaDateTime,
+            emails: emailsDestino,
+            baseUrl: baseUrl || undefined,
+            primerEstudianteId: estudiantes[0]?.id
+          }).catch(() => {});
+        }
+      }
 
-    // Notificación por email solo si el docente eligió "email" en modo de envío
-    const enviarPorEmail = Array.isArray(modoEnvio) && modoEnvio.some(
-      (m: string) => String(m).toLowerCase() === 'email'
-    );
-    if (enviarPorEmail) {
-      const emailsDestino = [
+      const emailsAcudientes = [
         ...new Set(
           estudiantes
             .map((e) => e.correo_acudiente)
             .filter((email): email is string => Boolean(email?.trim()))
         )
       ];
-      if (emailsDestino.length > 0) {
-        const docenteNombre = `${docente.nombres} ${docente.apellidos}`.trim();
-        // En producción (Vercel, etc.) nextUrl.origin puede no estar disponible; usar env o VERCEL_URL
-        const baseUrl =
-          process.env.NEXT_PUBLIC_SITE_URL ??
-          request.nextUrl?.origin ??
-          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
-        const primerEstudianteId = estudiantes[0]?.id;
-        sendReminderEmailNotification({
-          institucionNombre: docente.institucion.nombre,
-          docenteNombre,
-          titulo: nombre.trim(),
-          descripcion: descripcion.trim(),
-          fechaLimite: fechaDateTime,
-          emails: emailsDestino,
-          baseUrl: baseUrl || undefined,
-          primerEstudianteId,
-        }).catch(() => {});
+      if (emailsAcudientes.length > 0) {
+        const acudientes = await tx.acudientes.findMany({
+          where: {
+            institucion_id: userInstitutionId,
+            email: { in: emailsAcudientes }
+          },
+          select: { id: true }
+        });
+        sendPushNotification({
+          institucionId: userInstitutionId,
+          title: nombre.trim(),
+          body:
+            descripcion.trim().slice(0, 200) +
+            (descripcion.trim().length > 200 ? '...' : ''),
+          acudienteIds: acudientes.length > 0 ? acudientes.map((a) => a.id) : undefined
+        }).catch((err) => {
+          if (process.env.NODE_ENV !== 'test') {
+            console.error('Error en envío push tras recordatorio:', err);
+          }
+        });
       }
-    }
 
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('📢 Creando recordatorio y disparando notificaciones push...');
-    }
-    const emailsAcudientes = [
-      ...new Set(
-        estudiantes
-          .map((e) => e.correo_acudiente)
-          .filter((email): email is string => Boolean(email?.trim()))
-      )
-    ];
-    if (emailsAcudientes.length > 0) {
-      const acudientes = await prisma.acudientes.findMany({
-        where: {
-          institucion_id: userInstitutionId,
-          email: { in: emailsAcudientes },
+      return NextResponse.json(
+        {
+          success: true,
+          recordatorio: {
+            id: nuevoRecordatorio.id,
+            nombre: nuevoRecordatorio.nombre,
+            descripcion: nuevoRecordatorio.descripcion,
+            fecha: nuevoRecordatorio.fecha,
+            tipo: nuevoRecordatorio.tipo
+          }
         },
-        select: { id: true },
-      });
-      const acudienteIds = acudientes.map((a) => a.id);
-      sendPushNotification({
-        institucionId: userInstitutionId,
-        title: nombre.trim(),
-        body: descripcion.trim().slice(0, 200) + (descripcion.trim().length > 200 ? '...' : ''),
-        acudienteIds: acudienteIds.length > 0 ? acudienteIds : undefined,
-      }).catch((err) => {
-        if (process.env.NODE_ENV !== 'test') {
-          console.error('Error en envío push tras recordatorio:', err);
-        }
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      recordatorio: {
-        id: recordatorio.id,
-        nombre: recordatorio.nombre,
-        descripcion: recordatorio.descripcion,
-        fecha: recordatorio.fecha,
-        tipo: recordatorio.tipo
-      }
-    }, { status: 201 });
+        { status: 201 }
+      );
+    });
   } catch (error) {
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error creando recordatorio:', error);
@@ -219,4 +234,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

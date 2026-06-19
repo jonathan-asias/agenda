@@ -1,10 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import type { Cursos, Grados } from '@prisma/client';
 import {
-  getAuthInstitutionId,
+  GRADOS_PREDETERMINADOS,
+} from '@/lib/grados-predeterminados';
+import {
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
+import {
+  cursosSedeWhere,
+  institutionSedeWhere,
+  sedeDataForCreate,
+  sedeErrorToResponse,
+} from '@/lib/sede-scope';
 
 type CursoInput = {
   nombre: string;
@@ -17,11 +27,6 @@ type GradoCursoInput = {
 
 export async function POST(request: NextRequest) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
     const { institucionId, gradosCursos } = await request.json() as {
       institucionId: number;
       gradosCursos: GradoCursoInput[];
@@ -34,153 +39,145 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que la institución existe
-    const institucion = await prisma.instituciones.findUnique({
-      where: { id: institucionId }
-    });
-
-    if (!institucion) {
-      return NextResponse.json(
-        { error: 'Institución no encontrada' },
-        { status: 404 }
-      );
-    }
-
-    enforceTenant(userInstitutionId, institucionId);
-
-    const nombresCursos = gradosCursos
-      .flatMap(gradoCurso => gradoCurso.cursos.map(curso => curso.nombre?.trim()))
-      .filter((nombre): nombre is string => Boolean(nombre));
-
-    const nombresNormalizados = nombresCursos.map(nombre => nombre.toLowerCase());
-    const duplicadosEnPayload = nombresCursos.filter((nombre, index) => {
-      return nombresNormalizados.indexOf(nombre.toLowerCase()) !== index;
-    });
-
-    if (duplicadosEnPayload.length > 0) {
-      return NextResponse.json(
-        {
-          error: 'Ya existen cursos duplicados en la lista enviada',
-          duplicateNames: Array.from(new Set(duplicadosEnPayload))
-        },
-        { status: 409 }
-      );
-    }
-
-    if (nombresCursos.length > 0) {
-      const cursosExistentes = await prisma.cursos.findMany({
-        where: {
-          institucion_id: institucionId,
-          OR: nombresCursos.map(nombre => ({
-            nombre: { equals: nombre, mode: 'insensitive' }
-          }))
-        },
-        select: { nombre: true }
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+      const institucion = await tx.instituciones.findUnique({
+        where: { id: institucionId }
       });
 
-      if (cursosExistentes.length > 0) {
-        const duplicateNames = Array.from(
-          new Set(cursosExistentes.map(curso => curso.nombre))
+      if (!institucion) {
+        return NextResponse.json(
+          { error: 'Institución no encontrada' },
+          { status: 404 }
         );
+      }
+
+      enforceTenant(institutionId, institucionId);
+
+      const sedeData = sedeDataForCreate(scope);
+      const cursoWhere = cursosSedeWhere(institucionId, scope);
+      const gradoWhere = institutionSedeWhere(institucionId, scope);
+
+      const nombresCursos = gradosCursos
+        .flatMap(gradoCurso => gradoCurso.cursos.map(curso => curso.nombre?.trim()))
+        .filter((nombre): nombre is string => Boolean(nombre));
+
+      const nombresNormalizados = nombresCursos.map(nombre => nombre.toLowerCase());
+      const duplicadosEnPayload = nombresCursos.filter((nombre, index) => {
+        return nombresNormalizados.indexOf(nombre.toLowerCase()) !== index;
+      });
+
+      if (duplicadosEnPayload.length > 0) {
         return NextResponse.json(
           {
-            error: 'Ya existen cursos con el mismo nombre en la institución',
-            duplicateNames
+            error: 'Ya existen cursos duplicados en la lista enviada',
+            duplicateNames: Array.from(new Set(duplicadosEnPayload))
           },
           { status: 409 }
         );
       }
-    }
 
-    // Grados predeterminados (mismos que en el modal)
-    const gradosPredeterminados = [
-      { id: 1, nombre: 'PÁRVULOS', nivel: 'Educación Inicial', orden: 1 },
-      { id: 2, nombre: 'PRE-JARDÍN', nivel: 'Educación Inicial', orden: 2 },
-      { id: 3, nombre: 'JARDÍN', nivel: 'Educación Inicial', orden: 3 },
-      { id: 4, nombre: 'TRANSICIÓN', nivel: 'Educación Inicial', orden: 4 },
-      { id: 5, nombre: '1°', nivel: 'Primaria', orden: 5 },
-      { id: 6, nombre: '2°', nivel: 'Primaria', orden: 6 },
-      { id: 7, nombre: '3°', nivel: 'Primaria', orden: 7 },
-      { id: 8, nombre: '4°', nivel: 'Primaria', orden: 8 },
-      { id: 9, nombre: '5°', nivel: 'Primaria', orden: 9 },
-      { id: 10, nombre: '6°', nivel: 'Secundaria', orden: 10 },
-      { id: 11, nombre: '7°', nivel: 'Secundaria', orden: 11 },
-      { id: 12, nombre: '8°', nivel: 'Secundaria', orden: 12 },
-      { id: 13, nombre: '9°', nivel: 'Secundaria', orden: 13 },
-      { id: 14, nombre: '10°', nivel: 'Media', orden: 14 },
-      { id: 15, nombre: '11°', nivel: 'Media', orden: 15 }
-    ];
+      if (nombresCursos.length > 0) {
+        const cursosExistentes = await tx.cursos.findMany({
+          where: {
+            ...cursoWhere,
+            OR: nombresCursos.map(nombre => ({
+              nombre: { equals: nombre, mode: 'insensitive' }
+            }))
+          },
+          select: { nombre: true }
+        });
 
-    type CursoRecord = Awaited<ReturnType<typeof prisma.cursos.create>>;
-    type GradoRecord = Awaited<ReturnType<typeof prisma.grados.create>>;
-
-    const cursosCreados: CursoRecord[] = [];
-    const gradosCreados: GradoRecord[] = [];
-
-    for (const gradoCurso of gradosCursos) {
-      const gradoId = gradoCurso.grado_id;
-
-      // Buscar el grado en los predeterminados
-      const gradoPredeterminado = gradosPredeterminados.find(g => g.id === gradoId);
-      if (!gradoPredeterminado) {
-        return NextResponse.json(
-          { error: `Grado con ID ${gradoId} no es válido` },
-          { status: 400 }
-        );
+        if (cursosExistentes.length > 0) {
+          const duplicateNames = Array.from(
+            new Set(cursosExistentes.map(curso => curso.nombre))
+          );
+          return NextResponse.json(
+            {
+              error: 'Ya existen cursos con el mismo nombre en esta sede',
+              duplicateNames
+            },
+            { status: 409 }
+          );
+        }
       }
 
-      // Verificar si el grado ya existe en la base de datos
-      let grado = await prisma.grados.findFirst({
-        where: {
-          nombre: gradoPredeterminado.nombre,
-          institucion_id: institucionId
+      type CursoRecord = Cursos;
+      type GradoRecord = Grados;
+
+      const cursosCreados: CursoRecord[] = [];
+      const gradosCreados: GradoRecord[] = [];
+
+      for (const gradoCurso of gradosCursos) {
+        const gradoId = gradoCurso.grado_id;
+
+        const gradoPredeterminado = GRADOS_PREDETERMINADOS.find(g => g.id === gradoId);
+        if (!gradoPredeterminado) {
+          return NextResponse.json(
+            { error: `Grado con ID ${gradoId} no es válido` },
+            { status: 400 }
+          );
+        }
+
+        const nombreCanonico = gradoPredeterminado.nombre;
+        const nivelCanonico = gradoPredeterminado.nivel;
+
+        let grado = await tx.grados.findFirst({
+          where: {
+            orden: gradoPredeterminado.orden,
+            ...gradoWhere,
+          }
+        });
+
+        if (!grado) {
+          grado = await tx.grados.create({
+            data: {
+              nombre: nombreCanonico,
+              nivel: nivelCanonico,
+              orden: gradoPredeterminado.orden,
+              institucion_id: institucionId,
+              ...sedeData,
+            }
+          });
+          gradosCreados.push(grado);
+        } else if (grado.nombre !== nombreCanonico || grado.nivel !== nivelCanonico) {
+          grado = await tx.grados.update({
+            where: { id: grado.id },
+            data: {
+              nombre: nombreCanonico,
+              nivel: nivelCanonico,
+            }
+          });
+        }
+
+        for (const cursoData of gradoCurso.cursos) {
+          const curso = await tx.cursos.create({
+            data: {
+              nombre: cursoData.nombre,
+              grado_id: grado.id,
+              institucion_id: institucionId,
+              ...sedeData,
+            }
+          });
+
+          cursosCreados.push(curso);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `${cursosCreados.length} curso(s) creado(s) exitosamente`,
+        data: {
+          gradosCreados: gradosCreados || [],
+          cursosCreados: cursosCreados
         }
       });
-
-      // Si no existe, crearlo
-      if (!grado) {
-        console.log(`Creando grado: ${gradoPredeterminado.nombre} (${gradoPredeterminado.nivel})`);
-        grado = await prisma.grados.create({
-          data: {
-            nombre: gradoPredeterminado.nombre,
-            nivel: gradoPredeterminado.nivel,
-            orden: gradoPredeterminado.orden,
-            institucion_id: institucionId
-          }
-        });
-        console.log(`Grado creado con ID: ${grado.id}`);
-        gradosCreados.push(grado);
-      } else {
-        console.log(`Usando grado existente: ${grado.nombre} (ID: ${grado.id})`);
-      }
-
-      // Crear los cursos para este grado
-      for (const cursoData of gradoCurso.cursos) {
-        console.log(`Creando curso: ${cursoData.nombre} para grado: ${grado.nombre}`);
-
-        const curso = await prisma.cursos.create({
-          data: {
-            nombre: cursoData.nombre,
-            grado_id: grado.id,
-            institucion_id: institucionId
-          }
-        });
-
-        cursosCreados.push(curso);
-        console.log(`✅ Curso ${curso.nombre} creado exitosamente`);
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `${cursosCreados.length} curso(s) creado(s) exitosamente`,
-      data: {
-        gradosCreados: gradosCreados || [],
-        cursosCreados: cursosCreados
-      }
     });
 
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('Error creating cursos:', error);

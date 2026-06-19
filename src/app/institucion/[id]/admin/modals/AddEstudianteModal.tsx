@@ -4,6 +4,9 @@
 
 import { useState, useEffect } from 'react';
 import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import ErrorBanner from '@/components/ui/ErrorBanner';
 import type { Grado, Curso } from '@/types';
 
 interface AddEstudianteModalProps {
@@ -313,33 +316,10 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-slate-900">Agregar Estudiante</h2>
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
+    <Modal open={isOpen} onClose={onClose} title="Agregar estudiante" size="lg">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <ErrorBanner title={error} />}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -582,34 +562,16 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading || loadingGrados}
-                className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:bg-pink-400 transition-colors flex items-center"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creando...
-                  </>
-                ) : (
-                  'Crear Estudiante'
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-[var(--color-border-light)]">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" disabled={loading || loadingGrados}>
+            {loading ? 'Guardando…' : 'Guardar estudiante'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

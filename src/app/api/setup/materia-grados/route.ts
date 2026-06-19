@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
+import {
+  assertRecordBelongsToSede,
+  materiaGradosWhere,
+  sedeErrorToResponse,
+} from '@/lib/sede-scope';
 
 interface MateriaGradoAsignacion {
   materiaId: number;
@@ -18,15 +23,7 @@ interface MateriaGradosPayload {
 
 export async function POST(request: NextRequest) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
-    console.log('=== INICIO ENDPOINT MATERIA-GRADOS ===');
-    
     const body = (await request.json()) as MateriaGradosPayload;
-    console.log('Body recibido:', JSON.stringify(body, null, 2));
     
     const { institucionId, asignaciones } = body;
 
@@ -38,101 +35,82 @@ export async function POST(request: NextRequest) {
       throw new Error('asignaciones debe ser un array');
     }
 
-    console.log('Datos validados:', { 
-      institucionId, 
-      asignacionesCount: asignaciones.length 
-    });
-
-    // Verificar que la institución existe
-    const institucion = await prisma.instituciones.findUnique({
-      where: { id: institucionId }
-    });
-
-    if (!institucion) {
-      throw new Error(`Institución con ID ${institucionId} no encontrada`);
-    }
-
-    enforceTenant(userInstitutionId, institucionId);
-
-    console.log('Institución encontrada:', institucion.nombre);
-
-    // Eliminar asignaciones existentes para esta institución
-    const asignacionesExistentes = await prisma.materiaGrados.findMany({
-      where: {
-        materia: {
-          institucion_id: institucionId
-        }
-      }
-    });
-
-    if (asignacionesExistentes.length > 0) {
-      console.log('Eliminando asignaciones existentes...');
-      await prisma.materiaGrados.deleteMany({
-        where: {
-          materia: {
-            institucion_id: institucionId
-          }
-        }
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+      const institucion = await tx.instituciones.findUnique({
+        where: { id: institucionId }
       });
-    }
 
-    // Validar que las materias y grados existen
-    console.log('Validando materias y grados...');
-    for (const asignacion of asignaciones) {
-      // Verificar que la materia existe
-      const materia = await prisma.materias.findUnique({
-        where: { id: asignacion.materiaId }
-      });
-      
-      if (!materia) {
-        throw new Error(`Materia con ID ${asignacion.materiaId} no encontrada`);
+      if (!institucion) {
+        throw new Error(`Institución con ID ${institucionId} no encontrada`);
       }
-      
-      // Verificar que el grado existe
-      const grado = await prisma.grados.findUnique({
-        where: { id: asignacion.gradoId }
-      });
-      
-      if (!grado) {
-        throw new Error(`Grado con ID ${asignacion.gradoId} no encontrado`);
-      }
-      
-      console.log(`Validado: Materia "${materia.nombre}" (ID: ${asignacion.materiaId}) -> Grado "${grado.nombre}" (ID: ${asignacion.gradoId})`);
-    }
 
-    // Crear nuevas asignaciones
-    console.log('Creando asignaciones materia-grado...');
-    const asignacionesCreadas = await Promise.all(
-      asignaciones.map(async (asignacion) => {
-        console.log(`Asignando materia ${asignacion.materiaId} al grado ${asignacion.gradoId}`);
+      enforceTenant(institutionId, institucionId);
+
+      const mgWhere = materiaGradosWhere(institucionId, scope);
+
+      const asignacionesExistentes = await tx.materiaGrados.findMany({
+        where: mgWhere
+      });
+
+      if (asignacionesExistentes.length > 0) {
+        await tx.materiaGrados.deleteMany({
+          where: mgWhere
+        });
+      }
+
+      for (const asignacion of asignaciones) {
+        const materia = await tx.materias.findUnique({
+          where: { id: asignacion.materiaId }
+        });
         
-        try {
-          return await prisma.materiaGrados.create({
-            data: {
-              materia_id: asignacion.materiaId,
-              grado_id: asignacion.gradoId
-            }
-          });
-        } catch (createError) {
-          console.error('Error creando asignación específica:', createError);
-          console.error('Datos que causaron el error:', asignacion);
-          throw createError;
+        if (!materia) {
+          throw new Error(`Materia con ID ${asignacion.materiaId} no encontrada`);
         }
-      })
-    );
 
-    console.log('Asignaciones creadas exitosamente:', asignacionesCreadas.length);
+        assertRecordBelongsToSede(materia.sede_id, scope);
+        
+        const grado = await tx.grados.findUnique({
+          where: { id: asignacion.gradoId }
+        });
+        
+        if (!grado) {
+          throw new Error(`Grado con ID ${asignacion.gradoId} no encontrado`);
+        }
 
-    const response = {
-      success: true,
-      asignaciones: asignacionesCreadas.length,
-      data: { asignacionesCreadas }
-    };
+        assertRecordBelongsToSede(grado.sede_id, scope);
+      }
 
-    console.log('=== FIN ENDPOINT MATERIA-GRADOS ===');
-    return NextResponse.json(response);
+      const asignacionesCreadas = await Promise.all(
+        asignaciones.map(async (asignacion) => {
+          try {
+            return await tx.materiaGrados.create({
+              data: {
+                materia_id: asignacion.materiaId,
+                grado_id: asignacion.gradoId
+              }
+            });
+          } catch (createError) {
+            console.error('Error creando asignación específica:', createError);
+            console.error('Datos que causaron el error:', asignacion);
+            throw createError;
+          }
+        })
+      );
+
+      const response = {
+        success: true,
+        asignaciones: asignacionesCreadas.length,
+        data: { asignacionesCreadas }
+      };
+
+      return NextResponse.json(response);
+    });
 
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('=== ERROR EN ENDPOINT MATERIA-GRADOS ===');

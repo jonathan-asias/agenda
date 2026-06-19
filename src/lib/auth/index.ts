@@ -3,4 +3,5 @@ export {
   getUserRoleByEmail,
   getUserRoleAndInstitutionByEmail
 } from './getUserRole';
-export type { UserRoleAndInstitution } from './getUserRole';
+export { resolveSupabaseUserIdForReset, supabaseAuthEmailExists } from './resolveSupabaseUserId';
+export type { UserRoleAndInstitution } from './resolveTenantFromUser';

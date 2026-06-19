@@ -9,7 +9,9 @@ import DashboardSections from './DashboardSections';
 import AddItemModal from './AddItemModal';
 import Footer from '../Footer';
 import Header from '../Header';
+import ViewRecordatorioModal from '../docente/ViewRecordatorioModal';
 import type { Administrador } from '@/types';
+import type { Recordatorio } from '@/types/recordatorio';
 
 interface DashboardData {
   estadisticas: {
@@ -44,6 +46,7 @@ export default function AdminDashboardContent() {
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [dashboardLoaded, setDashboardLoaded] = useState(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [recordatorios, setRecordatorios] = useState<any[]>([]);
   const [loadingRecordatorios, setLoadingRecordatorios] = useState(false);
   const [selectedRecordatorio, setSelectedRecordatorio] = useState<any | null>(null);
@@ -71,13 +74,14 @@ export default function AdminDashboardContent() {
     }
   }, []);
 
-  const fetchDashboardData = useCallback(async (institucionIdParam?: number) => {
+  const fetchDashboardData = useCallback(async (institucionIdParam?: number, force = false) => {
     const id = institucionIdParam || administrador?.institucion?.id;
     if (!id) return;
     
-    if (dashboardLoaded && !institucionIdParam) return;
+    if (dashboardLoaded && !institucionIdParam && !force) return;
     
     setDashboardLoading(true);
+    setDashboardError(null);
     try {
       const response = await fetch(`/api/instituciones/${id}/dashboard`);
       if (response.ok) {
@@ -85,9 +89,19 @@ export default function AdminDashboardContent() {
         setDashboardData(data);
         setDashboardLoaded(true);
         fetchRecordatorios(id);
+      } else {
+        const body = await response.json().catch(() => ({}));
+        setDashboardError(
+          typeof body.error === 'string'
+            ? body.error
+            : 'No se pudo cargar el panel. Reinicia el servidor de desarrollo si acabas de actualizar el proyecto.'
+        );
+        setDashboardLoaded(true);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setDashboardError('Error de conexión al cargar el panel.');
+      setDashboardLoaded(true);
     } finally {
       setDashboardLoading(false);
     }
@@ -103,9 +117,6 @@ export default function AdminDashboardContent() {
           const data = await response.json();
           setAdministrador(data.administrador);
           setInstitucionId(data.administrador?.institucion?.id || null);
-          if (data.administrador?.institucion?.id && !dashboardLoaded) {
-            fetchDashboardData(data.administrador.institucion.id);
-          }
         }
       } catch (error) {
         console.error('Error fetching admin data:', error);
@@ -115,12 +126,16 @@ export default function AdminDashboardContent() {
     };
 
     fetchAdminData();
-  }, [user, dashboardLoaded, fetchDashboardData]);
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (!institucionId || dashboardLoaded) return;
+    fetchDashboardData(institucionId);
+  }, [institucionId, dashboardLoaded, fetchDashboardData]);
 
   const handleAddSuccess = () => {
-    // Recargar datos del dashboard después de agregar un elemento
     setDashboardLoaded(false);
-    fetchDashboardData();
+    fetchDashboardData(undefined, true);
   };
 
   // Extraer opciones únicas para los filtros
@@ -580,10 +595,40 @@ export default function AdminDashboardContent() {
             </>
           )}
 
-          {/* Estado sin datos */}
+          {/* Estado sin datos o error */}
           {!dashboardLoading && !dashboardData && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
               <div className="text-center max-w-2xl mx-auto">
+                {dashboardError ? (
+                  <>
+                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                      Error al cargar el panel
+                    </h3>
+                    <p className="text-slate-600 mb-4">{dashboardError}</p>
+                    <p className="text-sm text-slate-500 mb-6">
+                      Si acabas de actualizar el código, ejecuta{' '}
+                      <code className="bg-slate-100 px-1 rounded">npx prisma generate</code>
+                      {' '}y reinicia el servidor. Luego aplica la migración con{' '}
+                      <code className="bg-slate-100 px-1 rounded">npx prisma db push</code>
+                      {' '}o el script <code className="bg-slate-100 px-1 rounded">scripts/add-sede-isolation.sql</code> en Supabase.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setDashboardLoaded(false);
+                        fetchDashboardData(undefined, true);
+                      }}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Reintentar
+                    </button>
+                  </>
+                ) : (
+                  <>
                 <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -604,6 +649,8 @@ export default function AdminDashboardContent() {
                   </svg>
                   Iniciar Configuración
                 </button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -628,246 +675,14 @@ export default function AdminDashboardContent() {
         />
       )}
 
-      {/* Modal de Detalle del Recordatorio */}
-      {showRecordatorioModal && selectedRecordatorio && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] flex flex-col">
-            <div className="bg-white border-b border-slate-200 p-6 flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-800">{selectedRecordatorio.nombre}</h2>
-                  <p className="text-slate-600 text-sm">Detalle completo del recordatorio</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowRecordatorioModal(false);
-                  setSelectedRecordatorio(null);
-                }}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1">
-              <div className="space-y-6">
-                {/* Badges y Estado */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  {(() => {
-                    const tipoColors = {
-                      tarea: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                      examen: 'bg-red-100 text-red-800 border-red-200',
-                      evento: 'bg-blue-100 text-blue-800 border-blue-200',
-                      otro: 'bg-purple-100 text-purple-800 border-purple-200'
-                    };
-                    const tipoLabels = {
-                      tarea: 'Tarea',
-                      examen: 'Examen',
-                      evento: 'Evento',
-                      otro: 'Otro'
-                    };
-                    const fechaRecordatorio = new Date(selectedRecordatorio.fecha);
-                    const hoy = new Date();
-                    hoy.setHours(0, 0, 0, 0);
-                    const esPasado = fechaRecordatorio < hoy;
-                    const esHoy = fechaRecordatorio.toDateString() === hoy.toDateString();
-
-                    return (
-                      <>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                            tipoColors[selectedRecordatorio.tipo as keyof typeof tipoColors] || tipoColors.otro
-                          }`}
-                        >
-                          {tipoLabels[selectedRecordatorio.tipo as keyof typeof tipoLabels] || 'Otro'}
-                        </span>
-                        {esPasado && (
-                          <span className="px-3 py-1 bg-slate-200 text-slate-600 rounded-full text-xs font-medium">
-                            Pasado
-                          </span>
-                        )}
-                        {esHoy && (
-                          <span className="px-3 py-1 bg-blue-200 text-blue-700 rounded-full text-xs font-medium">
-                            Hoy
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {/* Información del Docente */}
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1">Docente</p>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {selectedRecordatorio.docente.nombres} {selectedRecordatorio.docente.apellidos}
-                      </p>
-                      <p className="text-xs text-slate-600">{selectedRecordatorio.docente.email}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Descripción Completa */}
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-2">Descripción</h3>
-                  <p className="text-slate-700 bg-slate-50 rounded-xl p-4 whitespace-pre-wrap">
-                    {selectedRecordatorio.descripcion}
-                  </p>
-                </div>
-
-                {/* Información Académica */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-xs font-medium text-slate-500">Fecha</p>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {new Date(selectedRecordatorio.fecha).toLocaleDateString('es-ES', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                      <p className="text-xs font-medium text-slate-500">Materia y Área</p>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {selectedRecordatorio.materia.nombre} - {selectedRecordatorio.area.nombre}
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                      <p className="text-xs font-medium text-slate-500">Grado y Curso</p>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {selectedRecordatorio.grado.nombre} ({selectedRecordatorio.grado.nivel}) - {selectedRecordatorio.curso.nombre}
-                      {selectedRecordatorio.curso.jornada && ` (${selectedRecordatorio.curso.jornada})`}
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      <p className="text-xs font-medium text-slate-500">Estudiantes</p>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {selectedRecordatorio.estudiantes.length} estudiante{selectedRecordatorio.estudiantes.length !== 1 ? 's' : ''} asignado{selectedRecordatorio.estudiantes.length !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Fechas de creación y modificación */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedRecordatorio.created_at && (
-                    <div className="bg-slate-50 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p className="text-xs font-medium text-slate-500">Fecha de Creación</p>
-                      </div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {new Date(selectedRecordatorio.created_at).toLocaleDateString('es-ES', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  )}
-                  {selectedRecordatorio.updated_at && selectedRecordatorio.updated_at !== selectedRecordatorio.created_at && (
-                    <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <p className="text-xs font-medium text-green-700">Última Modificación</p>
-                      </div>
-                      <p className="text-sm font-semibold text-green-900">
-                        {new Date(selectedRecordatorio.updated_at).toLocaleDateString('es-ES', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Lista Completa de Estudiantes */}
-                {selectedRecordatorio.estudiantes.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Estudiantes Asignados</h3>
-                    <div className="bg-slate-50 rounded-xl p-4 max-h-64 overflow-y-auto">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {selectedRecordatorio.estudiantes.map((est: any, idx: number) => (
-                          <div key={idx} className="bg-white rounded-lg p-3 border border-slate-200">
-                            <p className="text-sm font-medium text-slate-900">
-                              {est.estudiante.nombres} {est.estudiante.apellidos}
-                            </p>
-                            {est.estudiante.codigo_estudiantil && (
-                              <p className="text-xs text-slate-500 mt-1">
-                                Código: {est.estudiante.codigo_estudiantil}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="border-t border-slate-200 p-6 flex-shrink-0">
-              <button
-                onClick={() => {
-                  setShowRecordatorioModal(false);
-                  setSelectedRecordatorio(null);
-                }}
-                className="w-full px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ViewRecordatorioModal
+        isOpen={showRecordatorioModal}
+        onClose={() => {
+          setShowRecordatorioModal(false);
+          setSelectedRecordatorio(null);
+        }}
+        recordatorio={selectedRecordatorio as Recordatorio | null}
+      />
       <Footer />
       </div>
     </>

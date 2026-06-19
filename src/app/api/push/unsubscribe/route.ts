@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { withDbBypass } from '@/lib/db/rls-context';
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit';
 
 export interface UnsubscribeBody {
   endpoint: string;
 }
 
-/**
- * POST /api/push/unsubscribe
- *
- * Elimina la suscripción push por endpoint.
- * No lanza error si no existe (idempotente).
- *
- * Futuro: validar endpoint por tenant; activar push solo si plan === "plus"; preferencias por tipo; panel de configuración.
- */
 export async function POST(request: NextRequest) {
   try {
+    const rate = checkRateLimit(request, 'push-unsubscribe', { max: 20, windowSec: 60 });
+    if (!rate.ok) {
+      return rateLimitResponse(rate.retryAfterSec ?? 60);
+    }
+
     const body = (await request.json()) as UnsubscribeBody;
     const { endpoint } = body;
 
@@ -25,9 +23,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const deleted = await prisma.pushSubscriptions.deleteMany({
-      where: { endpoint: endpoint.trim() },
-    });
+    const trimmed = endpoint.trim();
+    if (!trimmed.startsWith('https://')) {
+      return NextResponse.json({ error: 'endpoint inválido' }, { status: 400 });
+    }
+
+    const deleted = await withDbBypass(async (tx) =>
+      tx.pushSubscriptions.deleteMany({
+        where: { endpoint: trimmed },
+      })
+    );
 
     return NextResponse.json({
       success: true,

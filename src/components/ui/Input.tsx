@@ -23,11 +23,11 @@ export default function Input({
 }: InputProps) {
   const inputId = id ?? (label ? `input-${label.replace(/\s/g, '-').toLowerCase()}` : undefined);
   const base =
-    'w-full px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 placeholder:text-slate-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full px-4 py-2.5 text-base border rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
   const stateClass = error
-    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-    : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500';
-  const inputClassName = `${base} focus:outline-none focus:ring-2 ${stateClass} ${className}`.trim();
+    ? 'border-[var(--color-danger-border-input)] focus-visible:ring-[var(--color-danger-focus)] focus-visible:border-[var(--color-danger)]'
+    : 'border-[var(--color-border)] focus-visible:ring-[var(--color-primary-focus)] focus-visible:border-[var(--color-primary)]';
+  const inputClassName = `${base} focus-visible:outline-none focus-visible:ring-2 ${stateClass} ${className}`.trim();
 
   return (
     <div className={containerClassName || undefined}>
@@ -45,7 +45,7 @@ export default function Input({
         {...rest}
       />
       {error && (
-        <p id={inputId ? `${inputId}-error` : undefined} className="mt-1 text-sm text-red-600">
+        <p id={inputId ? `${inputId}-error` : undefined} className="mt-1 text-sm text-[var(--color-danger)]" role="alert" aria-live="polite">
           {error}
         </p>
       )}

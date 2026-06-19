@@ -1,10 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import type { Materias } from '@prisma/client';
 import {
-  getAuthInstitutionId,
   enforceTenant,
   tenantErrorToResponse
 } from '@/lib/tenant';
+import { withAdminSedeDb } from '@/lib/security/require-admin-api';
+import { rbacErrorToResponse } from '@/lib/security/rbac';
+import {
+  institutionSedeWhere,
+  sedeDataForCreate,
+  sedeErrorToResponse,
+} from '@/lib/sede-scope';
 
 type AreaInput = {
   nombre: string;
@@ -19,19 +25,9 @@ type MateriaInput = {
 
 export async function POST(request: NextRequest) {
   try {
-    const userInstitutionId = await getAuthInstitutionId(request);
-    if (userInstitutionId == null) {
-      return NextResponse.json({ error: 'Se requiere autenticación' }, { status: 401 });
-    }
-
-    console.log('=== INICIO ENDPOINT AREAS-MATERIAS ===');
-    console.log('Request URL:', request.url);
-    console.log('Request method:', request.method);
-    
     let rawBody: unknown = {};
     try {
       rawBody = await request.json();
-      console.log('Body recibido:', JSON.stringify(rawBody, null, 2));
     } catch (jsonError) {
       console.error('Error parsing JSON:', jsonError);
       return NextResponse.json(
@@ -62,161 +58,103 @@ export async function POST(request: NextRequest) {
       throw new Error('materias debe ser un array');
     }
 
-    console.log('Datos validados:', { 
-      institucionId, 
-      areasCount: areas.length, 
-      materiasCount: materias.length 
-    });
-
-    // Verificar que la institución existe
-    const institucion = await prisma.instituciones.findUnique({
-      where: { id: institucionId }
-    });
-
-    if (!institucion) {
-      throw new Error(`Institución con ID ${institucionId} no encontrada`);
-    }
-
-    enforceTenant(userInstitutionId, institucionId);
-
-    console.log('Institución encontrada:', institucion.nombre);
-
-    // Verificar si ya existen áreas para esta institución
-    const areasExistentes = await prisma.areas.findMany({
-      where: { institucion_id: institucionId }
-    });
-
-    if (areasExistentes.length > 0) {
-      console.log('Ya existen áreas para esta institución, eliminando...');
-      // Primero eliminar materias asociadas
-      await prisma.materias.deleteMany({
-        where: { institucion_id: institucionId }
+    return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
+      const institucion = await tx.instituciones.findUnique({
+        where: { id: institucionId }
       });
-      // Luego eliminar áreas
-      await prisma.areas.deleteMany({
-        where: { institucion_id: institucionId }
-      });
-    }
 
-    // Guardar áreas
-    console.log('Creando áreas...');
-    const areasCreadas = await Promise.all(
-      areas.map(async (area) => {
-        console.log('Creando área:', area.nombre);
-        return await prisma.areas.create({
-          data: {
-            nombre: area.nombre,
-            es_opcional: area.es_opcional,
-            orden: area.orden,
-            institucion_id: institucionId,
-            activa: true
-          }
-        });
-      })
-    );
-
-    console.log('Áreas creadas exitosamente:', areasCreadas.length);
-
-    // Crear un mapa de areaId (del frontend) a id (de la base de datos)
-    const areaIdMap = new Map<number, number>();
-    areasCreadas.forEach(area => {
-      areaIdMap.set(area.orden, area.id);
-    });
-
-    console.log('Mapa de áreas:', Object.fromEntries(areaIdMap));
-
-    // Guardar materias
-    console.log('Creando materias...');
-    console.log('Datos de materias a crear:', JSON.stringify(materias, null, 2));
-    console.log('Mapa de áreas:', Object.fromEntries(areaIdMap));
-    
-    // Crear materias una por una para evitar problemas de conexión
-    const materiasCreadas: Array<Awaited<ReturnType<typeof prisma.materias.create>>> = [];
-    for (let i = 0; i < materias.length; i++) {
-      const materia = materias[i];
-      const areaKey = Number(materia.areaId);
-
-      if (!Number.isFinite(areaKey)) {
-        throw new Error(`El identificador de área ${materia.areaId} no es válido`);
+      if (!institucion) {
+        throw new Error(`Institución con ID ${institucionId} no encontrada`);
       }
 
-      const areaId = areaIdMap.get(areaKey);
-      
-      if (!areaId) {
-        throw new Error(`No se encontró el área con orden ${materia.areaId}`);
-      }
-      
-      console.log(`Creando materia ${i + 1}/${materias.length}: ${materia.nombre} para área ID: ${areaId}`);
-      console.log('Datos de la materia:', {
-        nombre: materia.nombre,
-        area_id: areaId,
-        institucion_id: institucionId
+      enforceTenant(institutionId, institucionId);
+
+      const sedeWhere = institutionSedeWhere(institucionId, scope);
+      const sedeData = sedeDataForCreate(scope);
+
+      const areasExistentes = await tx.areas.findMany({
+        where: sedeWhere
       });
-      
-      try {
-        const materiaCreada = await prisma.materias.create({
-          data: {
-            nombre: materia.nombre,
-            area_id: areaId,
-            institucion_id: institucionId
-          }
+
+      if (areasExistentes.length > 0) {
+        await tx.materias.deleteMany({
+          where: sedeWhere
         });
-        materiasCreadas.push(materiaCreada);
-        console.log(`Materia creada exitosamente: ${materiaCreada.nombre} (ID: ${materiaCreada.id})`);
-        
-        // Pequeño delay para evitar sobrecargar la conexión
-        if (i < materias.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+        await tx.areas.deleteMany({
+          where: sedeWhere
+        });
+      }
+
+      const areasCreadas = await Promise.all(
+        areas.map(async (area) => {
+          return await tx.areas.create({
+            data: {
+              nombre: area.nombre,
+              es_opcional: area.es_opcional,
+              orden: area.orden,
+              institucion_id: institucionId,
+              activa: true,
+              ...sedeData,
+            }
+          });
+        })
+      );
+
+      const areaIdMap = new Map<number, number>();
+      areasCreadas.forEach(area => {
+        areaIdMap.set(area.orden, area.id);
+      });
+
+      const materiasCreadas: Materias[] = [];
+      for (let i = 0; i < materias.length; i++) {
+        const materia = materias[i];
+        const areaKey = Number(materia.areaId);
+
+        if (!Number.isFinite(areaKey)) {
+          throw new Error(`El identificador de área ${materia.areaId} no es válido`);
         }
-      } catch (error) {
-        console.error('Error creando materia específica:', error);
-        console.error('Datos que causaron el error:', {
-          nombre: materia.nombre,
-          area_id: areaId,
-          institucion_id: institucionId
-        });
+
+        const areaId = areaIdMap.get(areaKey);
         
-        // Si es un error de conexión, intentar reconectar
-        if (error instanceof Error && error.message.includes('prepared statement')) {
-          console.log('Error de conexión detectado, intentando reconectar...');
-          await prisma.$disconnect();
-          await prisma.$connect();
-          console.log('Reconectado, reintentando...');
+        if (!areaId) {
+          throw new Error(`No se encontró el área con orden ${materia.areaId}`);
+        }
+
+        try {
+          const materiaCreada = await tx.materias.create({
+            data: {
+              nombre: materia.nombre,
+              area_id: areaId,
+              institucion_id: institucionId,
+              ...sedeData,
+            }
+          });
+          materiasCreadas.push(materiaCreada);
           
-          // Reintentar una vez
-          try {
-            const materiaCreada = await prisma.materias.create({
-              data: {
-                nombre: materia.nombre,
-                area_id: areaId,
-                institucion_id: institucionId
-              }
-            });
-            materiasCreadas.push(materiaCreada);
-            console.log(`Materia creada exitosamente en reintento: ${materiaCreada.nombre} (ID: ${materiaCreada.id})`);
-          } catch (retryError) {
-            console.error('Error en reintento:', retryError);
-            throw retryError;
+          if (i < materias.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
-        } else {
+        } catch (error) {
+          console.error('Error creando materia:', error);
           throw error;
         }
       }
-    }
 
-    console.log('Materias creadas exitosamente:', materiasCreadas.length);
+      const response = {
+        success: true,
+        areas: areasCreadas.length,
+        materias: materiasCreadas.length,
+        data: { areasCreadas, materiasCreadas }
+      };
 
-    const response = {
-      success: true,
-      areas: areasCreadas.length,
-      materias: materiasCreadas.length,
-      data: { areasCreadas, materiasCreadas }
-    };
-
-    console.log('=== FIN ENDPOINT AREAS-MATERIAS ===');
-    return NextResponse.json(response);
+      return NextResponse.json(response);
+    });
 
   } catch (error) {
+    const sedeResp = sedeErrorToResponse(error);
+    if (sedeResp) return sedeResp;
+    const rbacResp = rbacErrorToResponse(error);
+    if (rbacResp) return rbacResp;
     const tenantResp = tenantErrorToResponse(error);
     if (tenantResp) return tenantResp;
     console.error('=== ERROR EN ENDPOINT AREAS-MATERIAS ===');
