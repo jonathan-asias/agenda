@@ -8,6 +8,8 @@ import {
 } from '@/lib/payments/dev-confirm-purchase';
 import ConfirmarCompraForm from './ConfirmarCompraForm';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Confirmar compra (prueba)',
   robots: { index: false, follow: false },
