@@ -6,13 +6,10 @@ function getDevConfirmSecret(): string {
   return process.env.PAYMENT_DEV_CONFIRM_SECRET?.trim() ?? '';
 }
 
-/** Habilita la confirmación manual de compras solo en entornos de prueba. */
+/** Habilita la confirmación manual si hay secret, pasarelas en sandbox y no está desactivado explícitamente. */
 export function isDevConfirmPurchaseEnabled(): boolean {
   if (!getDevConfirmSecret()) return false;
   if (process.env.PAYMENT_DEV_CONFIRM_ENABLED === 'false') return false;
-  if (process.env.NODE_ENV === 'production' && process.env.PAYMENT_DEV_CONFIRM_ENABLED !== 'true') {
-    return false;
-  }
   return isMercadoPagoSandbox() || isWompiSandbox();
 }
 

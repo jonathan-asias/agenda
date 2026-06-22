@@ -116,3 +116,4 @@ scripts/**/*.jpg
 scripts/**/*.jpeg
 scripts/**/*.webp
 scripts/e2e-*.png
+.vercel
