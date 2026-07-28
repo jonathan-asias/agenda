@@ -247,7 +247,6 @@ export async function POST(request: NextRequest) {
               data: {
                 docente_id: docente.id,
                 materia_id: materiaId,
-                grado_id: gradoId,
                 curso_id: cursoId,
                 institucion_id: institutionId,
                 ...data,
@@ -377,7 +376,6 @@ export async function POST(request: NextRequest) {
             data: {
               docente_id: docente.id,
               materia_id: materiaId,
-              grado_id: gradoId,
               curso_id: cursoId,
               institucion_id: institutionId,
               ...fileData,
