@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { withTenantFromRequest } from '@/lib/db/with-tenant-request';
 import { getAuthUserEmail, tenantErrorToResponse } from '@/lib/tenant';
@@ -180,7 +181,7 @@ export async function PATCH(
             semana: fields.semana.trim().slice(0, 50),
             fecha_final: new Date(fields.fecha_final + 'T00:00:00.000Z'),
             contenido_html: html,
-            contenido_json: fields,
+            contenido_json: fields as Prisma.InputJsonValue,
           },
         });
 

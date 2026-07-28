@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { withTenantFromRequest } from '@/lib/db/with-tenant-request';
 import { getAuthUserEmail, tenantErrorToResponse } from '@/lib/tenant';
@@ -226,11 +226,11 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        const data = {
+        const data: Prisma.DocenteSilabusUncheckedUpdateInput = {
           grado_id: gradoId,
           origen: 'formulario',
           contenido_html: html,
-          contenido_json: fields,
+          contenido_json: fields as Prisma.InputJsonValue,
           storage_path: null,
           nombre_archivo: null,
           mime_type: null,
@@ -249,7 +249,10 @@ export async function POST(request: NextRequest) {
                 materia_id: materiaId,
                 curso_id: cursoId,
                 institucion_id: institutionId,
-                ...data,
+                grado_id: gradoId,
+                origen: 'formulario',
+                contenido_html: html,
+                contenido_json: fields as Prisma.InputJsonValue,
               },
               include: silabusInclude,
             });
@@ -355,11 +358,11 @@ export async function POST(request: NextRequest) {
         await supabase.storage.from(bucket).remove([existing.storage_path]).catch(() => null);
       }
 
-      const fileData = {
+      const fileData: Prisma.DocenteSilabusUncheckedUpdateInput = {
         grado_id: gradoId,
         origen: 'pdf',
         contenido_html: extractedHtml,
-        contenido_json: null as Prisma.JsonNullValueInput | null,
+        contenido_json: Prisma.DbNull,
         storage_path: storagePath,
         nombre_archivo: file.name.slice(0, 255),
         mime_type: mimeType,
@@ -378,7 +381,14 @@ export async function POST(request: NextRequest) {
               materia_id: materiaId,
               curso_id: cursoId,
               institucion_id: institutionId,
-              ...fileData,
+              grado_id: gradoId,
+              origen: 'pdf',
+              contenido_html: extractedHtml,
+              contenido_json: Prisma.DbNull,
+              storage_path: storagePath,
+              nombre_archivo: file.name.slice(0, 255),
+              mime_type: mimeType,
+              tamano_bytes: file.size,
             },
             include: silabusInclude,
           });

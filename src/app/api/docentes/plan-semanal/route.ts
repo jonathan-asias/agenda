@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { withTenantFromRequest } from '@/lib/db/with-tenant-request';
 import { getAuthUserEmail, tenantErrorToResponse } from '@/lib/tenant';
@@ -277,7 +277,7 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        const data = {
+        const data: Prisma.DocentePlanSemanalUncheckedUpdateInput = {
           grado_id: gradoId,
           periodo_academico: fields.periodo_academico.trim().slice(0, 100),
           semana: fields.semana.trim().slice(0, 50),
@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
           fecha_final: fechaFinal,
           origen: 'formulario',
           contenido_html: html,
-          contenido_json: fields,
+          contenido_json: fields as Prisma.InputJsonValue,
           storage_path: null,
           nombre_archivo: null,
           mime_type: null,
@@ -304,7 +304,14 @@ export async function POST(request: NextRequest) {
                 materia_id: materiaId,
                 curso_id: cursoId,
                 institucion_id: institutionId,
-                ...data,
+                grado_id: gradoId,
+                periodo_academico: fields.periodo_academico.trim().slice(0, 100),
+                semana: fields.semana.trim().slice(0, 50),
+                fecha_inicio: fechaInicio,
+                fecha_final: fechaFinal,
+                origen: 'formulario',
+                contenido_html: html,
+                contenido_json: fields as Prisma.InputJsonValue,
               },
               include: planInclude,
             });
@@ -435,7 +442,7 @@ export async function POST(request: NextRequest) {
         await supabase.storage.from(bucket).remove([existing.storage_path]).catch(() => null);
       }
 
-      const fileData = {
+      const fileData: Prisma.DocentePlanSemanalUncheckedUpdateInput = {
         grado_id: gradoId,
         periodo_academico: periodo.slice(0, 100),
         semana: semana.slice(0, 50),
@@ -443,7 +450,7 @@ export async function POST(request: NextRequest) {
         fecha_final: fechaFinal,
         origen: 'pdf',
         contenido_html: extractedHtml,
-        contenido_json: null as Prisma.JsonNullValueInput | null,
+        contenido_json: Prisma.DbNull,
         storage_path: storagePath,
         nombre_archivo: file.name.slice(0, 255),
         mime_type: mimeType,
@@ -462,7 +469,18 @@ export async function POST(request: NextRequest) {
               materia_id: materiaId,
               curso_id: cursoId,
               institucion_id: institutionId,
-              ...fileData,
+              grado_id: gradoId,
+              periodo_academico: periodo.slice(0, 100),
+              semana: semana.slice(0, 50),
+              fecha_inicio: fechaInicio,
+              fecha_final: fechaFinal,
+              origen: 'pdf',
+              contenido_html: extractedHtml,
+              contenido_json: Prisma.DbNull,
+              storage_path: storagePath,
+              nombre_archivo: file.name.slice(0, 255),
+              mime_type: mimeType,
+              tamano_bytes: file.size,
             },
             include: planInclude,
           });
