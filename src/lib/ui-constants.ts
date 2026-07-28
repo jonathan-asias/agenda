@@ -23,9 +23,9 @@
  * que están mapeadas a estos tokens.
  * 
  * Ejemplo de uso:
- * - CSS: `background-color: var(--color-primary);`
- * - Tailwind: `bg-[var(--color-primary)]` (si es necesario)
- * - O usar las clases mapeadas: `bg-blue-600` (mapeado a --color-primary)
+ * - UI de plataforma (botones, formularios): `var(--color-primary)`
+ * - Identidad institucional (banner, marca): `var(--brand-primary)`
+ * - Tailwind: `bg-[var(--color-primary)]` o clases mapeadas `bg-blue-600`
  */
 export const DESIGN_TOKENS = {
   // Colores principales
@@ -230,7 +230,7 @@ export const BUTTON_STYLES = {
     'rounded-lg', // Mapeado a --radius-md
     'text-sm font-medium', // Mapeado a --font-size-sm y --font-weight-medium
     'transition-colors',
-    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500', // Mapeado a --color-primary-focus
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600',
     'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
   
@@ -244,7 +244,7 @@ export const BUTTON_STYLES = {
     'rounded-lg', // Mapeado a --radius-md
     'text-sm font-medium', // Mapeado a --font-size-sm y --font-weight-medium
     'transition-colors',
-    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500', // Mapeado a --color-secondary-focus
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-600',
     'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
   
@@ -258,7 +258,7 @@ export const BUTTON_STYLES = {
     'rounded-lg', // Mapeado a --radius-md
     'text-sm font-medium', // Mapeado a --font-size-sm y --font-weight-medium
     'transition-colors',
-    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500', // Mapeado a --color-danger-focus
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600',
     'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
   
@@ -272,7 +272,7 @@ export const BUTTON_STYLES = {
     'rounded-lg', // Mapeado a --radius-md
     'text-sm font-medium', // Mapeado a --font-size-sm y --font-weight-medium
     'transition-colors',
-    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500', // Mapeado a --color-success-focus
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-green-600',
     'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
   
@@ -287,7 +287,7 @@ export const BUTTON_STYLES = {
     'rounded-lg', // Mapeado a --radius-md
     'text-sm font-medium', // Mapeado a --font-size-sm y --font-weight-medium
     'transition-colors',
-    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500', // Mapeado a --color-secondary-focus
+    'focus-ring-outline',
     'disabled:opacity-50 disabled:cursor-not-allowed',
   ].join(' '),
 } as const;
@@ -356,7 +356,7 @@ export const CARD_STYLES = {
  * - bg-white → --color-surface
  * - text-slate-900 → --color-text-primary
  * - text-slate-400 → --color-text-tertiary
- * - focus:ring-blue-500 → --color-primary-focus
+ * - focus-ring-field (globals.css) → --color-primary
  */
 export const INPUT_STYLES = {
   // Input estándar (usa --color-border, --color-surface, --color-text-primary)
@@ -368,9 +368,6 @@ export const INPUT_STYLES = {
     'rounded-lg', // Mapeado a --radius-md
     'bg-white', // Mapeado a --color-surface
     'text-slate-900', // Mapeado a --color-text-primary
-    'focus:outline-none',
-    'focus:ring-2 focus:ring-blue-500', // Mapeado a --color-primary-focus
-    'focus:border-blue-500', // Mapeado a --color-primary-focus
     'transition-all duration-200',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     'placeholder:text-slate-400', // Mapeado a --color-text-tertiary
@@ -385,9 +382,6 @@ export const INPUT_STYLES = {
     'rounded-lg', // Mapeado a --radius-md
     'bg-white', // Mapeado a --color-surface
     'text-slate-900', // Mapeado a --color-text-primary
-    'focus:outline-none',
-    'focus:ring-2 focus:ring-red-500', // Mapeado a --color-danger-focus
-    'focus:border-red-500', // Mapeado a --color-danger-focus
     'transition-all duration-200',
   ].join(' '),
 } as const;

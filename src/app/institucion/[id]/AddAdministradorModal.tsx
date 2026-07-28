@@ -353,10 +353,10 @@ export default function AddAdministradorModal({
                 value={formData.nombre}
                 onChange={handleInputChange}
                 required
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 ${
                   nombreValid
-                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                    ? 'border-green-300'
+                    : 'border-slate-200'
                 }`}
                 placeholder="Ingrese Nombre del administrador"
               />
@@ -375,12 +375,12 @@ export default function AddAdministradorModal({
                 onChange={handleInputChange}
                 required
                 disabled={!nombreValid}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 ${
                   !nombreValid
                     ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                     : apellidoValid
-                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                    ? 'border-green-300'
+                    : 'border-slate-200'
                 }`}
                 placeholder="Ingrese el apellido del administrador"
               />
@@ -399,12 +399,12 @@ export default function AddAdministradorModal({
                 onChange={handleInputChange}
                 required
                 disabled={!apellidoValid}
-                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 ${
                   !apellidoValid
                     ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                     : cargoValid
-                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                    ? 'border-green-300'
+                    : 'border-slate-200'
                 }`}
                 placeholder="Ingrese el cargo del administrador"
               />
@@ -435,7 +435,7 @@ export default function AddAdministradorModal({
                 onChange={handleInputChange}
                 required
                 disabled={!telefonoValid}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 disabled:bg-slate-100 disabled:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">Seleccione una sede</option>
                 {institucion?.sedes && institucion.sedes.length > 0 ? (
@@ -478,14 +478,14 @@ export default function AddAdministradorModal({
                   onChange={handleInputChange}
                   required
                   disabled={!telefonoValid || !formData.sede_id}
-                  className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                  className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 ${
                     !telefonoValid || !formData.sede_id
                       ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                       : emailError 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                      ? 'border-[var(--color-danger-border-input)]' 
                       : emailAvailable === true
-                      ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                      : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                      ? 'border-green-300'
+                      : 'border-slate-200'
                   }`}
                   placeholder="Ingrese el correo electrónico del administrador"
                 />
@@ -546,12 +546,12 @@ export default function AddAdministradorModal({
                 onChange={handleInputChange}
                 required
                 disabled={!canProceedToPassword}
-                className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
+                className={`w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 ${
                   !canProceedToPassword
                     ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                     : passwordValid
-                    ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
-                    : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500'
+                    ? 'border-green-300'
+                    : 'border-slate-200'
                 }`}
                 placeholder="Mínimo 8 caracteres, incluir mayúsculas, minúsculas, números y símbolos"
               />
@@ -614,7 +614,10 @@ export default function AddAdministradorModal({
             <Button
               type="submit"
               variant="primary"
-              disabled={submitting || !(nombreValid && apellidoValid && canProceedToPassword && telefonoValid && cargoValid && passwordValid)}
+              disabled={
+                submitting ||
+                !(nombreValid && apellidoValid && canProceedToPassword && telefonoValid && cargoValid && passwordValid)
+              }
               className="flex-1 sm:ml-auto"
             >
               {submitting ? 'Guardando…' : 'Guardar administrador'}

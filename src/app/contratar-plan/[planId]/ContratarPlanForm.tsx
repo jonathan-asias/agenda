@@ -56,7 +56,7 @@ function isValidNIT(nit: string): boolean {
 }
 
 const formInputClassName =
-  'w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+  'w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 placeholder:text-slate-500';
 
 export default function ContratarPlanForm({ plan }: { plan: PlanFromDb }) {
   const searchParams = useSearchParams();
@@ -258,7 +258,7 @@ export default function ContratarPlanForm({ plan }: { plan: PlanFromDb }) {
   return (
     <div className="mx-auto max-w-6xl">
       <Link
-        href="/#pricing"
+        href="/#planes"
         className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 mb-8"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -535,7 +535,7 @@ export default function ContratarPlanForm({ plan }: { plan: PlanFromDb }) {
                 type="button"
                 onClick={() => handlePayment('wompi')}
                 disabled={loadingProvider !== null || !wompiConfigured || !wompiChargeAllowed}
-                className="w-full rounded-xl border-2 border-slate-900 bg-white px-6 py-4 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full rounded-xl border-2 border-slate-900 bg-white px-6 py-4 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed focus-ring-outline"
               >
                 {loadingProvider === 'wompi'
                   ? 'Procesando...'

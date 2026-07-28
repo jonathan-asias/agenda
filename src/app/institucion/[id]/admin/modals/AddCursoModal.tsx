@@ -184,7 +184,7 @@ export default function AddCursoModal({ isOpen, onClose, institucionId, onSucces
                 grado_id: gradoPredeterminado ? gradoPredeterminado.id : 0,
               });
             }}
-            className="w-full px-4 py-2.5 text-base border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-focus)]"
+            className="w-full px-4 py-2.5 text-base border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)]"
             required
           >
             <option value="">Seleccionar grado</option>

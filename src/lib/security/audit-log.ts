@@ -8,7 +8,10 @@ export type AuditAction =
   | 'INSTITUCION_ELIMINADA'
   | 'SUSCRIPCION_CANCELADA'
   | 'CAMBIO_PLAN_INICIADO'
-  | 'PLATFORM_ADMIN_RESET_PASSWORD';
+  | 'PLATFORM_ADMIN_RESET_PASSWORD'
+  | 'PLATFORM_ADMIN_RESEND_VERIFICATION'
+  | 'TRIAL_INVITE_CREATED'
+  | 'TRIAL_INVITE_RESENT';
 
 function getClientIp(request?: NextRequest): string | null {
   if (!request) return null;

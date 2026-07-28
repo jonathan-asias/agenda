@@ -45,6 +45,7 @@ export async function applyInstitutionPlanChange(
       email: params.email,
       plan_id: params.planId,
       estado: 'ACTIVA',
+      es_prueba: false,
       fecha_inicio: dates.fecha_inicio,
       fecha_fin: dates.fecha_fin,
       institucion_id: params.institucionId,

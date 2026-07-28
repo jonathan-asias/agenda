@@ -242,7 +242,7 @@ function ActivarNotificacionesContent() {
             <button
               type="button"
               onClick={handleActivate}
-              className="w-full rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -273,7 +273,7 @@ function ActivarNotificacionesContent() {
               type="button"
               onClick={disablePushNotifications}
               disabled={status === 'disabling'}
-              className="w-full rounded-xl border-2 border-slate-300 bg-white px-6 py-4 font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full rounded-xl border-2 border-slate-300 bg-white px-6 py-4 font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 focus-ring-outline transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {status === 'disabling' ? (
                 <>

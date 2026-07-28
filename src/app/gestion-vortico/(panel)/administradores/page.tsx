@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import ResetPasswordForm from '@/components/platform-admin/ResetPasswordForm';
 import { PLATFORM_ADMIN_BASE } from '@/lib/platform-admin/constants';
+import { CardListSkeleton } from '@/components/ui/PageSkeletons';
 
 interface AdminRow {
   id: number;
@@ -55,7 +56,7 @@ export default function AdministradoresListPage() {
 
       <div className="space-y-4">
         {loading ? (
-          <p className="text-slate-500">Cargando…</p>
+          <CardListSkeleton count={4} dark />
         ) : items.length === 0 ? (
           <p className="text-slate-500">Sin resultados</p>
         ) : (

@@ -136,13 +136,13 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
             <div className="space-y-3">
               <Link
                 href="/recuperar-contrasena"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
               >
                 Solicitar nuevo enlace
               </Link>
               <Link
                 href="/login"
-                className="w-full flex justify-center py-3 px-4 border border-slate-300 rounded-xl shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                className="w-full flex justify-center py-3 px-4 border border-slate-300 rounded-xl shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus-ring-outline transition-all duration-200"
               >
                 Volver al Login
               </Link>
@@ -171,7 +171,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
             </p>
             <Link
               href="/login"
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               Iniciar Sesión
             </Link>
@@ -215,7 +215,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                  className="w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                   placeholder="Ingresa tu nueva contraseña"
                 />
                 <button
@@ -250,7 +250,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                  className="w-full px-4 py-2.5 pr-12 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                   placeholder="Confirma tu nueva contraseña"
                 />
                 <button
@@ -304,7 +304,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <div className="flex items-center">

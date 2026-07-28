@@ -35,6 +35,21 @@ type ResultadoValidacion = {
   advertencias: string[];
   duplicadosEnArchivo: Array<{ codigo: string; filas: number[] }>;
   duplicadosEnSistema: string[];
+  detalleFilas?: Array<{
+    fila: number;
+    codigo_estudiantil: string;
+    nombres: string;
+    apellidos: string;
+    nombre_acudiente: string;
+    telefono_acudiente: string;
+    correo_acudiente: string | null;
+    grado_id: number;
+    grado_nombre: string | null;
+    curso_id: number;
+    curso_nombre: string | null;
+    valida: boolean;
+    errores: string[];
+  }>;
 };
 
 export default function BulkUploadEstudiantesModal({
@@ -50,6 +65,7 @@ export default function BulkUploadEstudiantesModal({
   const [error, setError] = useState('');
   const [validacion, setValidacion] = useState<ResultadoValidacion | null>(null);
   const [resultado, setResultado] = useState<ResultadoCarga | null>(null);
+  const [mostrarPreview, setMostrarPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,6 +89,7 @@ export default function BulkUploadEstudiantesModal({
     setError('');
     setValidacion(null);
     setResultado(null);
+    setMostrarPreview(false);
   };
 
   useEffect(() => {
@@ -81,6 +98,7 @@ export default function BulkUploadEstudiantesModal({
     setError('');
     setValidacion(null);
     setResultado(null);
+    setMostrarPreview(false);
     setIsDragging(false);
   }, [isOpen]);
 
@@ -137,6 +155,7 @@ export default function BulkUploadEstudiantesModal({
     setError('');
     setValidacion(null);
     setResultado(null);
+    setMostrarPreview(false);
 
     try {
       const formData = new FormData();
@@ -239,19 +258,24 @@ export default function BulkUploadEstudiantesModal({
       onClose={onClose}
       title="Carga masiva de estudiantes"
       size="xl"
-      className="max-w-3xl"
+      className="max-w-5xl"
     >
       <p className="text-sm text-[var(--color-text-secondary)] mb-5">
         Descarga la plantilla con grados, cursos y materias de su sede, complete los datos y súbala aquí.
       </p>
 
       <div className="space-y-6">
-            <section className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-primary-light)] p-4">
-              <h3 className="font-medium text-[var(--color-primary-text)] mb-2">Paso 1 — Descargar plantilla</h3>
-              <p className="text-sm text-[var(--color-text-secondary)] mb-3">
+            <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h3 className="font-medium text-slate-900 mb-2">Paso 1 — Descargar plantilla</h3>
+              <p className="text-sm text-slate-600 mb-3">
                 El archivo Excel incluye hojas de referencia con los <strong>grados</strong>,{' '}
                 <strong>cursos</strong> y <strong>materias</strong> disponibles en su sede. En la
                 hoja &quot;Estudiantes&quot; use los IDs de grado y curso indicados en esas hojas.
+              </p>
+              <p className="text-sm text-slate-700 mb-4 rounded-md border border-slate-200 bg-white px-3 py-2">
+                <strong>Recomendación:</strong> descargue siempre una plantilla nueva antes de
+                cargar. No reutilice un Excel antiguo si ya agregó o modificó grados o cursos; la
+                plantilla refleja la información actual de la sede en el momento de la descarga.
               </p>
               <Button type="button" variant="primary" onClick={descargarPlantilla} disabled={descargando}>
                 {descargando ? 'Generando…' : 'Descargar plantilla (.xlsx)'}
@@ -441,6 +465,93 @@ export default function BulkUploadEstudiantesModal({
                   <p className="text-sm text-green-700 mt-2">
                     Puede proceder con &quot;Importar estudiantes&quot;.
                   </p>
+                )}
+
+                {(validacion.detalleFilas?.length ?? 0) > 0 && (
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setMostrarPreview((v) => !v)}
+                      className="border-slate-300 bg-white"
+                    >
+                      {mostrarPreview ? 'Ocultar previsualización' : 'Previsualizar'}
+                    </Button>
+
+                    {mostrarPreview && (
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                        <div className="max-h-80 overflow-auto">
+                          <table className="min-w-full text-left text-sm">
+                            <thead className="sticky top-0 bg-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                              <tr>
+                                <th className="whitespace-nowrap px-3 py-2">Fila</th>
+                                <th className="whitespace-nowrap px-3 py-2">Código</th>
+                                <th className="whitespace-nowrap px-3 py-2">Estudiante</th>
+                                <th className="whitespace-nowrap px-3 py-2">Grado</th>
+                                <th className="whitespace-nowrap px-3 py-2">Curso</th>
+                                <th className="whitespace-nowrap px-3 py-2">Acudiente</th>
+                                <th className="whitespace-nowrap px-3 py-2">Tel. acudiente</th>
+                                <th className="whitespace-nowrap px-3 py-2">Correo acudiente</th>
+                                <th className="whitespace-nowrap px-3 py-2">Estado</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {validacion.detalleFilas!.map((fila) => (
+                                <tr key={`${fila.fila}-${fila.codigo_estudiantil}`}>
+                                  <td className="px-3 py-2 text-slate-500">{fila.fila}</td>
+                                  <td className="px-3 py-2 font-medium text-slate-800">
+                                    {fila.codigo_estudiantil}
+                                  </td>
+                                  <td className="px-3 py-2 text-slate-700">
+                                    {fila.nombres} {fila.apellidos}
+                                  </td>
+                                  <td className="px-3 py-2 text-slate-700">
+                                    {fila.grado_nombre ?? (
+                                      <span className="text-red-600">ID {fila.grado_id}</span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2 text-slate-700">
+                                    {fila.curso_nombre ?? (
+                                      <span className="text-red-600">ID {fila.curso_id}</span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2 text-slate-700">
+                                    {fila.nombre_acudiente || '—'}
+                                  </td>
+                                  <td className="whitespace-nowrap px-3 py-2 text-slate-700">
+                                    {fila.telefono_acudiente || '—'}
+                                  </td>
+                                  <td className="px-3 py-2 text-slate-700">
+                                    {fila.correo_acudiente || '—'}
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    {fila.valida ? (
+                                      <span className="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                                        Listo
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800"
+                                        title={fila.errores.join(' ')}
+                                      >
+                                        Error
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <p className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
+                          {validacion.filasValidas} listo(s) para importar
+                          {validacion.filasConError > 0
+                            ? ` · ${validacion.filasConError} con error`
+                            : ''}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </section>
             )}

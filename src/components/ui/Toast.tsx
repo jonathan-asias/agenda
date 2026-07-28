@@ -55,9 +55,12 @@ export function ToastHost() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<ToastDetail>).detail;
       const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const duration = detail.duration ?? (detail.type === 'error' ? 6000 : 4000);
+      const defaultDuration = detail.type === 'error' ? 0 : 4000;
+      const duration = detail.duration ?? defaultDuration;
       setToasts((prev) => [...prev, { ...detail, id }]);
-      window.setTimeout(() => removeToast(id), duration);
+      if (duration > 0) {
+        window.setTimeout(() => removeToast(id), duration);
+      }
     };
     window.addEventListener(TOAST_EVENT, handler);
     return () => window.removeEventListener(TOAST_EVENT, handler);
@@ -87,7 +90,7 @@ export function ToastHost() {
           <button
             type="button"
             onClick={() => removeToast(toast.id)}
-            className="shrink-0 p-1 rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-focus)] min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1"
+            className="shrink-0 p-1 rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] focus-ring-outline min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1"
             aria-label="Cerrar notificación"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

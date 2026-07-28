@@ -2,7 +2,7 @@
 
 /* ============================================================================
  * DESIGN TOKENS - FASE 1
- * Sistema de tokens semánticos que envuelve los valores actuales
+ * Sistema de tokens sem?nticos que envuelve los valores actuales
  * sin modificar el resultado visual.
  * ============================================================================ */
 
@@ -15,7 +15,8 @@
   --text: var(--color-text-primary);
 
   /* ========================================================================
-   * COLORES PRINCIPALES
+   * COLORES PRINCIPALES (plataforma — botones, UI interna)
+   * No se sobrescriben con branding institucional.
    * ======================================================================== */
   --color-primary: #2563eb; /* blue-600 */
   --color-primary-hover: #1d4ed8; /* blue-700 */
@@ -25,7 +26,21 @@
   --color-primary-text: #1e40af; /* blue-800 */
 
   /* ========================================================================
-   * COLORES SECUNDARIOS
+   * COLORES DE MARCA INSTITUCIONAL (logo, banner, identidad del colegio)
+   * Se actualizan con applyBranding() → --brand-*
+   * ======================================================================== */
+  --brand-primary: #2563eb;
+  --brand-primary-hover: #1d4ed8;
+  --brand-primary-focus: #3b82f6;
+  --brand-primary-light: #dbeafe;
+  --brand-primary-text: #1e40af;
+  --brand-secondary: #475569;
+  --brand-secondary-hover: #334155;
+  --brand-secondary-light: #f8fafc;
+  --brand-secondary-text: #1e293b;
+
+  /* ========================================================================
+   * COLORES SECUNDARIOS (plataforma)
    * ======================================================================== */
   --color-secondary: #475569; /* slate-600 */
   --color-secondary-hover: #334155; /* slate-700 */
@@ -36,7 +51,7 @@
   /* ========================================================================
    * FONDOS Y SUPERFICIES
    * ======================================================================== */
-  --color-background: #dbeafe; /* blue-50 - fondo principal de páginas */
+  --color-background: #dbeafe; /* blue-50 - fondo principal de p?ginas */
   --color-surface: #ffffff; /* white - fondos de cards, inputs */
   --color-surface-glass: rgba(255, 255, 255, 0.8); /* bg-white/80 - glassmorphism */
   --color-surface-nested: #f8fafc; /* slate-50 - cards anidadas */
@@ -57,7 +72,7 @@
   --color-border-glass: rgba(255, 255, 255, 0.2); /* border-white/20 - glassmorphism */
 
   /* ========================================================================
-   * COLORES SEMÁNTICOS: ÉXITO
+   * COLORES SEM?NTICOS: ?XITO
    * ======================================================================== */
   --color-success: #16a34a; /* green-600 */
   --color-success-hover: #15803d; /* green-700 */
@@ -68,7 +83,7 @@
   --color-success-border: #bbf7d0; /* green-200 */
 
   /* ========================================================================
-   * COLORES SEMÁNTICOS: ERROR/DANGER
+   * COLORES SEM?NTICOS: ERROR/DANGER
    * ======================================================================== */
   --color-danger: #dc2626; /* red-600 */
   --color-danger-hover: #b91c1c; /* red-700 */
@@ -80,14 +95,14 @@
   --color-danger-border-input: #fca5a5; /* red-300 */
 
   /* ========================================================================
-   * COLORES SEMÁNTICOS: ADVERTENCIA
+   * COLORES SEM?NTICOS: ADVERTENCIA
    * ======================================================================== */
   --color-warning: #eab308; /* yellow-600 */
   --color-warning-light: #fefce8; /* yellow-50 */
   --color-warning-border: #fef08a; /* yellow-200 */
 
   /* ========================================================================
-   * TIPOGRAFÍA
+   * TIPOGRAF?A
    * ======================================================================== */
   --font-family-base: Arial, Helvetica, sans-serif;
   --font-size-xs: 0.75rem; /* 12px */
@@ -128,6 +143,12 @@
   --color-primary-light: var(--color-primary-light);
   --color-primary-lighter: var(--color-primary-lighter);
   --color-primary-text: var(--color-primary-text);
+
+  /* Marca institucional */
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: var(--brand-primary-hover);
+  --color-brand-primary-light: var(--brand-primary-light);
+  --color-brand-secondary: var(--brand-secondary);
   
   /* Colores secundarios */
   --color-secondary: var(--color-secondary);
@@ -153,7 +174,7 @@
   --color-border-light: var(--color-border-light);
   --color-border-glass: var(--color-border-glass);
   
-  /* Semánticos: Éxito */
+  /* Sem?nticos: ?xito */
   --color-success: var(--color-success);
   --color-success-hover: var(--color-success-hover);
   --color-success-focus: var(--color-success-focus);
@@ -162,7 +183,7 @@
   --color-success-text: var(--color-success-text);
   --color-success-border: var(--color-success-border);
   
-  /* Semánticos: Error/Danger */
+  /* Sem?nticos: Error/Danger */
   --color-danger: var(--color-danger);
   --color-danger-hover: var(--color-danger-hover);
   --color-danger-focus: var(--color-danger-focus);
@@ -172,12 +193,12 @@
   --color-danger-border: var(--color-danger-border);
   --color-danger-border-input: var(--color-danger-border-input);
   
-  /* Semánticos: Advertencia */
+  /* Sem?nticos: Advertencia */
   --color-warning: var(--color-warning);
   --color-warning-light: var(--color-warning-light);
   --color-warning-border: var(--color-warning-border);
   
-  /* Tipografía */
+  /* Tipograf?a */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-family-base: var(--font-family-base);
@@ -207,7 +228,7 @@
     --background: #0a0a0a;
     --foreground: #ededed;
     /* Los tokens de color mantienen valores actuales en modo claro */
-    /* Se actualizarán en futuras fases cuando se implemente dark mode completo */
+    /* Se actualizar?n en futuras fases cuando se implemente dark mode completo */
   }
 }
 
@@ -215,6 +236,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-family-base);
+}
+
+/* Evitar salto de layout al alternar type=password ? text (fuentes distintas del navegador) */
+input[type='password'],
+input[type='text'] {
+  font-family: inherit;
+  letter-spacing: normal;
 }
 
 body.modal-open {
@@ -261,7 +289,7 @@ input[type="reset"] {
   cursor: pointer;
 }
 
-/* Selector de país (react-phone-number-input): icono y texto negro */
+/* Selector de pa?s (react-phone-number-input): icono y texto negro */
 .PhoneInputCountry {
   color: black;
 }
@@ -281,7 +309,7 @@ input[type="reset"] {
   background-color: #fff;
 }
 
-/* Icono/flecha del indicativo de país: negro y visible */
+/* Icono/flecha del indicativo de pa?s: negro y visible */
 .PhoneInputCountrySelectArrow {
   border-color: #000 !important;
   opacity: 1 !important;
@@ -325,4 +353,303 @@ input[type="reset"] {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ============================================================================
+ * FOCO VISIBLE ? alto contraste en controles interactivos
+ * ============================================================================ */
+:is(button, a, [role="button"], [role="switch"]):focus-visible {
+  outline: none;
+}
+
+:is(button, a, [role="button"]).bg-blue-600:focus-visible,
+:is(button, a, [role="button"])[class*="bg-[var(--color-primary)]"]:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--color-primary);
+}
+
+:is(button, a, [role="button"]).bg-green-600:focus-visible,
+:is(button, a, [role="button"]).bg-emerald-600:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--color-success);
+}
+
+:is(button, a, [role="button"]).bg-slate-900:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #0f172a;
+}
+
+:is(button, a, [role="button"])[class*="bg-[#009ee3]"]:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #009ee3;
+}
+
+.focus-ring-toggle:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--color-primary);
+}
+
+:is(button, a, [role="button"]).bg-slate-600:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--color-secondary);
+}
+
+.focus-ring-outline:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* Campos de formulario ? foco unificado con tokens */
+:is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  select,
+  textarea
+):focus-visible {
+  outline: none;
+}
+
+:is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  select,
+  textarea
+):not([aria-invalid="true"]):not(.focus-ring-field-error):focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: none;
+}
+
+:is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  select,
+  textarea
+)[aria-invalid="true"]:focus-visible,
+.focus-ring-field-error:focus-visible {
+  border-color: var(--color-danger);
+  box-shadow: none;
+}
+
+.focus-ring-field-success:focus-visible {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 2px var(--color-success);
+}
+
+input[type="checkbox"]:focus,
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus,
+input[type="radio"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Campos densos (wizard y formularios): sin anillo de foco y sin borde rojo al enfocar */
+.wizard-quiet-focus:focus,
+.wizard-quiet-focus:focus-visible,
+.form-quiet-focus:focus,
+.form-quiet-focus:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--color-primary) !important;
+}
+
+input[type="checkbox"].wizard-quiet-focus:focus,
+input[type="checkbox"].wizard-quiet-focus:focus-visible,
+input[type="radio"].wizard-quiet-focus:focus,
+input[type="radio"].wizard-quiet-focus:focus-visible,
+input[type="checkbox"].form-quiet-focus:focus,
+input[type="checkbox"].form-quiet-focus:focus-visible,
+input[type="radio"].form-quiet-focus:focus,
+input[type="radio"].form-quiet-focus:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.PhoneInputInput:focus-visible {
+  outline: none;
+  border-color: var(--color-primary) !important;
+  box-shadow: none !important;
+}
+
+.PhoneInput--error .PhoneInputInput:focus-visible {
+  border-color: var(--color-primary) !important;
+  box-shadow: none !important;
+}
+
+.PhoneInputCountrySelect:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* ============================================================================
+ * Gestion Vortico - tema claro (fondo del shell + remap del contenido)
+ * ============================================================================ */
+.gv-shell[data-gv-theme='light'] {
+  color-scheme: light;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.gv-shell[data-gv-theme='light'] > main {
+  background-color: #f1f5f9 !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='bg-slate-950'],
+.gv-shell[data-gv-theme='light'][class*='bg-slate-950'] {
+  background-color: #f1f5f9 !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='bg-slate-900'],
+.gv-shell[data-gv-theme='light'][class*='bg-slate-900'] {
+  background-color: #ffffff !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='bg-slate-800'] {
+  background-color: #e2e8f0 !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='hover:bg-slate-900']:hover,
+.gv-shell[data-gv-theme='light'] [class*='hover:bg-slate-800']:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='border-slate-800'],
+.gv-shell[data-gv-theme='light'] [class*='border-slate-700'],
+.gv-shell[data-gv-theme='light'] [class*='border-slate-600'] {
+  border-color: #e2e8f0 !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='text-white'],
+.gv-shell[data-gv-theme='light'] [class*='text-slate-100'],
+.gv-shell[data-gv-theme='light'] [class*='text-slate-200'] {
+  color: #0f172a !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='text-slate-300'] {
+  color: #334155 !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='text-slate-400'],
+.gv-shell[data-gv-theme='light'] [class*='text-slate-500'] {
+  color: #64748b !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='hover:text-slate-200']:hover {
+  color: #0f172a !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='text-violet-400'] {
+  color: #7c3aed !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='hover:text-violet-300']:hover,
+.gv-shell[data-gv-theme='light'] [class*='text-violet-300'] {
+  color: #6d28d9 !important;
+}
+
+.gv-shell[data-gv-theme='light'] [class*='bg-violet-600/20'] {
+  background-color: #ede9fe !important;
+}
+
+.gv-shell[data-gv-theme='light'] button[class*='bg-violet-600']:not([class*='bg-violet-600/']) {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+}
+
+.gv-shell[data-gv-theme='light'] input,
+.gv-shell[data-gv-theme='light'] select,
+.gv-shell[data-gv-theme='light'] textarea {
+  color: #0f172a;
+}
+
+/* Vista web del sílabus (formulario o extracción PDF) */
+.silabus-preview {
+  color: #334155;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.silabus-preview .silabus-doc {
+  max-width: 48rem;
+}
+
+.silabus-preview .silabus-section {
+  margin-bottom: 1.5rem;
+}
+
+.silabus-preview h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.silabus-preview p {
+  margin: 0 0 0.75rem;
+}
+
+.silabus-preview .silabus-empty {
+  color: #94a3b8;
+}
+
+/* Vista web del plan de clases semanal */
+.plan-semanal-preview {
+  color: #334155;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.plan-semanal-preview .ps-doc {
+  max-width: 52rem;
+}
+
+.plan-semanal-preview .ps-section {
+  margin-bottom: 1.5rem;
+}
+
+.plan-semanal-preview h2 {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.plan-semanal-preview h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.plan-semanal-preview h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.plan-semanal-preview p {
+  margin: 0 0 0.75rem;
+}
+
+.plan-semanal-preview .ps-empty {
+  color: #94a3b8;
+}
+
+.plan-semanal-preview .ps-field {
+  margin-bottom: 0.85rem;
+}
+
+.plan-semanal-preview .ps-table-wrap {
+  overflow-x: auto;
+}
+
+.plan-semanal-preview .ps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.plan-semanal-preview .ps-table th,
+.plan-semanal-preview .ps-table td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.plan-semanal-preview .ps-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #0f172a;
 }

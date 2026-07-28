@@ -7,6 +7,7 @@ import Header from '../../Header';
 import Footer from '../../Footer';
 import ViewRecordatorioModal from '../../docente/ViewRecordatorioModal';
 import type { Recordatorio } from '@/types/recordatorio';
+import { ListPageSkeleton } from '@/components/ui/PageSkeletons';
 
 const tipoColors: Record<string, string> = {
   tarea: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -92,7 +93,7 @@ export default function AdminRecordatoriosPage() {
                 <select
                   value={filtros.area}
                   onChange={(e) => setFiltros((prev) => ({ ...prev, area: e.target.value, materia: '' }))}
-                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                 >
                   <option value="">Todas las áreas</option>
                   {opcionesFiltros.areas.map((area) => (
@@ -105,7 +106,7 @@ export default function AdminRecordatoriosPage() {
                 <select
                   value={filtros.materia}
                   onChange={(e) => setFiltros((prev) => ({ ...prev, materia: e.target.value }))}
-                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                   disabled={!filtros.area}
                 >
                   <option value="">Todas las materias</option>
@@ -121,7 +122,7 @@ export default function AdminRecordatoriosPage() {
                 <select
                   value={filtros.docente}
                   onChange={(e) => setFiltros((prev) => ({ ...prev, docente: e.target.value }))}
-                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                 >
                   <option value="">Todos los docentes</option>
                   {opcionesFiltros.docentes.map((d) => (
@@ -132,10 +133,7 @@ export default function AdminRecordatoriosPage() {
             </div>
 
             {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4" />
-                <p className="text-slate-600">Cargando recordatorios...</p>
-              </div>
+              <ListPageSkeleton rows={6} />
             ) : recordatorios.length > 0 ? (
               recordatoriosFiltrados.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

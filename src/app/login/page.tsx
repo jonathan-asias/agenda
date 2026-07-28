@@ -5,11 +5,10 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { applyBranding } from '@/lib/applyBranding';
+import { resetBranding } from '@/lib/applyBranding';
 import Header from '@/components/landing/Header';
 import Footer from '@/components/landing/Footer';
-import { Button, Card, Input, ErrorBanner, LoaderPage } from '@/components/ui';
+import { Button, Card, Input, ErrorBanner, LoaderPage, InfoTooltip, TurnstileField, isTurnstileVerified } from '@/components/ui';
 
 export default function LoginPage() {
   return (
@@ -26,7 +25,6 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
-  const { institutionId } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,8 +32,15 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [userType, setUserType] = useState<'institucion' | 'administrador' | 'docente'>('institucion');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Login público: siempre colores por defecto (landing), nunca branding de una institución
+  useEffect(() => {
+    resetBranding();
+  }, []);
 
   useEffect(() => {
     if (searchParams.get('subscription') === 'blocked') {
@@ -49,27 +54,6 @@ function LoginContent() {
       }
     }
   }, [searchParams]);
-
-  // Aplicar branding de la institución en login cuando ya hay sesión (ej. usuario volvió a login)
-  useEffect(() => {
-    if (!institutionId) return;
-    let cancelled = false;
-    const fetchBranding = async () => {
-      try {
-        const resp = await fetch(`/api/instituciones/${institutionId}/branding`);
-        if (cancelled || !resp.ok) return;
-        const data = await resp.json();
-        applyBranding({
-          colorPrimario: data.color_primario ?? undefined,
-          colorSecundario: data.color_secundario ?? undefined,
-        });
-      } catch {
-        // Silenciar
-      }
-    };
-    fetchBranding();
-    return () => { cancelled = true; };
-  }, [institutionId]);
 
   // Función para sanitizar entrada de texto
   const sanitizeInput = (input: string): string => {
@@ -254,6 +238,24 @@ function LoginContent() {
         return;
       }
 
+      if (!isTurnstileVerified(turnstileToken)) {
+        setError('Debes completar la verificación de seguridad');
+        return;
+      }
+
+      const captchaRes = await fetch('/api/auth/verify-turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ turnstileToken }),
+      });
+      if (!captchaRes.ok) {
+        const captchaData = await captchaRes.json().catch(() => ({}));
+        setError(captchaData.error || 'Verificación de seguridad fallida. Intenta de nuevo.');
+        setTurnstileToken(null);
+        setCaptchaResetKey((k) => k + 1);
+        return;
+      }
+
       // 6. Intentar login con Supabase
       const { data, error: supabaseError } = await supabaseClient.auth.signInWithPassword({
         email: sanitizedEmail,
@@ -263,6 +265,8 @@ function LoginContent() {
       if (supabaseError) {
         // Mostrar el mensaje de error específico de Supabase
         console.error('Error de Supabase:', supabaseError);
+        setTurnstileToken(null);
+        setCaptchaResetKey((k) => k + 1);
         
         let errorMessage = 'Error al iniciar sesión';
         
@@ -379,26 +383,14 @@ function LoginContent() {
               <label className="text-sm font-medium text-slate-700">
                 Perfil de Usuario
               </label>
-              <div className="relative group">
-                <button
-                  type="button"
-                  className="p-1 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
-                  aria-label="Información para iniciar sesión"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </button>
-                <div className="absolute right-0 top-full mt-1.5 z-10 w-72 p-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
-                  <p className="font-medium text-white mb-2">Para iniciar sesión:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-slate-200 leading-relaxed text-left pl-1">
-                    <li>Seleccione el perfil de usuario (Institución, Administrador o Docente).</li>
-                    <li>Ingrese su correo electrónico y contraseña.</li>
-                    <li>Haga clic en <strong className="text-white">Iniciar sesión</strong>.</li>
-                  </ol>
-                  <div className="absolute -top-1.5 right-4 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
-                </div>
-              </div>
+              <InfoTooltip label="Información para iniciar sesión" placement="right">
+                <p className="font-medium text-white mb-2">Para iniciar sesión:</p>
+                <ol className="list-decimal list-inside space-y-1 text-slate-200 leading-relaxed text-left pl-1">
+                  <li>Seleccione el perfil de usuario (Institución, Administrador o Docente).</li>
+                  <li>Ingrese su correo electrónico y contraseña.</li>
+                  <li>Haga clic en <strong className="text-white">Iniciar sesión</strong>.</li>
+                </ol>
+              </InfoTooltip>
             </div>
             <div className="flex justify-center gap-6">
               <label className="flex items-center cursor-pointer group">
@@ -413,7 +405,7 @@ function LoginContent() {
                       setError('');
                       setValidationErrors({});
                     }}
-                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 cursor-pointer"
                   />
                 </div>
                 <span className={`ml-3 text-sm font-medium transition-colors ${
@@ -436,7 +428,7 @@ function LoginContent() {
                       setError('');
                       setValidationErrors({});
                     }}
-                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 cursor-pointer"
                   />
                 </div>
                 <span className={`ml-3 text-sm font-medium transition-colors ${
@@ -459,7 +451,7 @@ function LoginContent() {
                       setError('');
                       setValidationErrors({});
                     }}
-                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
+                    className="w-5 h-5 text-blue-600 border-2 border-slate-300 cursor-pointer"
                   />
                 </div>
                 <span className={`ml-3 text-sm font-medium transition-colors ${
@@ -516,7 +508,7 @@ function LoginContent() {
                       });
                     }
                   }}
-                  className={`w-full px-4 py-2.5 pr-12 text-base border rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-focus)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
+                  className={`w-full px-4 py-2.5 pr-12 text-base border rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] transition-all duration-200 placeholder:text-[var(--color-text-tertiary)] ${
                     validationErrors.password ? 'border-[var(--color-danger-border-input)]' : 'border-[var(--color-border)]'
                   }`}
                   placeholder="Ingrese su contraseña"
@@ -552,27 +544,35 @@ function LoginContent() {
 
             {error && <ErrorBanner title={error} />}
 
-            <Button type="submit" variant="primary" size="lg" fullWidth disabled={loading}>
+            <TurnstileField
+              resetKey={captchaResetKey}
+              onChange={setTurnstileToken}
+            />
+
+            {!isTurnstileVerified(turnstileToken) && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Marca la casilla &quot;No soy un robot&quot; para continuar.
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={loading || !isTurnstileVerified(turnstileToken)}
+            >
               {loading ? 'Iniciando sesión…' : 'Iniciar sesión'}
             </Button>
           </form>
 
           {/* Links */}
-          <div className="mt-6 text-center space-y-3">
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              ¿No tienes una cuenta?{' '}
-              <Link
-                href="/registro-institucion"
-                className="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
-              >
-                Regístrate aquí
-              </Link>
-            </p>
+          <div className="mt-6 text-center">
             <p className="text-sm text-[var(--color-text-secondary)]">
               ¿Olvidaste tu contraseña?{' '}
               <Link
                 href="/recuperar-contrasena"
-                className="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors"
+                className="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors rounded focus-ring-outline"
               >
                 Recupérala aquí
               </Link>

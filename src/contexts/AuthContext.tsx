@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const obtainSupabaseClient = () => {
     if (!isSupabaseConfigured()) {
       console.error(
-        'Supabase no est? configurado. La autenticaci?n no funcionar? hasta que definas NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+        'Supabase no está configurado. La autenticación no funcionará hasta que definas NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.'
       );
       return null;
     }
@@ -69,9 +69,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Aplicar branding de la instituci?n cuando se conoce el institutionId
+  // Branding solo con sesión de institución; sin institución → colores por defecto (landing/login)
   useEffect(() => {
-    if (!institutionId || typeof fetch === 'undefined') return;
+    if (!institutionId || typeof fetch === 'undefined') {
+      resetBranding();
+      return;
+    }
 
     let cancelled = false;
     const apply = async () => {
@@ -79,6 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const resp = await fetch(`/api/instituciones/${institutionId}/branding`);
         if (cancelled || !resp.ok) return;
         const data = await resp.json();
+        if (cancelled) return;
         applyBranding({
           colorPrimario: data.color_primario ?? undefined,
           colorSecundario: data.color_secundario ?? undefined,
@@ -99,7 +103,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // Solo ejecutar en el cliente despu?s de montar
+    // Solo ejecutar en el cliente después de montar
     if (!isMounted) return;
 
     const supabaseClient = obtainSupabaseClient();
@@ -108,13 +112,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // Obtener la sesi?n actual
+    // Obtener la sesión actual
     const getSession = async () => {
       const { data: { session } } = await supabaseClient.auth.getSession();
       
       setUser(session?.user ?? null);
       
-      // Si hay usuario, obtener su instituci?n (sin importar si es admin o instituci?n)
+      // Si hay usuario, obtener su institución (sin importar si es admin o institución)
       if (session?.user?.email) {
         const { institutionId: instId, role: userRole } = await getUserInfo(session.user.email);
         setInstitutionId(instId);
@@ -129,12 +133,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     getSession();
 
-    // Escuchar cambios en la autenticaci?n
+    // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null);
         
-        // Si hay usuario, obtener su instituci?n (sin importar si es admin o instituci?n)
+        // Si hay usuario, obtener su institución (sin importar si es admin o institución)
         if (session?.user?.email) {
           const { institutionId: instId, role: userRole } = await getUserInfo(session.user.email);
           setInstitutionId(instId);
@@ -152,18 +156,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isMounted]);
 
   const signOut = async () => {
-    const supabaseClient = obtainSupabaseClient();
-    if (!supabaseClient) {
-      setInstitutionId(null);
-      setRole(null);
-      setUser(null);
-      resetBranding();
-      return;
-    }
-    await supabaseClient.auth.signOut();
+    // Restaurar tema por defecto de inmediato (antes del redirect a /login)
     setInstitutionId(null);
     setRole(null);
+    setUser(null);
     resetBranding();
+
+    const supabaseClient = obtainSupabaseClient();
+    if (!supabaseClient) return;
+    try {
+      await supabaseClient.auth.signOut();
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    } finally {
+      resetBranding();
+    }
   };
 
   const value = {

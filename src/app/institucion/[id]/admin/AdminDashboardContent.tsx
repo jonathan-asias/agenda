@@ -12,6 +12,9 @@ import Header from '../Header';
 import ViewRecordatorioModal from '../docente/ViewRecordatorioModal';
 import type { Administrador } from '@/types';
 import type { Recordatorio } from '@/types/recordatorio';
+import InfoTooltip from '@/components/ui/InfoTooltip';
+import { DashboardPageSkeleton, ListPageSkeleton, StatsCardsSkeleton } from '@/components/ui/PageSkeletons';
+import Skeleton from '@/components/ui/Skeleton';
 
 interface DashboardData {
   estadisticas: {
@@ -197,14 +200,7 @@ export default function AdminDashboardContent() {
   });
 
   if (loading || !administrador) {
-    return (
-      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando información del administrador...</p>
-        </div>
-      </div>
-    );
+    return <DashboardPageSkeleton />;
   }
 
   return (
@@ -264,10 +260,17 @@ export default function AdminDashboardContent() {
 
           {/* Estado de carga */}
           {dashboardLoading && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-slate-600">Cargando datos del dashboard...</p>
+            <div className="space-y-6">
+              <StatsCardsSkeleton count={6} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {[0, 1].map((i) => (
+                  <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-48" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -288,7 +291,7 @@ export default function AdminDashboardContent() {
                         setAccordionOpen('resumen');
                       }
                     }}
-                    className={`w-full flex items-center justify-between px-6 py-4 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 cursor-pointer ${accordionOpen === 'resumen' ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
+                    className={`w-full flex items-center justify-between px-6 py-4 text-left transition-colors focus-ring-outline cursor-pointer ${accordionOpen === 'resumen' ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
                     aria-expanded={accordionOpen === 'resumen'}
                   >
                     <div className="flex items-center gap-2">
@@ -296,22 +299,12 @@ export default function AdminDashboardContent() {
                         Resumen institucional
                       </h2>
                       {accordionOpen === 'resumen' && (
-                        <div className="relative group" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            className="p-1 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
-                            aria-label="Información del resumen institucional"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                          <div className="absolute left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 top-full mt-1.5 z-20 min-w-[200px] max-w-[min(28rem,calc(100vw-2rem))] w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[280px] p-4 sm:p-5 bg-slate-800 text-white text-sm sm:text-base rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <InfoTooltip label="Información del resumen institucional" size="sm">
                             <p className="leading-relaxed tracking-wide text-slate-100">
                               En este resumen se muestran las cantidades de áreas, materias, grados, cursos, docentes y estudiantes registrados en la institución.
                             </p>
-                            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
-                          </div>
+                          </InfoTooltip>
                         </div>
                       )}
                     </div>
@@ -343,7 +336,7 @@ export default function AdminDashboardContent() {
                         setAccordionOpen('detallado');
                       }
                     }}
-                    className={`w-full flex items-center justify-between px-6 py-4 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 cursor-pointer ${accordionOpen === 'detallado' ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
+                    className={`w-full flex items-center justify-between px-6 py-4 text-left transition-colors focus-ring-outline cursor-pointer ${accordionOpen === 'detallado' ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
                     aria-expanded={accordionOpen === 'detallado'}
                   >
                     <div className="flex items-center gap-2">
@@ -351,22 +344,12 @@ export default function AdminDashboardContent() {
                         Resumen detallado
                       </h2>
                       {accordionOpen === 'detallado' && (
-                        <div className="relative group" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            className="p-1 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
-                            aria-label="Información del resumen detallado"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                          <div className="absolute left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 top-full mt-1.5 z-20 min-w-[200px] max-w-[min(28rem,calc(100vw-2rem))] w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[280px] p-4 sm:p-5 bg-slate-800 text-white text-sm sm:text-base rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <InfoTooltip label="Información del resumen detallado" size="sm">
                             <p className="leading-relaxed tracking-wide text-slate-100">
                               Aquí puedes consultar el listado completo de áreas, materias, grados, cursos, docentes y estudiantes con sus nombres, así como los recordatorios creados por los docentes.
                             </p>
-                            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
-                          </div>
+                          </InfoTooltip>
                         </div>
                       )}
                     </div>
@@ -407,7 +390,7 @@ export default function AdminDashboardContent() {
                               <select
                                 value={filtros.area}
                                 onChange={(e) => setFiltros(prev => ({ ...prev, area: e.target.value, materia: '' }))}
-                                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                               >
                                 <option value="">Todas las áreas</option>
                                 {opcionesFiltros.areas.map((area) => (
@@ -420,7 +403,7 @@ export default function AdminDashboardContent() {
                               <select
                                 value={filtros.materia}
                                 onChange={(e) => setFiltros(prev => ({ ...prev, materia: e.target.value }))}
-                                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                                 disabled={!filtros.area}
                               >
                                 <option value="">Todas las materias</option>
@@ -436,7 +419,7 @@ export default function AdminDashboardContent() {
                               <select
                                 value={filtros.docente}
                                 onChange={(e) => setFiltros(prev => ({ ...prev, docente: e.target.value }))}
-                                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                               >
                                 <option value="">Todos los docentes</option>
                                 {opcionesFiltros.docentes.map((docente) => (
@@ -449,7 +432,7 @@ export default function AdminDashboardContent() {
                               <select
                                 value={filtros.cantidadEstudiantes}
                                 onChange={(e) => setFiltros(prev => ({ ...prev, cantidadEstudiantes: e.target.value }))}
-                                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                               >
                                 <option value="">Todas las cantidades</option>
                                 <option value="1-5">1 - 5 estudiantes</option>
@@ -475,9 +458,8 @@ export default function AdminDashboardContent() {
                         </div>
                         <div className="h-96 overflow-y-auto">
                           {loadingRecordatorios ? (
-                            <div className="text-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                              <p className="text-slate-600">Cargando recordatorios...</p>
+                            <div className="p-4">
+                              <ListPageSkeleton rows={4} />
                             </div>
                           ) : recordatorios.length > 0 ? (
                             recordatoriosFiltrados.length > 0 ? (

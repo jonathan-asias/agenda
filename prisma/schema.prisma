@@ -21,8 +21,32 @@ model Plan {
   pagos      Pago[]
   suscripciones Suscripcion[]
   instituciones Instituciones[]
+  invitacionesPrueba InvitacionPrueba[]
 
   @@map("Planes")
+}
+
+model InvitacionPrueba {
+  id                 Int         @id @default(autoincrement())
+  referencia         String      @unique @db.VarChar(64)
+  institucion_nombre String      @map("institucion_nombre") @db.VarChar(255)
+  nit                String      @db.VarChar(50)
+  email              String      @db.VarChar(255)
+  plan_id            Int         @map("plan_id")
+  suscripcion_id     Int         @unique @map("suscripcion_id")
+  estado             String      @db.VarChar(30)
+  link_expires_at    DateTime    @map("link_expires_at")
+  trial_days         Int         @default(30) @map("trial_days")
+  created_by         String      @map("created_by") @db.VarChar(255)
+  used_at            DateTime?   @map("used_at")
+  created_at         DateTime    @default(now()) @map("created_at")
+  plan               Plan        @relation(fields: [plan_id], references: [id])
+  suscripcion        Suscripcion @relation(fields: [suscripcion_id], references: [id])
+
+  @@index([email])
+  @@index([nit])
+  @@index([estado])
+  @@map("InvitacionesPrueba")
 }
 
 model Suscripcion {
@@ -30,12 +54,14 @@ model Suscripcion {
   email           String         @db.VarChar(255)
   plan_id         Int
   estado          String         @db.VarChar(50)
+  es_prueba       Boolean        @default(false) @map("es_prueba")
   fecha_inicio    DateTime?      @map("fecha_inicio")
   fecha_fin       DateTime?      @map("fecha_fin")
   institucion_id  Int?           @unique @map("institucion_id")
   created_at      DateTime       @default(now()) @map("created_at")
   plan            Plan           @relation(fields: [plan_id], references: [id])
   institucion     Instituciones?
+  invitacionPrueba InvitacionPrueba?
 
   @@map("Suscripciones")
 }
@@ -175,6 +201,8 @@ model Grados {
   materiaGrados  MateriaGrados[]
   docenteAsignaciones DocenteAsignaciones[]
   recordatorios  Recordatorios[]
+  silabus        DocenteSilabus[]
+  planesSemanales DocentePlanSemanal[]
 
   @@map("Grados")
 }
@@ -194,6 +222,8 @@ model Cursos {
   estudiantes         Estudiantes[]
   docenteAsignaciones DocenteAsignaciones[]
   recordatorios       Recordatorios[]
+  silabus             DocenteSilabus[]
+  planesSemanales     DocentePlanSemanal[]
 
   @@map("Cursos")
 }
@@ -230,6 +260,8 @@ model Materias {
   materiaGrados       MateriaGrados[]
   docenteAsignaciones DocenteAsignaciones[]
   recordatorios       Recordatorios[]
+  silabus             DocenteSilabus[]
+  planesSemanales     DocentePlanSemanal[]
 
   @@map("Materias")
 }
@@ -262,6 +294,8 @@ model Docentes {
   sede                Sedes?                @relation(fields: [sede_id], references: [id])
   docenteAsignaciones DocenteAsignaciones[]
   recordatorios       Recordatorios[]
+  silabus             DocenteSilabus[]
+  planesSemanales     DocentePlanSemanal[]
 
   @@map("Docentes")
 }
@@ -280,6 +314,66 @@ model DocenteAsignaciones {
 
   @@unique([docente_id, grado_id, curso_id, materia_id])
   @@map("DocenteAsignaciones")
+}
+
+model DocenteSilabus {
+  id             Int      @id @default(autoincrement())
+  docente_id     Int
+  materia_id     Int
+  grado_id       Int
+  curso_id       Int
+  institucion_id Int
+  /** formulario = Plan Básico; pdf = Plan Plus (archivo + HTML extraído) */
+  origen         String   @default("formulario") @db.VarChar(20)
+  contenido_html String?  @db.Text
+  contenido_json Json?
+  storage_path   String?  @db.VarChar(500)
+  nombre_archivo String?  @db.VarChar(255)
+  mime_type      String?  @db.VarChar(120)
+  tamano_bytes   Int?
+  created_at     DateTime @default(now()) @map("created_at")
+  updated_at     DateTime @updatedAt @map("updated_at")
+  docente        Docentes @relation(fields: [docente_id], references: [id], onDelete: Cascade)
+  materia        Materias @relation(fields: [materia_id], references: [id], onDelete: Cascade)
+  grado          Grados   @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+  curso          Cursos   @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+
+  @@unique([docente_id, curso_id, materia_id])
+  @@index([institucion_id])
+  @@map("DocenteSilabus")
+}
+
+/** Plan de clases semanal del docente (por materia/curso/semana). */
+model DocentePlanSemanal {
+  id                 Int      @id @default(autoincrement())
+  docente_id         Int
+  materia_id         Int
+  grado_id           Int
+  curso_id           Int
+  institucion_id     Int
+  periodo_academico  String   @db.VarChar(100)
+  semana             String   @db.VarChar(50)
+  fecha_inicio       DateTime @db.Date
+  fecha_final        DateTime @db.Date
+  /** formulario = Plan Básico; pdf = Plan Plus */
+  origen             String   @default("formulario") @db.VarChar(20)
+  contenido_html     String?  @db.Text
+  contenido_json     Json?
+  storage_path       String?  @db.VarChar(500)
+  nombre_archivo     String?  @db.VarChar(255)
+  mime_type          String?  @db.VarChar(120)
+  tamano_bytes       Int?
+  created_at         DateTime @default(now()) @map("created_at")
+  updated_at         DateTime @updatedAt @map("updated_at")
+  docente            Docentes @relation(fields: [docente_id], references: [id], onDelete: Cascade)
+  materia            Materias @relation(fields: [materia_id], references: [id], onDelete: Cascade)
+  grado              Grados   @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+  curso              Cursos   @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+
+  @@unique([docente_id, curso_id, materia_id, fecha_inicio])
+  @@index([institucion_id])
+  @@index([docente_id, curso_id, materia_id])
+  @@map("DocentePlanSemanal")
 }
 
 model Estudiantes {

@@ -5,7 +5,8 @@ import { showSuccess, showError, showConfirm } from '@/lib/notifications';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Institucion, Sede, InstitucionAdministrador } from '@/types';
-import { Button } from '@/components/ui';
+import { Button, InfoTooltip } from '@/components/ui';
+import { InstitutionPageSkeleton } from '@/components/ui/PageSkeletons';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import InstitucionAuthGuard from '@/components/auth/InstitucionAuthGuard';
@@ -153,14 +154,7 @@ function InstitucionPageContent() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando institución...</p>
-        </div>
-      </div>
-    );
+    return <InstitutionPageSkeleton />;
   }
 
   if (error || !institucion) {
@@ -176,7 +170,7 @@ function InstitucionPageContent() {
           <p className="text-slate-600 mb-6">{error}</p>
           <Link 
             href="/registro-institucion"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
             Registrar Nueva Institución
           </Link>
@@ -200,23 +194,11 @@ function InstitucionPageContent() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-slate-800">Administradores</h2>
-              <div className="relative group">
-                <button
-                  type="button"
-                  className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-                  aria-label="Información sobre funciones del administrador"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </button>
-                <div className="absolute left-0 top-full mt-1.5 z-10 w-72 p-3 bg-slate-800 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <p className="leading-relaxed">
-                    Los administradores pueden crear y gestionar docentes, estudiantes, materias y cursos de la sede a la cual estén vinculados.
-                  </p>
-                  <div className="absolute -top-1.5 left-4 w-3 h-3 bg-slate-800 transform rotate-45 pointer-events-none" />
-                </div>
-              </div>
+              <InfoTooltip label="Información sobre funciones del administrador">
+                <p className="leading-relaxed">
+                  Los administradores pueden crear y gestionar docentes, estudiantes, materias y cursos de la sede a la cual estén vinculados.
+                </p>
+              </InfoTooltip>
             </div>
             <Button
               type="button"
@@ -392,7 +374,7 @@ function InstitucionPageContent() {
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1.5">Sede</label>
                 <select
-                  className="w-full min-h-11 px-3 py-2 text-sm text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-focus)]"
+                  className="w-full min-h-11 px-3 py-2 text-sm text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]"
                   value={editAdminData.sede_id}
                   onChange={(e) => setEditAdminData((prev) => ({ ...prev, sede_id: e.target.value }))}
                 >

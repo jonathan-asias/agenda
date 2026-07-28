@@ -11,6 +11,11 @@ export const tokens = {
     secondary: 'var(--color-secondary)',
     secondaryHover: 'var(--color-secondary-hover)',
     secondaryFocus: 'var(--color-secondary-focus)',
+    /** Identidad visual de la institución (no usar en botones de plataforma) */
+    brandPrimary: 'var(--brand-primary)',
+    brandPrimaryHover: 'var(--brand-primary-hover)',
+    brandPrimaryLight: 'var(--brand-primary-light)',
+    brandSecondary: 'var(--brand-secondary)',
     background: 'var(--background)',
     surface: 'var(--surface)',
     surfaceNested: 'var(--color-surface-nested)',

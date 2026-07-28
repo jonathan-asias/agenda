@@ -3,13 +3,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef, memo, startTransition } from 'react';
 import { showSuccess, showError } from '@/lib/notifications';
 import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import type { Docente, Estudiante } from '@/types';
 import { GRADOS_PREDETERMINADOS } from '@/lib/grados-predeterminados';
+import { WizardDataSkeleton } from '@/components/ui/PageSkeletons';
 
 interface SetupWizardProps {
   institucionId: number;
@@ -35,6 +37,820 @@ interface MateriaCurso {
   gradoId: number;
 }
 
+interface BufferedTextInputProps {
+  value: string;
+  onCommit: (value: string) => void;
+  type?: string;
+  disabled?: boolean;
+  className?: string;
+  placeholder?: string;
+  ariaLabel?: string;
+}
+
+function BufferedTextInput({
+  value,
+  onCommit,
+  type = 'text',
+  disabled,
+  className,
+  placeholder,
+  ariaLabel,
+}: BufferedTextInputProps) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  const commit = () => {
+    if (draft !== value) onCommit(draft);
+  };
+
+  return (
+    <input
+      type={type}
+      disabled={disabled}
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') event.currentTarget.blur();
+      }}
+      className={`wizard-quiet-focus ${className || ''}`.trim()}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+    />
+  );
+}
+
+function getPasswordRequirementsDocente(password: string) {
+  return {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    symbol: /[@$!%*?&]/.test(password),
+  };
+}
+
+const fieldErrorBorder = 'border-[var(--color-danger-border-input)]';
+const fieldNormalBorder = 'border-slate-300';
+
+type DocenteDatosDraft = {
+  nombres: string;
+  apellidos: string;
+  telefono: string;
+  email: string;
+  password: string;
+};
+
+const DocenteDatosPersonalesPanel = memo(function DocenteDatosPersonalesPanel({
+  value,
+  onCommitField,
+  onClearFieldError,
+  camposHabilitados,
+  erroresValidacion,
+  camposValidados,
+  emailVerificado,
+  verificandoEmail,
+  mostrarPassword,
+  onTogglePassword,
+  onVerifyEmail,
+  onGeneratePassword,
+  passwordEnabled,
+  passwordButtonsEnabled,
+}: {
+  value: DocenteDatosDraft;
+  onCommitField: (field: keyof DocenteDatosDraft, next: string) => void;
+  onClearFieldError: (field: keyof DocenteDatosDraft) => void;
+  camposHabilitados: { [key: string]: boolean };
+  erroresValidacion: { [key: string]: string };
+  camposValidados: { [key: string]: boolean };
+  emailVerificado: boolean;
+  verificandoEmail: boolean;
+  mostrarPassword: boolean;
+  onTogglePassword: () => void;
+  onVerifyEmail: (email?: string) => void;
+  onGeneratePassword: () => void;
+  passwordEnabled: boolean;
+  passwordButtonsEnabled: boolean;
+}) {
+  const [draft, setDraft] = useState(value);
+  const draftRef = useRef(value);
+  const apellidosRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const phoneContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDraft(value);
+    draftRef.current = value;
+  }, [value]);
+
+  const updateDraft = (field: keyof DocenteDatosDraft, next: string) => {
+    setDraft((prev) => {
+      const updated = { ...prev, [field]: next };
+      draftRef.current = updated;
+      return updated;
+    });
+    // Quitar borde rojo mientras el usuario corrige (el error solo se revalida al salir del campo).
+    if (erroresValidacion[field]) {
+      onClearFieldError(field);
+    }
+  };
+
+  /** Usa el valor del evento o el draft más reciente (ref) para evitar commits con estado stale. */
+  const commitField = (field: keyof DocenteDatosDraft, next?: string) => {
+    onCommitField(field, next !== undefined ? next : draftRef.current[field]);
+  };
+
+  const handleTelefonoChange = (val: string) => {
+    updateDraft('telefono', val);
+    // Habilitar email en cuanto el número sea válido, sin depender solo del blur.
+    if (isPhoneValid(val)) {
+      onCommitField('telefono', val);
+    }
+  };
+
+  const isEmailFormatValid = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  const handleEmailChange = (val: string) => {
+    updateDraft('email', val);
+    // Commit al tener formato válido (habilita Verificar sin blur).
+    // Si ya estaba verificado, también commit al editar para invalidar la verificación.
+    if (isEmailFormatValid(val) || emailVerificado) {
+      onCommitField('email', val);
+    }
+  };
+
+  const passwordReqs = getPasswordRequirementsDocente(draft.password);
+  const inputBase =
+    'w-full px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 transition-colors duration-150 placeholder:text-slate-400 wizard-quiet-focus';
+
+  // Habilitación local según el draft: así Tab no salta al acordeón mientras el padre aún no reaccionó al blur.
+  const isNombreValido = (v: string) =>
+    !!v.trim() && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v.trim());
+
+  const nombresOk = isNombreValido(draft.nombres);
+  const apellidosOk = isNombreValido(draft.apellidos);
+  const telefonoOk = isPhoneValid(draft.telefono);
+  const emailOk = isEmailFormatValid(draft.email);
+
+  const nombresEnabled = !!camposHabilitados.nombres;
+  const apellidosEnabled = !!camposHabilitados.apellidos || nombresOk;
+  const telefonoEnabled = !!camposHabilitados.telefono || (apellidosEnabled && apellidosOk);
+  const emailEnabled = !!camposHabilitados.email || (telefonoEnabled && telefonoOk);
+  const verifyEnabled = emailEnabled && emailOk && !emailVerificado && !verificandoEmail;
+
+  const focusPhoneInput = () => {
+    const input = phoneContainerRef.current?.querySelector<HTMLInputElement>(
+      'input.PhoneInputInput, input[type="tel"]'
+    );
+    input?.focus();
+  };
+
+  /** Tab hacia adelante: confirmar campo y enfocar el siguiente lógico. */
+  const handleForwardTab = (
+    e: { key: string; shiftKey: boolean; preventDefault: () => void; currentTarget: HTMLInputElement },
+    field: keyof DocenteDatosDraft,
+    canGoNext: boolean,
+    focusNext: () => void
+  ) => {
+    if (e.key !== 'Tab' || e.shiftKey) return;
+    commitField(field, e.currentTarget.value);
+    if (!canGoNext) return;
+    e.preventDefault();
+    requestAnimationFrame(() => {
+      focusNext();
+    });
+  };
+
+  return (
+    <div className="p-4 border-t border-slate-200">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Nombres *</label>
+          <input
+            type="text"
+            value={draft.nombres}
+            onChange={(e) => updateDraft('nombres', e.target.value)}
+            onBlur={(e) => commitField('nombres', e.target.value)}
+            onKeyDown={(e) =>
+              handleForwardTab(e, 'nombres', nombresOk, () => apellidosRef.current?.focus())
+            }
+            disabled={!nombresEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.nombres ? fieldErrorBorder : fieldNormalBorder
+            } ${!nombresEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            placeholder="Ingresa los nombres"
+          />
+          {erroresValidacion.nombres && (
+            <p className="text-red-500 text-xs mt-1">{erroresValidacion.nombres}</p>
+          )}
+          {camposValidados.nombres && !erroresValidacion.nombres && (
+            <p className="text-green-600 text-xs mt-1 flex items-center">
+              <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Nombres válidos
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Apellidos *</label>
+          <input
+            ref={apellidosRef}
+            type="text"
+            value={draft.apellidos}
+            onChange={(e) => updateDraft('apellidos', e.target.value)}
+            onBlur={(e) => commitField('apellidos', e.target.value)}
+            onKeyDown={(e) =>
+              handleForwardTab(e, 'apellidos', apellidosOk, focusPhoneInput)
+            }
+            disabled={!apellidosEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.apellidos ? fieldErrorBorder : fieldNormalBorder
+            } ${!apellidosEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            placeholder="Ingresa los apellidos"
+          />
+          {erroresValidacion.apellidos && (
+            <p className="text-red-500 text-xs mt-1">{erroresValidacion.apellidos}</p>
+          )}
+          {camposValidados.apellidos && !erroresValidacion.apellidos && (
+            <p className="text-green-600 text-xs mt-1 flex items-center">
+              <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Apellidos válidos
+            </p>
+          )}
+        </div>
+
+        <div
+          ref={phoneContainerRef}
+          onKeyDown={(e) => {
+            if (e.key !== 'Tab' || e.shiftKey || !telefonoOk) return;
+            const target = e.target as HTMLElement;
+            if (target.tagName !== 'INPUT') return;
+            e.preventDefault();
+            commitField('telefono');
+            requestAnimationFrame(() => emailRef.current?.focus());
+          }}
+        >
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Teléfono Celular * (con indicativo de país)
+          </label>
+          <PhoneInputField
+            value={draft.telefono}
+            onChange={handleTelefonoChange}
+            onBlur={() => commitField('telefono')}
+            disabled={!telefonoEnabled}
+            error={!!erroresValidacion.telefono}
+            showValidState={!!camposValidados.telefono && !erroresValidacion.telefono}
+            invalidMessage=""
+            aria-label="Teléfono celular"
+          />
+          <div className="mt-1 min-h-[1.25rem]">
+            {erroresValidacion.telefono ? (
+              <p className="text-red-500 text-xs">{erroresValidacion.telefono}</p>
+            ) : camposValidados.telefono ? (
+              <p className="text-green-600 text-xs flex items-center">
+                <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Teléfono válido
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Email *</label>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              ref={emailRef}
+              type="email"
+              value={draft.email}
+              onChange={(e) => handleEmailChange(e.target.value)}
+              onBlur={(e) => commitField('email', e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Tab' && !e.shiftKey && telefonoOk) {
+                  commitField('email', e.currentTarget.value);
+                }
+              }}
+              disabled={!emailEnabled}
+              className={`flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 transition-colors duration-150 placeholder:text-slate-400 wizard-quiet-focus ${
+                erroresValidacion.email ? fieldErrorBorder : fieldNormalBorder
+              } ${!emailEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              placeholder="correo@ejemplo.com"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const email = draftRef.current.email;
+                commitField('email', email);
+                onVerifyEmail(email);
+              }}
+              disabled={!verifyEnabled}
+              tabIndex={verifyEnabled ? 0 : -1}
+              className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                verifyEnabled
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              }`}
+            >
+              {verificandoEmail ? (
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Verificando...
+                </div>
+              ) : (
+                'Verificar'
+              )}
+            </button>
+          </div>
+          <div className="mt-1 min-h-[2.5rem]">
+            {erroresValidacion.email ? (
+              <p className="text-red-500 text-xs">{erroresValidacion.email}</p>
+            ) : verificandoEmail ? (
+              <p className="text-blue-600 text-xs flex items-center">
+                <svg className="w-3 h-3 mr-1 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Comprobando email...
+              </p>
+            ) : emailVerificado ? (
+              <p className="text-green-600 text-xs flex items-center">
+                <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Email verificado y disponible
+              </p>
+            ) : emailOk ? (
+              <p className="text-amber-600 text-xs flex items-center">
+                <svg className="w-3 h-3 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Email válido. Haz clic en &quot;Verificar&quot; para comprobar disponibilidad
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-slate-700 mb-2">Contraseña *</label>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1 h-11">
+            <input
+              ref={passwordRef}
+              type={mostrarPassword ? 'text' : 'password'}
+              value={draft.password}
+              onChange={(e) => updateDraft('password', e.target.value)}
+              onBlur={(e) => commitField('password', e.target.value)}
+              disabled={!passwordEnabled}
+              autoComplete="new-password"
+              spellCheck={false}
+              className={`wizard-quiet-focus absolute inset-0 h-11 w-full box-border px-3 pr-11 border rounded-lg text-sm leading-none text-slate-900 font-[inherit] tracking-normal [font-variant-ligatures:none] transition-colors duration-150 ${
+                erroresValidacion.password ? fieldErrorBorder : fieldNormalBorder
+              } ${!passwordEnabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+              placeholder="Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo"
+            />
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onTogglePassword}
+              disabled={!passwordButtonsEnabled}
+              tabIndex={passwordButtonsEnabled ? 0 : -1}
+              aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed"
+            >
+              <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                {mostrarPassword ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878L3 3m6.878 6.878L21 21" />
+                ) : (
+                  <>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </>
+                )}
+              </svg>
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={onGeneratePassword}
+            disabled={!passwordButtonsEnabled}
+            tabIndex={passwordButtonsEnabled ? 0 : -1}
+            className={`w-full sm:w-auto h-11 px-3 rounded-lg transition-colors flex items-center justify-center ${
+              passwordButtonsEnabled
+                ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+            }`}
+          >
+            <svg className="w-5 h-5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Generar
+          </button>
+        </div>
+        <div className="mt-1 min-h-[1.25rem]">
+          {erroresValidacion.password ? (
+            <p className="text-red-500 text-xs">{erroresValidacion.password}</p>
+          ) : camposValidados.password ? (
+            <p className="text-green-600 text-xs flex items-center">
+              <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Contraseña válida
+            </p>
+          ) : null}
+        </div>
+        <div className="mt-2 text-xs text-slate-500 space-y-1">
+          {(
+            [
+              [passwordReqs.length, 'Al menos 8 caracteres'],
+              [passwordReqs.upper, 'Una letra mayúscula'],
+              [passwordReqs.lower, 'Una letra minúscula'],
+              [passwordReqs.number, 'Un número'],
+              [passwordReqs.symbol, 'Un símbolo (@$!%*?&)'],
+            ] as const
+          ).map(([ok, label]) => (
+            <p key={label} className={ok ? 'text-green-600' : 'text-slate-500'}>
+              {ok ? '✓' : '•'} {label}
+            </p>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-blue-50 rounded-lg p-4 mb-4">
+        <h5 className="font-medium text-blue-900 mb-2">🏢 Asignación Institucional</h5>
+        <p className="text-sm text-blue-700">
+          El docente será asignado automáticamente a la misma sede del administrador
+        </p>
+      </div>
+    </div>
+  );
+});
+
+function assignmentKey(gradoId: number, materiaId: string) {
+  return `${gradoId}:${materiaId}`;
+}
+
+const GradoMateriasCheckboxes = memo(function GradoMateriasCheckboxes({
+  grado,
+  materias,
+  assignedKeys,
+  onToggle,
+  onToggleAll,
+}: {
+  grado: { id: number; nombre: string; cursos: unknown[] };
+  materias: Materia[];
+  assignedKeys: Set<string>;
+  onToggle: (gradoId: number, materiaId: string, checked: boolean) => void;
+  onToggleAll: (gradoId: number, materiaIds: string[], checked: boolean) => void;
+}) {
+  const selectedCount = materias.filter((materia) =>
+    assignedKeys.has(assignmentKey(grado.id, materia.id))
+  ).length;
+  const allSelected = materias.length > 0 && selectedCount === materias.length;
+  const someSelected = selectedCount > 0 && !allSelected;
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h5 className="break-words font-semibold text-slate-900">{grado.nombre}</h5>
+          <span className="text-sm text-slate-500">
+            {grado.cursos.length} curso{grado.cursos.length !== 1 ? 's' : ''}
+            {materias.length > 0 && (
+              <> · {selectedCount}/{materias.length} materias</>
+            )}
+          </span>
+        </div>
+        {materias.length > 0 && (
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = someSelected;
+              }}
+              onChange={(e) =>
+                onToggleAll(
+                  grado.id,
+                  materias.map((materia) => materia.id),
+                  e.target.checked
+                )
+              }
+              className="wizard-quiet-focus h-4 w-4 rounded border-slate-300 text-blue-600"
+            />
+            Seleccionar todas
+          </label>
+        )}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+        {materias.map((materia) => {
+          const isAsignada = assignedKeys.has(assignmentKey(grado.id, materia.id));
+          return (
+            <label
+              key={materia.id}
+              className={`flex cursor-pointer items-center space-x-2 rounded-lg border p-2 transition-colors ${
+                isAsignada
+                  ? 'border-blue-200 bg-blue-50'
+                  : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isAsignada}
+                onChange={(e) => onToggle(grado.id, materia.id, e.target.checked)}
+                className="wizard-quiet-focus h-4 w-4 rounded border-slate-300 text-blue-600"
+              />
+              <span className="text-sm font-medium text-slate-900">{materia.nombre}</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+const AsignarMateriasAGradosPanel = memo(function AsignarMateriasAGradosPanel({
+  grados,
+  materias,
+  value,
+  onChange,
+}: {
+  grados: Array<{ id: number; nombre: string; cursos: unknown[] }>;
+  materias: Materia[];
+  value: MateriaCurso[];
+  onChange: (next: MateriaCurso[]) => void;
+}) {
+  const [assignedKeys, setAssignedKeys] = useState(
+    () => new Set(value.map((item) => assignmentKey(item.gradoId, item.materiaId)))
+  );
+
+  useEffect(() => {
+    setAssignedKeys(new Set(value.map((item) => assignmentKey(item.gradoId, item.materiaId))));
+  }, [value]);
+
+  const commitKeys = useCallback(
+    (next: Set<string>) => {
+      setAssignedKeys(next);
+      const nextValue: MateriaCurso[] = Array.from(next, (entry) => {
+        const sep = entry.indexOf(':');
+        return {
+          gradoId: Number(entry.slice(0, sep)),
+          materiaId: entry.slice(sep + 1),
+        };
+      });
+      startTransition(() => onChange(nextValue));
+    },
+    [onChange]
+  );
+
+  const handleToggle = useCallback(
+    (gradoId: number, materiaId: string, checked: boolean) => {
+      const key = assignmentKey(gradoId, materiaId);
+      const next = new Set(assignedKeys);
+      if (checked) next.add(key);
+      else next.delete(key);
+      commitKeys(next);
+    },
+    [assignedKeys, commitKeys]
+  );
+
+  const handleToggleAll = useCallback(
+    (gradoId: number, materiaIds: string[], checked: boolean) => {
+      const next = new Set(assignedKeys);
+      materiaIds.forEach((materiaId) => {
+        const key = assignmentKey(gradoId, materiaId);
+        if (checked) next.add(key);
+        else next.delete(key);
+      });
+      commitKeys(next);
+    },
+    [assignedKeys, commitKeys]
+  );
+
+  return (
+    <div className="space-y-4">
+      {grados.map((grado) => (
+        <GradoMateriasCheckboxes
+          key={grado.id}
+          grado={grado}
+          materias={materias}
+          assignedKeys={assignedKeys}
+          onToggle={handleToggle}
+          onToggleAll={handleToggleAll}
+        />
+      ))}
+    </div>
+  );
+});
+
+const AreasTogglePanel = memo(function AreasTogglePanel({
+  areas,
+  value,
+  onChange,
+}: {
+  areas: Array<{ id: number; nombre: string; es_opcional: boolean }>;
+  value: number[];
+  onChange: (next: number[], toggledId: number, active: boolean) => void;
+}) {
+  const [activeIds, setActiveIds] = useState(() => new Set(value));
+
+  useEffect(() => {
+    setActiveIds(new Set(value));
+  }, [value]);
+
+  const toggle = useCallback(
+    (areaId: number) => {
+      const next = new Set(activeIds);
+      const active = !next.has(areaId);
+      if (active) next.add(areaId);
+      else next.delete(areaId);
+
+      setActiveIds(next);
+      startTransition(() => onChange(Array.from(next), areaId, active));
+    },
+    [activeIds, onChange]
+  );
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {areas.map((area) => {
+          const active = activeIds.has(area.id);
+          return (
+            <div
+              key={area.id}
+              className={`flex flex-col gap-3 rounded-lg border p-3 transition-colors sm:flex-row sm:items-center sm:justify-between ${
+                active ? 'border-blue-200 bg-blue-50' : 'border-slate-200 bg-white'
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="break-words font-medium text-slate-900">{area.nombre}</span>
+                  {area.es_opcional && (
+                    <span className="shrink-0 rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">
+                      Opcional
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={active}
+                aria-label={`${active ? 'Desactivar' : 'Activar'} ${area.nombre}`}
+                onClick={() => toggle(area.id)}
+                className={`form-quiet-focus h-6 w-12 flex-shrink-0 rounded-full transition-colors ${
+                  active ? 'bg-blue-600' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  className={`block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    active ? 'translate-x-6' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+const MateriasEditorPanel = memo(function MateriasEditorPanel({
+  activeAreaIds,
+  areas,
+  examples,
+  value,
+  onChange,
+}: {
+  activeAreaIds: number[];
+  areas: Array<{ id: number; nombre: string }>;
+  examples: Record<number, string[]>;
+  value: Materia[];
+  onChange: (next: Materia[]) => void;
+}) {
+  const [localMaterias, setLocalMaterias] = useState(value);
+
+  useEffect(() => {
+    setLocalMaterias(value);
+  }, [value]);
+
+  const update = useCallback(
+    (next: Materia[]) => {
+      setLocalMaterias(next);
+      startTransition(() => onChange(next));
+    },
+    [onChange]
+  );
+
+  const addMateria = useCallback(
+    (areaId: number) => {
+      const next = [
+        ...localMaterias,
+        {
+          id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          nombre: 'Nueva Materia',
+          areaId,
+        },
+      ];
+      update(next);
+    },
+    [localMaterias, update]
+  );
+
+  return (
+    <div className="space-y-4">
+      {activeAreaIds.map((areaId) => {
+        const area = areas.find((item) => item.id === areaId);
+        const materiasDelArea = localMaterias.filter((materia) => materia.areaId === areaId);
+
+        return (
+          <div key={areaId} className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h5 className="break-words font-semibold text-slate-900">{area?.nombre}</h5>
+                <InfoTooltip
+                  label={`Ejemplo de materias para ${area?.nombre}`}
+                  size="sm"
+                  panelVariant="light"
+                  triggerVariant="muted"
+                >
+                  <div className="font-semibold text-slate-700">Ejemplos:</div>
+                  {(examples[area?.id || 0] || ['Materia A', 'Materia B', 'Materia C'])
+                    .slice(0, 3)
+                    .map((example) => (
+                      <div key={example}>{example}</div>
+                    ))}
+                  <div className="mt-2 text-[11px] text-orange-600">
+                    El nombre de la materia debe seguir los estándares de la institución.
+                  </div>
+                </InfoTooltip>
+              </div>
+              <button
+                type="button"
+                onClick={() => addMateria(areaId)}
+                className="flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              >
+                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Agregar Materia
+              </button>
+            </div>
+
+            {materiasDelArea.length > 0 && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                {materiasDelArea.map((materia) => (
+                  <div
+                    key={materia.id}
+                    className="flex items-center space-x-2 rounded-lg border border-slate-200 bg-slate-50 p-2"
+                  >
+                    <BufferedTextInput
+                      value={materia.nombre}
+                      onCommit={(nombre) => {
+                        update(
+                          localMaterias.map((item) =>
+                            item.id === materia.id ? { ...item, nombre } : item
+                          )
+                        );
+                      }}
+                      className="flex-1 border-none bg-transparent text-sm font-medium text-slate-900 focus:outline-none focus:ring-0"
+                      ariaLabel={`Nombre de la materia en ${area?.nombre || 'el área'}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => update(localMaterias.filter((item) => item.id !== materia.id))}
+                      className="rounded p-1 text-red-600 transition-colors hover:bg-red-50"
+                      aria-label={`Eliminar materia ${materia.nombre}`}
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
 interface DocenteForm {
   nombres: string;
   apellidos: string;
@@ -53,6 +869,323 @@ interface EstudianteForm {
   grado_id: number;
   curso_id: number;
 }
+
+const isEstudianteNombreValido = (v: string) =>
+  !!v.trim() && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v.trim());
+
+const isEstudianteEmailValido = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+const EstudianteFormPanel = memo(function EstudianteFormPanel({
+  value,
+  onFieldChange,
+  camposHabilitados,
+  erroresValidacion,
+  camposValidados,
+  gradosDisponibles,
+  cursosDisponibles,
+  cargandoCursos = false,
+  onLimpiar,
+  onAgregar,
+}: {
+  value: EstudianteForm;
+  onFieldChange: (field: keyof EstudianteForm, next: string | number) => void;
+  camposHabilitados: { [key: string]: boolean };
+  erroresValidacion: { [key: string]: string };
+  camposValidados: { [key: string]: boolean };
+  gradosDisponibles: Array<{ id: number; nombre: string; nivel: string }>;
+  cursosDisponibles: Array<{ id: number; nombre: string }>;
+  cargandoCursos?: boolean;
+  onLimpiar: () => void;
+  onAgregar: () => void;
+}) {
+  const apellidosRef = useRef<HTMLInputElement>(null);
+  const codigoRef = useRef<HTMLInputElement>(null);
+  const nombreAcudienteRef = useRef<HTMLInputElement>(null);
+  const correoRef = useRef<HTMLInputElement>(null);
+  const telefonoContainerRef = useRef<HTMLDivElement>(null);
+  const gradoRef = useRef<HTMLSelectElement>(null);
+  const cursoRef = useRef<HTMLSelectElement>(null);
+
+  const nombresOk = isEstudianteNombreValido(value.nombres);
+  const apellidosOk = isEstudianteNombreValido(value.apellidos);
+  const codigoOk = value.codigo_estudiantil.trim().length >= 3;
+  const nombreAcudienteOk = isEstudianteNombreValido(value.nombre_acudiente);
+  const correoOk = isEstudianteEmailValido(value.correo_acudiente);
+  const telefonoOk = isPhoneValid(value.telefono_acudiente);
+  const gradoOk = value.grado_id > 0;
+
+  const nombresEnabled = !!camposHabilitados.nombres;
+  const apellidosEnabled = !!camposHabilitados.apellidos || nombresOk;
+  const codigoEnabled = !!camposHabilitados.codigo_estudiantil || (apellidosEnabled && apellidosOk);
+  const nombreAcudienteEnabled =
+    !!camposHabilitados.nombre_acudiente || (codigoEnabled && codigoOk);
+  const correoEnabled =
+    !!camposHabilitados.correo_acudiente || (nombreAcudienteEnabled && nombreAcudienteOk);
+  const telefonoEnabled = !!camposHabilitados.telefono_acudiente || (correoEnabled && correoOk);
+  const gradoEnabled = !!camposHabilitados.grado_id || (telefonoEnabled && telefonoOk);
+  const cursoEnabled =
+    !cargandoCursos &&
+    (!!camposHabilitados.curso_id || (gradoEnabled && gradoOk)) &&
+    cursosDisponibles.length > 0;
+
+  const inputBase =
+    'w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400';
+
+  const focusPhoneInput = () => {
+    telefonoContainerRef.current
+      ?.querySelector<HTMLInputElement>('input.PhoneInputInput, input[type="tel"]')
+      ?.focus();
+  };
+
+  const handleForwardTab = (
+    e: { key: string; shiftKey: boolean; preventDefault: () => void },
+    canGoNext: boolean,
+    focusNext: () => void
+  ) => {
+    if (e.key !== 'Tab' || e.shiftKey || !canGoNext) return;
+    e.preventDefault();
+    requestAnimationFrame(() => {
+      focusNext();
+    });
+  };
+
+  const fieldFeedback = (field: string, label = '✓ Válido') => (
+    <div className="mt-1 min-h-[1.25rem]">
+      {erroresValidacion[field] ? (
+        <p className="text-red-500 text-xs">{erroresValidacion[field]}</p>
+      ) : camposValidados[field] ? (
+        <p className="text-green-600 text-xs flex items-center">
+          <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {label}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+      <h4 className="text-lg font-semibold text-slate-900 mb-4">Agregar Estudiante</h4>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Nombres del Estudiante *
+          </label>
+          <input
+            type="text"
+            value={value.nombres}
+            onChange={(e) => onFieldChange('nombres', e.target.value)}
+            onKeyDown={(e) =>
+              handleForwardTab(e, nombresOk, () => apellidosRef.current?.focus())
+            }
+            disabled={!nombresEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.nombres ? 'border-red-500' : 'border-slate-300'
+            } ${!nombresEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            placeholder="Ingresa los nombres"
+          />
+          {fieldFeedback('nombres')}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Apellidos del Estudiante *
+          </label>
+          <input
+            ref={apellidosRef}
+            type="text"
+            value={value.apellidos}
+            onChange={(e) => onFieldChange('apellidos', e.target.value)}
+            onKeyDown={(e) =>
+              handleForwardTab(e, apellidosOk, () => codigoRef.current?.focus())
+            }
+            disabled={!apellidosEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.apellidos ? 'border-red-500' : 'border-slate-300'
+            } ${!apellidosEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            placeholder="Ingresa los apellidos"
+          />
+          {fieldFeedback('apellidos')}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Código del Estudiante *
+          </label>
+          <input
+            ref={codigoRef}
+            type="text"
+            value={value.codigo_estudiantil}
+            onChange={(e) => onFieldChange('codigo_estudiantil', e.target.value)}
+            onKeyDown={(e) =>
+              handleForwardTab(e, codigoOk, () => nombreAcudienteRef.current?.focus())
+            }
+            disabled={!codigoEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.codigo_estudiantil ? 'border-red-500' : 'border-slate-300'
+            } ${!codigoEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            placeholder="Ej: EST001"
+          />
+          {fieldFeedback('codigo_estudiantil')}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Nombre del Acudiente *
+          </label>
+          <input
+            ref={nombreAcudienteRef}
+            type="text"
+            value={value.nombre_acudiente}
+            onChange={(e) => onFieldChange('nombre_acudiente', e.target.value)}
+            onKeyDown={(e) =>
+              handleForwardTab(e, nombreAcudienteOk, () => correoRef.current?.focus())
+            }
+            disabled={!nombreAcudienteEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.nombre_acudiente ? 'border-red-500' : 'border-slate-300'
+            } ${!nombreAcudienteEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            placeholder="Nombre completo del acudiente"
+          />
+          {fieldFeedback('nombre_acudiente')}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Correo del Acudiente *
+          </label>
+          <input
+            ref={correoRef}
+            type="email"
+            value={value.correo_acudiente}
+            onChange={(e) => onFieldChange('correo_acudiente', e.target.value)}
+            onKeyDown={(e) => handleForwardTab(e, correoOk, focusPhoneInput)}
+            disabled={!correoEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.correo_acudiente ? 'border-red-500' : 'border-slate-300'
+            } ${!correoEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            placeholder="correo@ejemplo.com"
+          />
+          {fieldFeedback('correo_acudiente')}
+        </div>
+
+        <div
+          ref={telefonoContainerRef}
+          onKeyDown={(e) => {
+            if (e.key !== 'Tab' || e.shiftKey || !telefonoOk) return;
+            const target = e.target as HTMLElement;
+            if (target.tagName !== 'INPUT') return;
+            e.preventDefault();
+            requestAnimationFrame(() => gradoRef.current?.focus());
+          }}
+        >
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Teléfono del Acudiente * (con indicativo de país)
+          </label>
+          <PhoneInputField
+            value={value.telefono_acudiente}
+            onChange={(val) => onFieldChange('telefono_acudiente', val)}
+            disabled={!telefonoEnabled}
+            showValidState={!!camposValidados.telefono_acudiente && !erroresValidacion.telefono_acudiente}
+            invalidMessage=""
+            aria-label="Teléfono del acudiente"
+          />
+          {fieldFeedback('telefono_acudiente')}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Grado *</label>
+          <select
+            ref={gradoRef}
+            value={value.grado_id}
+            onChange={(e) => onFieldChange('grado_id', parseInt(e.target.value, 10))}
+            onKeyDown={(e) =>
+              handleForwardTab(e, gradoOk && cursosDisponibles.length > 0, () =>
+                cursoRef.current?.focus()
+              )
+            }
+            disabled={!gradoEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.grado_id ? 'border-red-500' : 'border-slate-300'
+            } ${!gradoEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+          >
+            <option value={0}>Selecciona un grado</option>
+            {gradosDisponibles.map((grado) => (
+              <option key={grado.id} value={grado.id}>
+                {grado.nombre} - {grado.nivel}
+              </option>
+            ))}
+          </select>
+          {fieldFeedback('grado_id')}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Curso *</label>
+          <select
+            ref={cursoRef}
+            value={value.curso_id}
+            onChange={(e) => onFieldChange('curso_id', parseInt(e.target.value, 10))}
+            disabled={!cursoEnabled}
+            className={`${inputBase} ${
+              erroresValidacion.curso_id ? 'border-red-500' : 'border-slate-300'
+            } ${!cursoEnabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+          >
+            <option value={0}>
+              {cargandoCursos
+                ? 'Cargando…'
+                : cursosDisponibles.length === 0
+                  ? 'Selecciona un grado primero'
+                  : 'Selecciona un curso'}
+            </option>
+            {!cargandoCursos &&
+              cursosDisponibles.map((curso) => (
+                <option key={curso.id} value={curso.id}>
+                  {curso.nombre}
+                </option>
+              ))}
+          </select>
+          {fieldFeedback('curso_id')}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-6">
+        <button
+          type="button"
+          onClick={onLimpiar}
+          className="w-full sm:w-auto px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors text-left sm:text-center"
+        >
+          Limpiar formulario
+        </button>
+        <button
+          type="button"
+          onClick={onAgregar}
+          disabled={Object.keys(erroresValidacion).length > 0}
+          className={`w-full sm:w-auto px-6 py-2 rounded-lg transition-colors flex items-center justify-center ${
+            Object.keys(erroresValidacion).length > 0
+              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+          Agregar Estudiante
+        </button>
+      </div>
+    </div>
+  );
+});
 
 interface AsignacionDocente {
   docenteId: number;
@@ -252,6 +1385,8 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   const [gradosGuardados, setGradosGuardados] = useState<any[]>([]);
   const [cursosGuardados, setCursosGuardados] = useState<any[]>([]);
   const [gradosCargados, setGradosCargados] = useState<any[]>([]);
+  const [mostrarGradosDisponibles, setMostrarGradosDisponibles] = useState(true);
+  const [mostrarAreasMateriasDisponibles, setMostrarAreasMateriasDisponibles] = useState(true);
 
   const gradosPredeterminados = [...GRADOS_PREDETERMINADOS];
 
@@ -299,12 +1434,12 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
   const agregarCurso = (gradoId: number) => {
     const nuevoCurso: Curso = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       nombre: '',
       gradoId,
     };
 
-    setCursos([...cursos, nuevoCurso]);
+    setCursos((prev) => [...prev, nuevoCurso]);
   };
 
   const eliminarCurso = (cursoId: string) => {
@@ -385,6 +1520,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   // Función para cargar cursos según el grado seleccionado
   const cargarCursosPorGrado = async (gradoId: number) => {
     setCargandoCursos(true);
+    setCursosDisponibles([]);
     try {
       const response = await fetch(`/api/setup/grados/${institucionId}`);
       if (response.ok) {
@@ -420,32 +1556,31 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   const cargarAreasMaterias = async () => {
     setCargandoAreasMaterias(true);
     try {
-      // Cargar áreas
-      const responseAreas = await fetch(`/api/setup/areas/${institucionId}`);
+      const [responseAreas, responseMaterias, responseMateriasGrados] = await Promise.all([
+        fetch(`/api/setup/areas/${institucionId}`),
+        fetch(`/api/setup/materias/${institucionId}`),
+        fetch(`/api/setup/materias-grados/${institucionId}`),
+      ]);
+
       if (responseAreas.ok) {
         const dataAreas = await responseAreas.json();
         setAreasCargadas(dataAreas.areas || []);
-        console.log('Áreas cargadas:', dataAreas.areas);
       }
 
-      // Cargar materias
-      const responseMaterias = await fetch(`/api/setup/materias/${institucionId}`);
       if (responseMaterias.ok) {
         const dataMaterias = await responseMaterias.json();
         setMateriasCargadas(dataMaterias.materias || []);
-        console.log('Materias cargadas:', dataMaterias.materias);
       }
 
-      // Cargar materias-grados
-      const responseMateriasGrados = await fetch(`/api/setup/materias-grados/${institucionId}`);
       if (responseMateriasGrados.ok) {
         const dataMateriasGrados = await responseMateriasGrados.json();
-        console.log('=== MATERIAS-GRADOS CARGADOS ===');
-        console.log('Respuesta completa:', dataMateriasGrados);
-        console.log('Materias-grados:', dataMateriasGrados.materiasGrados);
         setMateriasGradosCargados(dataMateriasGrados.materiasGrados || []);
       } else {
-        console.error('Error cargando materias-grados:', responseMateriasGrados.status, responseMateriasGrados.statusText);
+        console.error(
+          'Error cargando materias-grados:',
+          responseMateriasGrados.status,
+          responseMateriasGrados.statusText
+        );
       }
     } catch (error) {
       console.error('Error cargando áreas y materias:', error);
@@ -983,8 +2118,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
   };
 
   // Función para verificar manualmente el email
-  const verificarEmailManual = async () => {
-    if (!docenteActual.email.trim() || !validarEmail(docenteActual.email.trim())) {
+  const verificarEmailManual = async (emailOverride?: string) => {
+    const emailToCheck = (emailOverride ?? docenteActual.email).trim();
+    if (!emailToCheck || !validarEmail(emailToCheck)) {
       setModalEmailDocente({
         tipo: 'error',
         titulo: 'Email inválido',
@@ -993,11 +2129,35 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       return;
     }
 
+    if (emailOverride !== undefined && docenteActual.email !== emailToCheck) {
+      setDocenteActual((prev) => ({ ...prev, email: emailToCheck }));
+    }
+
+    const emailNorm = emailToCheck.toLowerCase();
+
+    // Ya usado por un docente agregado en este asistente (aún no persistido)
+    const emailEnWizard = docentes.some((d) => d.email.toLowerCase() === emailNorm);
+    if (emailEnWizard) {
+      setEmailVerificado(false);
+      setErroresValidacion((prev) => ({
+        ...prev,
+        email: 'Este email ya está asignado a otro docente en este asistente',
+      }));
+      setCamposHabilitados((prev) => ({ ...prev, password: false }));
+      setModalEmailDocente({
+        tipo: 'error',
+        titulo: 'Email no disponible',
+        mensaje:
+          'Ya agregaste un docente con este correo en el asistente. Usa otro email.',
+      });
+      return;
+    }
+
     setVerificandoEmail(true);
     setEmailVerificado(false);
     
     try {
-      const emailExiste = await verificarEmailExistente(docenteActual.email.trim());
+      const emailExiste = await verificarEmailExistente(emailToCheck);
       
       if (emailExiste) {
         setErroresValidacion(prev => ({
@@ -1039,101 +2199,86 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     }
   };
 
-  // Función para validar campo en tiempo real
-  const validarCampo = async (campo: string, valor: string) => {
-    const errores = { ...erroresValidacion };
-    const habilitados = { ...camposHabilitados };
-    const validados = { ...camposValidados };
-    
-    switch (campo) {
-      case 'nombres':
-        if (valor.trim() && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
-          errores[campo] = 'Solo se permiten letras y espacios';
-          validados[campo] = false;
-        } else if (valor.trim() && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
-          delete errores[campo];
-          validados[campo] = true;
-          habilitados.apellidos = true;
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-        }
-        break;
-      case 'apellidos':
-        if (valor.trim() && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
-          errores[campo] = 'Solo se permiten letras y espacios';
-          validados[campo] = false;
-        } else if (valor.trim() && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
-          delete errores[campo];
-          validados[campo] = true;
-          habilitados.telefono = true;
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-        }
-        break;
-      case 'telefono':
-        if (valor && typeof valor === 'string' && valor.trim() && !isPhoneValid(valor.trim())) {
-          errores[campo] = 'Ingrese un número de teléfono válido con indicativo de país';
-          validados[campo] = false;
-        } else if (valor && typeof valor === 'string' && valor.trim() && isPhoneValid(valor.trim())) {
-          delete errores[campo];
-          validados[campo] = true;
-          habilitados.email = true;
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-        }
-        break;
-      case 'email':
-        if (valor.trim() && !validarEmail(valor.trim())) {
-          errores[campo] = 'Formato de email inválido';
-          validados[campo] = false;
-          setEmailVerificado(false);
-          // Deshabilitar contraseña cuando email es inválido
-          setCamposHabilitados(prev => ({ ...prev, password: false }));
-        } else if (valor.trim() && validarEmail(valor.trim())) {
-          delete errores[campo];
-          validados[campo] = true;
-          // No habilitar password automáticamente, esperar verificación manual
-          setEmailVerificado(false);
-          // Deshabilitar contraseña hasta que email sea verificado
-          setCamposHabilitados(prev => ({ ...prev, password: false }));
-        } else {
-          delete errores[campo];
-          validados[campo] = false;
-          setEmailVerificado(false);
-          // Deshabilitar contraseña cuando email está vacío
-          setCamposHabilitados(prev => ({ ...prev, password: false }));
-        }
-        break;
-      case 'password': {
-          const reqs = getPasswordRequirementsDocente(String(valor || ''));
-          const allOk = Object.values(reqs).every(Boolean);
-          if (valor && !allOk) {
-            errores[campo] = 'La contraseña debe cumplir todos los requisitos';
-            validados[campo] = false;
-          } else if (valor && allOk) {
-            delete errores[campo];
-            validados[campo] = true;
-          } else {
-            delete errores[campo];
-            validados[campo] = false;
-          }
-          break;
-        }
-    }
-    
-    setErroresValidacion(errores);
-    setCamposHabilitados(habilitados);
-    setCamposValidados(validados);
-  };
-
   // Función para validar email
   const validarEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
+
+  // Función para validar campo en tiempo real
+  const validarCampo = async (campo: string, valor: string) => {
+    let nextError: string | undefined;
+    let campoValido = false;
+    let unlockNext: string | null = null;
+
+    switch (campo) {
+      case 'nombres':
+        if (valor.trim() && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          nextError = 'Solo se permiten letras y espacios';
+        } else if (valor.trim() && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          campoValido = true;
+          unlockNext = 'apellidos';
+        }
+        break;
+      case 'apellidos':
+        if (valor.trim() && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          nextError = 'Solo se permiten letras y espacios';
+        } else if (valor.trim() && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor.trim())) {
+          campoValido = true;
+          unlockNext = 'telefono';
+        }
+        break;
+      case 'telefono':
+        if (valor && typeof valor === 'string' && valor.trim() && !isPhoneValid(valor.trim())) {
+          nextError = 'Ingrese un número de teléfono válido con indicativo de país';
+        } else if (valor && typeof valor === 'string' && valor.trim() && isPhoneValid(valor.trim())) {
+          campoValido = true;
+          unlockNext = 'email';
+        }
+        break;
+      case 'email':
+        if (valor.trim() && !validarEmail(valor.trim())) {
+          nextError = 'Formato de email inválido';
+          setEmailVerificado(false);
+        } else if (valor.trim() && validarEmail(valor.trim())) {
+          campoValido = true;
+          setEmailVerificado(false);
+        } else {
+          setEmailVerificado(false);
+        }
+        break;
+      case 'password': {
+        const reqs = getPasswordRequirementsDocente(String(valor || ''));
+        const allOk = Object.values(reqs).every(Boolean);
+        if (valor && !allOk) {
+          nextError = 'La contraseña debe cumplir todos los requisitos';
+        } else if (valor && allOk) {
+          campoValido = true;
+        }
+        break;
+      }
+    }
+
+    setErroresValidacion((prev) => {
+      const next = { ...prev };
+      if (nextError) next[campo] = nextError;
+      else delete next[campo];
+      return next;
+    });
+
+    setCamposValidados((prev) => ({ ...prev, [campo]: campoValido }));
+
+    setCamposHabilitados((prev) => {
+      const next = { ...prev };
+      if (unlockNext) next[unlockNext] = true;
+      // La contraseña solo se habilita tras verificar el email (no al validar formato).
+      if (campo === 'email') next.password = false;
+      return next;
+    });
+  };
+
+  const validarCampoRef = useRef(validarCampo);
+  validarCampoRef.current = validarCampo;
 
   // Función para validar teléfono celular colombiano
   const validarTelefonoColombiano = (telefono: string) => {
@@ -1152,14 +2297,6 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     
     return false;
   };
-
-  const getPasswordRequirementsDocente = (password: string) => ({
-    length: password.length >= 8,
-    upper: /[A-Z]/.test(password),
-    lower: /[a-z]/.test(password),
-    number: /\d/.test(password),
-    symbol: /[@$!%*?&]/.test(password),
-  });
 
   // Función para validar campos de estudiantes
   const validarCampoEstudiante = async (campo: string, valor: string | number) => {
@@ -1273,6 +2410,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     setCamposHabilitadosEstudiante(habilitados);
     setCamposValidadosEstudiante(validados);
   };
+
+  const validarCampoEstudianteRef = useRef(validarCampoEstudiante);
+  validarCampoEstudianteRef.current = validarCampoEstudiante;
 
   // Función para agregar docente
   const handleAgregarDocente = () => {
@@ -1644,22 +2784,47 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         });
         
         console.log('Status de respuesta:', response.status);
-        
-        const responseData = await response.json();
+
+        const rawText = await response.text();
+        let responseData: {
+          error?: string;
+          details?: string;
+          message?: string;
+          success?: boolean;
+          data?: { errores?: Array<{ error?: string; docente?: string }>; exitosos?: number; fallidos?: number };
+        } = {};
+        try {
+          responseData = rawText ? JSON.parse(rawText) : {};
+        } catch {
+          responseData = { error: rawText || `Error HTTP ${response.status}` };
+        }
         console.log('Respuesta del servidor:', responseData);
-        
+
+        const apiErrores = responseData.data?.errores ?? [];
+        const creadoOk =
+          response.ok &&
+          responseData.success !== false &&
+          (responseData.data?.exitosos == null || responseData.data.exitosos > 0) &&
+          apiErrores.length === 0;
+
         resultados.push({
           docente: docente.email,
-          success: response.ok,
+          success: creadoOk,
           data: responseData
         });
         
-        if (!response.ok) {
+        if (!creadoOk) {
+          const detalle =
+            responseData.error ||
+            responseData.details ||
+            responseData.message ||
+            apiErrores.map((e) => e.error).filter(Boolean).join('; ') ||
+            (Object.keys(responseData).length === 0
+              ? `Error HTTP ${response.status} (sin detalle)`
+              : 'Error desconocido');
           console.error(`Error guardando docente ${docente.email}:`, responseData);
           erroresDocentes.push(
-            `Error guardando ${docente.nombres} ${docente.apellidos}: ${
-              responseData.error || responseData.details || 'Error desconocido'
-            }`
+            `Error guardando ${docente.nombres} ${docente.apellidos}: ${detalle}`
           );
         }
       }
@@ -1676,7 +2841,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         setModalDocenteAccion({
           tipo: fallidos > 0 ? 'info' : 'success',
           titulo: fallidos > 0 ? 'Docentes creados con errores' : 'Docentes creados',
-          mensaje: `Se crearon ${exitosos} docente(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}.`
+          mensaje: `Se crearon ${exitosos} docente(s) exitosamente${fallidos > 0 ? ` (${fallidos} con errores)` : ''}.${
+            erroresDocentes.length > 0 ? ` ${erroresDocentes[0]}` : ''
+          }`
         });
         if (erroresDocentes.length > 0) {
           console.error('Errores al guardar docentes:', erroresDocentes);
@@ -1687,7 +2854,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         setModalDocenteAccion({
           tipo: 'error',
           titulo: 'No se pudieron crear docentes',
-          mensaje: 'No se pudo crear ningún docente. Revisa los errores.'
+          mensaje:
+            erroresDocentes[0] ||
+            'No se pudo crear ningún docente. Revisa los errores.',
         });
       }
       
@@ -1865,7 +3034,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               materiasCreadas: responseData?.materiasCreadas?.length || materias.length
             });
             console.log('Asignaciones guardadas:', asignacionesData);
-            // Avanzar al siguiente paso
+            await cargarAreasMaterias();
             setCurrentStep(3);
           } else {
             console.error('Error guardando asignaciones:', asignacionesData);
@@ -1878,7 +3047,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             materiasCreadas: responseData?.materiasCreadas?.length || materias.length
           });
           console.log('Datos guardados:', responseData);
-          // Avanzar al siguiente paso
+          await cargarAreasMaterias();
           setCurrentStep(3);
         }
       } else {
@@ -1901,10 +3070,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     setSaving(true);
     try {
       const normalizarNombre = (nombre: string) => nombre.trim().toLowerCase();
+
+      // Mapear cursos ya guardados por id predeterminado del grado (no por id de BD)
       const cursosExistentesPorGrado = new Map<number, Set<string>>();
       gradosCargados.forEach((grado: any) => {
+        const pred = gradosPredeterminados.find(
+          (g) => g.orden === grado.orden || g.nombre === grado.nombre
+        );
+        if (!pred) return;
         cursosExistentesPorGrado.set(
-          grado.id,
+          pred.id,
           new Set((grado.cursos || []).map((curso: any) => normalizarNombre(curso.nombre || '')))
         );
       });
@@ -1923,81 +3098,99 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         return;
       }
 
-      // Solo obtener los grados que tienen cursos
-      const gradosConCursos = gradosPredeterminados.filter(grado => 
-        cursosNuevos.some(curso => curso.gradoId === grado.id)
+      // Detectar nombres duplicados en el payload (mismo o distinto grado)
+      const nombresEnPayload = cursosNuevos.map((c) => normalizarNombre(c.nombre));
+      const duplicadosPayload = cursosNuevos
+        .filter((c, i) => nombresEnPayload.indexOf(normalizarNombre(c.nombre)) !== i)
+        .map((c) => c.nombre.trim());
+      if (duplicadosPayload.length > 0) {
+        setMostrarResumen(false);
+        setDuplicadosCursos(Array.from(new Set(duplicadosPayload)));
+        return;
+      }
+
+      const gradosConCursos = gradosPredeterminados.filter((grado) =>
+        cursosNuevos.some((curso) => curso.gradoId === grado.id)
       );
-      
-      console.log('=== DATOS QUE SE ENVÍAN ===');
-      console.log('Grados con cursos:', gradosConCursos.length);
-      console.log('Cursos totales:', cursos.length);
-      
-      // Transformar los datos para que coincidan con la estructura esperada por la API
-      const gradosCursos = gradosConCursos.map(grado => ({
+
+      const gradosCursos = gradosConCursos.map((grado) => ({
         grado_id: grado.id,
         cursos: cursosNuevos
-          .filter(curso => curso.gradoId === grado.id)
-          .map(curso => ({
-            nombre: curso.nombre
-          }))
+          .filter((curso) => curso.gradoId === grado.id)
+          .map((curso) => ({
+            nombre: curso.nombre.trim(),
+          })),
       }));
-
-      const datosAEnviar = {
-        institucionId,
-        gradosCursos
-      };
-      
-      console.log('institucionId:', institucionId);
-      console.log('gradosCursos transformados:', gradosCursos);
-      console.log('JSON completo:', JSON.stringify(datosAEnviar, null, 2));
 
       const response = await fetch('/api/setup/grados-cursos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosAEnviar)
+        body: JSON.stringify({
+          institucionId,
+          gradosCursos,
+        }),
       });
-      
+
       const responseData = await response.json();
-      console.log('Respuesta del servidor:', responseData);
-      
+
       if (response.ok) {
         setMostrarResumen(false);
+        setCursos([]);
         setGradosGuardados(responseData.data.gradosCreados);
         setCursosGuardados(responseData.data.cursosCreados);
         setMostrarExitoGradosCursos({
           gradosCreados: responseData.data.gradosCreados?.length || 0,
-          cursosCreados: responseData.data.cursosCreados?.length || 0
+          cursosCreados: responseData.data.cursosCreados?.length || 0,
         });
-        console.log('Datos guardados:', responseData);
         await cargarGrados();
-        // Avanzar al siguiente paso
         setCurrentStep(2);
       } else if (response.status === 409) {
+        setMostrarResumen(false);
         const duplicateNames = responseData?.duplicateNames;
-        setDuplicadosCursos(Array.isArray(duplicateNames) && duplicateNames.length > 0 ? duplicateNames : []);
+        setDuplicadosCursos(
+          Array.isArray(duplicateNames) && duplicateNames.length > 0 ? duplicateNames : []
+        );
       } else {
         console.error('Error del servidor:', responseData);
-        await showError('Error al guardar', responseData.details || responseData.error || 'Error desconocido');
+        await showError(
+          'Error al guardar',
+          responseData.details || responseData.error || 'Error desconocido'
+        );
       }
     } catch (error) {
       console.error('Error de conexión:', error);
-      await showError('Error de conexión', error instanceof Error ? error.message : 'Error desconocido');
+      await showError(
+        'Error de conexión',
+        error instanceof Error ? error.message : 'Error desconocido'
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // Cargar grados cuando se llegue al Paso 1 o 2
+  // Prefetch grados y áreas/materias al abrir el wizard (también al reabrirlo con datos ya guardados)
   useEffect(() => {
-    if ((currentStep === 1 || currentStep === 2) && gradosCargados.length === 0) {
-      cargarGrados();
+    if (!institucionId) return;
+    void cargarGrados();
+    void cargarAreasMaterias();
+  }, [institucionId]);
+
+  // Recargar grados al entrar a pasos 1 o 2 si aún no hay datos
+  useEffect(() => {
+    if ((currentStep === 1 || currentStep === 2) && gradosCargados.length === 0 && !cargandoGrados) {
+      void cargarGrados();
     }
   }, [currentStep]);
 
-  // Cargar áreas y materias cuando se llegue al Paso 3
+  // Cargar áreas y materias al entrar al paso 2 o 3 si aún no hay datos
   useEffect(() => {
-    if (currentStep === 3 && areasCargadas.length === 0) {
-      cargarAreasMaterias();
+    if (
+      (currentStep === 2 || currentStep === 3) &&
+      areasCargadas.length === 0 &&
+      materiasCargadas.length === 0 &&
+      !cargandoAreasMaterias
+    ) {
+      void cargarAreasMaterias();
     }
   }, [currentStep]);
 
@@ -2045,7 +3238,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
   // Actualizar estado de secciones cuando cambien los datos
   useEffect(() => {
-    actualizarEstadoSecciones();
+    startTransition(() => {
+      actualizarEstadoSecciones();
+    });
   }, [docenteActual, emailVerificado, erroresValidacion, asignacionesGradoCurso]);
 
   // Filtrar materias cuando cambien las asignaciones grado-curso
@@ -2055,28 +3250,94 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
     }
   }, [asignacionesGradoCurso, materiasGradosCargados]);
 
+  const cursosPendientesValidos = cursos.filter((c) => c.nombre.trim().length > 0);
+  const tieneGradosYCursosGuardados = gradosCargados.some(
+    (g: any) => Array.isArray(g.cursos) && g.cursos.length > 0
+  );
+  const tieneAreasYMateriasGuardadas =
+    areasCargadas.length > 0 && materiasCargadas.length > 0;
+
+  const handleAreasActivasChange = useCallback(
+    (next: number[], toggledId: number, active: boolean) => {
+      setAreasActivas(next);
+      if (!active) {
+        setMaterias((prev) => prev.filter((materia) => materia.areaId !== toggledId));
+      }
+    },
+    []
+  );
+
   const handleNext = () => {
+    if (saving) return;
+    if (currentStep === 1 && !tieneGradosYCursosGuardados) return;
+    if (currentStep === 2 && !tieneAreasYMateriasGuardadas) return;
     if (currentStep < 5) {
       setCurrentStep((currentStep + 1) as WizardStep);
     }
   };
 
   const handleBack = () => {
+    if (saving) return;
     if (currentStep > 0) {
       setCurrentStep((currentStep - 1) as WizardStep);
     }
   };
 
+  const docenteDatosValue = {
+    nombres: docenteActual.nombres,
+    apellidos: docenteActual.apellidos,
+    telefono: docenteActual.telefono,
+    email: docenteActual.email,
+    password: docenteActual.password,
+  };
+
+  const handleDocenteDatosCommit = useCallback(
+    (field: keyof DocenteDatosDraft, next: string) => {
+      startTransition(() => {
+        setDocenteActual((prev) =>
+          prev[field] === next ? prev : { ...prev, [field]: next }
+        );
+      });
+      void validarCampoRef.current(field, next);
+    },
+    []
+  );
+
+  const handleClearDocenteFieldError = useCallback((field: keyof DocenteDatosDraft) => {
+    setErroresValidacion((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }, []);
+
+  const handleEstudianteFieldChange = useCallback(
+    (field: keyof EstudianteForm, next: string | number) => {
+      setEstudianteActual((prev) => {
+        if (field === 'grado_id') {
+          return { ...prev, grado_id: next as number, curso_id: 0 };
+        }
+        return prev[field] === next ? prev : { ...prev, [field]: next };
+      });
+      void validarCampoEstudianteRef.current(field, next);
+    },
+    []
+  );
+
   return (
     <>
     <Modal
       open
-      onClose={onClose}
+      onClose={() => {
+        if (!saving) onClose();
+      }}
       size="full"
-      className="max-w-5xl"
+      className="max-w-5xl overflow-hidden"
       closeOnOverlayClick={false}
       showCloseButton={false}
-      contentClassName="overflow-hidden flex flex-col flex-1 min-h-0"
+      zIndex={100}
+      contentClassName="overflow-hidden flex flex-col flex-1 min-h-0 p-0"
     >
           {duplicadosCursos !== null && (
             <Modal
@@ -2084,7 +3345,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               onClose={() => setDuplicadosCursos(null)}
               title="Cursos duplicados"
               size="md"
-              zIndex={60}
+              zIndex={110}
             >
               <p className="text-sm text-[var(--color-text-secondary)] font-medium">
                 No se pueden crear cursos con nombres duplicados.
@@ -2117,7 +3378,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               onClose={() => setMostrarExitoGradosCursos(null)}
               title="Configuración guardada"
               size="md"
-              zIndex={60}
+              zIndex={110}
             >
               <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
                 {mostrarExitoGradosCursos.cursosCreados > 0 ? (
@@ -2148,7 +3409,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               onClose={() => setMostrarExitoAreasMaterias(null)}
               title="Configuración guardada"
               size="md"
-              zIndex={60}
+              zIndex={110}
             >
               <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
                 <p className="font-medium text-[var(--color-text-primary)]">Áreas y materias guardadas correctamente.</p>
@@ -2168,7 +3429,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               onClose={() => setModalEmailDocente(null)}
               title={modalEmailDocente.titulo}
               size="md"
-              zIndex={60}
+              zIndex={110}
             >
               <p className={`text-sm font-medium ${
                 modalEmailDocente.tipo === 'success' ? 'text-green-700' : modalEmailDocente.tipo === 'error' ? 'text-red-700' : 'text-[var(--color-text-primary)]'
@@ -2192,7 +3453,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               onClose={() => setModalDocenteAccion(null)}
               title={modalDocenteAccion.titulo}
               size="md"
-              zIndex={60}
+              zIndex={110}
             >
               <p className={`text-sm font-medium ${
                 modalDocenteAccion.tipo === 'success' ? 'text-green-700' : modalDocenteAccion.tipo === 'error' ? 'text-red-700' : 'text-[var(--color-text-primary)]'
@@ -2216,7 +3477,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               onClose={() => setModalEstudianteAccion(null)}
               title={modalEstudianteAccion.titulo}
               size="md"
-              zIndex={60}
+              zIndex={110}
             >
               <p className={`text-sm font-medium ${
                 modalEstudianteAccion.tipo === 'success' ? 'text-green-700' : modalEstudianteAccion.tipo === 'error' ? 'text-red-700' : 'text-[var(--color-text-primary)]'
@@ -2240,7 +3501,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               onClose={() => setEstudianteParaEliminar(null)}
               title="Eliminar estudiante"
               size="md"
-              zIndex={60}
+              zIndex={110}
             >
               <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
                 <p className="font-medium text-[var(--color-text-primary)]">
@@ -2276,7 +3537,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               onClose={() => !eliminandoCurso && setCursoParaEliminar(null)}
               title="Confirmar eliminación"
               size="md"
-              zIndex={60}
+              zIndex={110}
               closeOnOverlayClick={!eliminandoCurso}
             >
               <div className="text-sm text-[var(--color-text-secondary)] space-y-2">
@@ -2309,37 +3570,39 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
             </Modal>
           )}
         {/* Header: color fijo (no usa branding de la institución) */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 relative bg-slate-700 text-white">
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative shrink-0 overflow-hidden rounded-t-2xl bg-slate-700 px-4 py-3 text-white sm:px-6 sm:py-4">
+          <div className="flex flex-col items-start gap-3 pr-12 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold">Configuración Inicial</h2>
-              <p className="text-xs sm:text-sm mt-1 text-white/90">
+              <h2 className="text-xl font-bold sm:text-2xl">Configuración Inicial</h2>
+              <p className="mt-1 text-xs text-white/90 sm:text-sm">
                 {currentStep === 0 ? 'Introducción' : `Paso ${currentStep} de 5`}
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="absolute top-3 right-3 text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+            disabled={saving}
+            className="absolute right-3 top-3 rounded-lg p-2 text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
             aria-label="Cerrar"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
           {/* Progress Bar */}
-          <div className="mt-4 bg-white bg-opacity-20 rounded-full h-2">
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/20">
             <div
-              className="bg-white h-2 rounded-full transition-all duration-300"
+              className="h-2 rounded-full bg-white transition-all duration-300"
               style={{ width: `${(currentStep / 5) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Step Indicators */}
-        <div className="border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex gap-4 sm:gap-0 sm:justify-between overflow-x-auto sm:overflow-visible pb-1">
+        <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex w-full items-start">
             {[
               { num: 0, label: 'Introducción' },
               { num: 1, label: 'Grados y Cursos' },
@@ -2347,34 +3610,33 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               { num: 3, label: 'Docentes' },
               { num: 4, label: 'Estudiantes' },
               { num: 5, label: 'Resumen' },
-            ].map((step) => (
+            ].map((step, index, steps) => (
               <div
                 key={step.num}
-                className={`flex items-center flex-shrink-0 sm:flex-shrink ${step.num < 5 ? 'sm:flex-1' : ''}`}
+                className="relative flex min-w-0 flex-1 flex-col items-center px-0.5"
               >
-                <div className="flex flex-col items-center min-w-[110px] sm:min-w-0">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-                      currentStep >= step.num
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-200 text-slate-500'
-                    }`}
-                  >
-                    {step.num}
-                  </div>
-                  <span
-                    className={`text-[10px] sm:text-xs mt-1 font-medium text-center ${
-                      currentStep >= step.num ? 'text-blue-600' : 'text-slate-400'
-                    }`}
-                  >
-                    {step.label}
-                  </span>
+                <div
+                  className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+                    currentStep >= step.num
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-200 text-slate-500'
+                  }`}
+                >
+                  {step.num}
                 </div>
-                {step.num < 5 && (
+                <span
+                  className={`mt-1 w-full text-center text-[10px] font-medium leading-tight sm:text-xs ${
+                    currentStep >= step.num ? 'text-blue-600' : 'text-slate-400'
+                  }`}
+                >
+                  {step.label}
+                </span>
+                {index < steps.length - 1 && (
                   <div
-                    className={`hidden sm:block flex-1 h-0.5 mx-2 mt-[-20px] ${
+                    className={`absolute left-1/2 top-4 z-0 h-0.5 w-full ${
                       currentStep > step.num ? 'bg-blue-600' : 'bg-slate-200'
                     }`}
+                    aria-hidden
                   />
                 )}
               </div>
@@ -2383,9 +3645,14 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-white p-4 sm:p-6">
           {currentStep === 0 && (
             <div className="max-w-2xl mx-auto">
+              {cargandoGrados && (
+                <div className="mb-6">
+                  <WizardDataSkeleton label="Cargando elementos ya guardados…" sections={1} />
+                </div>
+              )}
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2436,6 +3703,10 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </p>
               </div>
 
+              {cargandoGrados ? (
+                <WizardDataSkeleton label="Cargando grados y cursos guardados…" sections={4} />
+              ) : (
+              <>
               <div className="space-y-6">
                 {Object.entries(gradosPorNivel).map(([nivel, grados]) => (
                   <div key={nivel} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
@@ -2458,26 +3729,20 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                 <span className="font-semibold text-slate-900 text-lg">
                                   {grado.nombre}
                                 </span>
-                                <div className="relative group ml-2">
-                                  <button
-                                    type="button"
-                                    aria-label={`Ejemplo de curso para ${grado.nombre}`}
-                                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                                  >
-                                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                      <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
-                                    </svg>
-                                  </button>
-                                  <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                                    <div className="font-semibold text-slate-700">Ejemplos:</div>
-                                    <div>{ejemploCurso}</div>
-                                    <div>{grado.nombre} B</div>
-                                    <div>{grado.nombre} C</div>
-                                    <div className="mt-2 text-[11px] text-orange-600">
-                                      Ten en cuenta que el nombre del curso debe seguir los estándares de la institución.
-                                    </div>
+                                <InfoTooltip
+                                  label={`Ejemplo de curso para ${grado.nombre}`}
+                                  size="sm"
+                                  panelVariant="light"
+                                  triggerVariant="muted"
+                                >
+                                  <div className="font-semibold text-slate-700">Ejemplos:</div>
+                                  <div>{ejemploCurso}</div>
+                                  <div>{grado.nombre} B</div>
+                                  <div>{grado.nombre} C</div>
+                                  <div className="mt-2 text-[11px] text-orange-600">
+                                    Ten en cuenta que el nombre del curso debe seguir los estándares de la institución.
                                   </div>
-                                </div>
+                                </InfoTooltip>
                                 <span className="text-sm text-slate-500">
                                   ({cursosDelGrado.length} curso{cursosDelGrado.length !== 1 ? 's' : ''})
                                 </span>
@@ -2519,12 +3784,12 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                     key={curso.id}
                                     className="flex items-center space-x-2 bg-slate-50 rounded-lg p-2 border border-slate-200"
                                   >
-                                    <input
-                                      type="text"
+                                    <BufferedTextInput
                                       value={curso.nombre}
-                                      onChange={(e) => editarNombreCurso(curso.id, e.target.value)}
+                                      onCommit={(nombre) => editarNombreCurso(curso.id, nombre)}
                                       className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm font-medium text-slate-900"
                                       placeholder={ejemploCurso}
+                                      ariaLabel={`Nombre del curso para ${grado.nombre}`}
                                     />
                                     <button
                                       onClick={() => eliminarCurso(curso.id)}
@@ -2557,8 +3822,9 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => setMostrarResumen(true)}
-                    disabled={saving || cursos.length === 0}
+                    disabled={saving || cursosPendientesValidos.length === 0}
                     className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center"
                   >
                     {saving ? (
@@ -2579,42 +3845,119 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     )}
                   </button>
                 </div>
-                {cursos.length === 0 && (
+                {cursosPendientesValidos.length === 0 && (
                   <p className="text-sm text-blue-600 mt-2">
-                    💡 Agrega al menos un curso para poder guardar
+                    Agrega al menos un curso con nombre para poder guardar
+                  </p>
+                )}
+                {!tieneGradosYCursosGuardados && (
+                  <p className="text-sm text-amber-700 mt-2">
+                    Debes guardar al menos un grado con cursos antes de continuar al siguiente paso.
                   </p>
                 )}
               </div>
+              </>
+              )}
             </div>
           )}
 
           {/* Modal de Resumen */}
           <Modal
             open={mostrarResumen}
-            onClose={() => setMostrarResumen(false)}
-            title="Resumen — grados y cursos"
+            onClose={() => !saving && setMostrarResumen(false)}
+            title={
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-inset ring-white/20">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 008 22h12V4H8a4 4 0 00-4 4v11.5zM8 4v13" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-lg font-bold leading-tight text-white sm:text-xl">Resumen académico</div>
+                  <div className="mt-1 text-xs font-medium text-blue-100 sm:text-sm">
+                    Grados y cursos que se crearán
+                  </div>
+                </div>
+              </div>
+            }
             size="full"
-            className="max-w-4xl"
-            zIndex={60}
+            className="max-w-4xl overflow-hidden"
+            zIndex={110}
+            closeOnOverlayClick={!saving}
+            showCloseButton={!saving}
             contentClassName="overflow-y-auto flex-1 px-6 py-4 max-h-[70vh]"
+            headerClassName="border-b-0 bg-slate-800 px-5 py-5 sm:px-6"
+            titleClassName="min-w-0"
+            closeButtonClassName="text-white/80 hover:bg-white/15 hover:text-white"
           >
-            <p className="text-sm text-[var(--color-text-secondary)] mb-4">Revisa los datos antes de guardar.</p>
+            <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5-4.5A11.95 11.95 0 0112 2a11.95 11.95 0 01-8 3.5c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">Todo listo para guardar</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                    Verifica la estructura académica. Los grados y cursos indicados se agregarán a tu institución.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Estadísticas */}
+            <div className="mb-6 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422A12.08 12.08 0 0118 15.5c0 1.38-2.686 2.5-6 2.5s-6-1.12-6-2.5c0-1.77.388-3.435.84-4.922L12 14z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold leading-none text-emerald-700">
+                      {gradosPredeterminados.filter(grado =>
+                        cursosPendientesValidos.some(curso => curso.gradoId === grado.id)
+                      ).length}
+                    </div>
+                    <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-emerald-700/80">Grados</div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold leading-none text-blue-700">{cursosPendientesValidos.length}</div>
+                    <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-blue-700/80">Cursos</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
                   {/* Resumen de Grados */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                      <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
-                      Grados que se guardarán
-                    </h3>
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-700">1</span>
+                      <h3 className="font-semibold text-slate-900">Grados que se guardarán</h3>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {gradosPredeterminados.filter(grado => 
-                          cursos.some(curso => curso.gradoId === grado.id)
+                          cursosPendientesValidos.some(curso => curso.gradoId === grado.id)
                         ).map((grado) => (
-                          <div key={grado.id} className="flex items-center space-x-3">
-                            <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-                            <div>
-                              <span className="font-medium text-slate-900">{grado.nombre}</span>
-                              <span className="text-sm text-slate-600 ml-2">({grado.nivel})</span>
+                          <div key={grado.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 font-bold text-emerald-700">
+                              {grado.nombre}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-slate-900">{grado.nombre}</div>
+                              <div className="truncate text-xs text-slate-500">{grado.nivel}</div>
                             </div>
                           </div>
                         ))}
@@ -2624,32 +3967,39 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
                   {/* Resumen de Cursos */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                      <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
-                      Cursos que se guardarán
-                    </h3>
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <div className="space-y-3">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700">2</span>
+                      <h3 className="font-semibold text-slate-900">Cursos que se guardarán</h3>
+                    </div>
+                    <div className="space-y-4">
                         {Object.entries(gradosPorNivel).map(([nivel, grados]) => {
                           const gradosConCursosNivel = grados.filter(g => 
-                            cursos.some(curso => curso.gradoId === g.id)
+                            cursosPendientesValidos.some(curso => curso.gradoId === g.id)
                           );
                           if (gradosConCursosNivel.length === 0) return null;
                           
                           return (
-                            <div key={nivel} className="border-b border-blue-200 pb-3 last:border-b-0 last:pb-0">
-                              <h4 className="font-medium text-blue-900 mb-2">{nivel}</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            <div key={nivel} className="rounded-2xl border border-blue-100 bg-blue-50/50 p-3 sm:p-4">
+                              <div className="mb-3 flex items-center justify-between">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-blue-700">{nivel}</h4>
+                                <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                                  {gradosConCursosNivel.length} {gradosConCursosNivel.length === 1 ? 'grado' : 'grados'}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 {gradosConCursosNivel.map((grado) => {
-                                  const cursosDelGrado = cursos.filter(c => c.gradoId === grado.id);
+                                  const cursosDelGrado = cursosPendientesValidos.filter(c => c.gradoId === grado.id);
                                   return (
-                                    <div key={grado.id} className="text-sm">
-                                      <span className="font-medium text-slate-700">{grado.nombre}:</span>
-                                      <div className="ml-2 mt-1">
-                                        {cursosDelGrado.map((curso, index) => (
-                                          <div key={curso.id} className="text-slate-600">
-                                            • {curso.nombre}
-                                          </div>
+                                    <div key={grado.id} className="overflow-hidden rounded-xl border border-blue-100 bg-white shadow-sm">
+                                      <div className="flex items-center justify-between border-b border-blue-100 bg-blue-50 px-3 py-2">
+                                        <span className="text-sm font-bold text-slate-800">{grado.nombre}</span>
+                                        <span className="text-xs font-medium text-blue-700">{cursosDelGrado.length} {cursosDelGrado.length === 1 ? 'curso' : 'cursos'}</span>
+                                      </div>
+                                      <div className="flex flex-wrap gap-2 p-3">
+                                        {cursosDelGrado.map((curso) => (
+                                          <span key={curso.id} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                                            {curso.nombre}
+                                          </span>
                                         ))}
                                       </div>
                                     </div>
@@ -2659,30 +4009,16 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                             </div>
                           );
                         })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Estadísticas */}
-                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
-                      <div>
-                        <div className="text-2xl font-bold text-green-600">
-                          {gradosPredeterminados.filter(grado => 
-                            cursos.some(curso => curso.gradoId === grado.id)
-                          ).length}
-                        </div>
-                        <div className="text-sm text-slate-600">Grados</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-blue-600">{cursos.length}</div>
-                        <div className="text-sm text-slate-600">Cursos</div>
-                      </div>
                     </div>
                   </div>
 
             <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => setMostrarResumen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setMostrarResumen(false)}
+                disabled={saving}
+              >
                 Cancelar
               </Button>
               <Button type="button" variant="primary" onClick={handleSaveGradosYCursos} disabled={saving}>
@@ -2694,33 +4030,86 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
           {/* Modal de Resumen para Áreas y Materias */}
           <Modal
             open={mostrarResumenAreas}
-            onClose={() => setMostrarResumenAreas(false)}
-            title="Resumen — áreas y materias"
+            onClose={() => !saving && setMostrarResumenAreas(false)}
+            title={
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-inset ring-white/20">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-lg font-bold leading-tight text-white sm:text-xl">Resumen académico</div>
+                  <div className="mt-1 text-xs font-medium text-blue-100 sm:text-sm">
+                    Áreas, materias y asignaciones
+                  </div>
+                </div>
+              </div>
+            }
             size="full"
-            className="max-w-4xl"
-            zIndex={60}
+            className="max-w-4xl overflow-hidden"
+            zIndex={110}
+            closeOnOverlayClick={!saving}
+            showCloseButton={!saving}
             contentClassName="overflow-y-auto flex-1 px-6 py-4 max-h-[70vh]"
+            headerClassName="border-b-0 bg-slate-800 px-5 py-5 sm:px-6"
+            titleClassName="min-w-0"
+            closeButtonClassName="text-white/80 hover:bg-white/15 hover:text-white"
           >
-            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-              Revisa las áreas, materias y asignaciones antes de guardar.
-            </p>
+            <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5-4.5A11.95 11.95 0 0112 2a11.95 11.95 0 01-8 3.5c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">Todo listo para guardar</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                    Verifica áreas, materias y su vínculo con los grados antes de confirmar.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4">
+                <div className="text-2xl font-bold leading-none text-purple-700">{areasActivas.length}</div>
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-purple-700/80">Áreas</div>
+              </div>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                <div className="text-2xl font-bold leading-none text-blue-700">{materias.length}</div>
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-blue-700/80">Materias</div>
+              </div>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="text-2xl font-bold leading-none text-emerald-700">{materiasPorCurso.length}</div>
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-emerald-700/80">Asignaciones</div>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <div className="text-2xl font-bold leading-none text-amber-700">{gradosCargados.length}</div>
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-amber-700/80">Grados</div>
+              </div>
+            </div>
+
                   {/* Resumen de Áreas */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                      <span className="w-2 h-2 bg-purple-600 rounded-full mr-2"></span>
-                      Áreas Activas ({areasActivas.length})
-                    </h3>
-                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-sm font-bold text-purple-700">1</span>
+                      <h3 className="font-semibold text-slate-900">Áreas activas</h3>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {areasActivas.map((areaId) => {
                           const area = areasPredeterminadas.find(a => a.id === areaId);
                           return (
-                            <div key={areaId} className="flex items-start gap-2 min-w-0">
-                              <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
+                            <div key={areaId} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-xs font-bold text-purple-700">
+                                A
+                              </div>
                               <div className="min-w-0">
-                                <span className="font-medium text-slate-900 break-words">{area?.nombre}</span>
+                                <div className="break-words font-semibold text-slate-900">{area?.nombre}</div>
                                 {area?.es_opcional && (
-                                  <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded ml-2">
+                                  <span className="mt-1 inline-flex rounded bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
                                     Opcional
                                   </span>
                                 )}
@@ -2734,12 +4123,11 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
                   {/* Resumen de Materias */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                      <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
-                      Materias Creadas ({materias.length})
-                    </h3>
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <div className="space-y-3">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700">2</span>
+                      <h3 className="font-semibold text-slate-900">Materias creadas</h3>
+                    </div>
+                    <div className="space-y-4">
                         {areasActivas.map((areaId) => {
                           const area = areasPredeterminadas.find(a => a.id === areaId);
                           const materiasDelArea = materias.filter(m => m.areaId === areaId);
@@ -2747,80 +4135,70 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                           if (materiasDelArea.length === 0) return null;
                           
                           return (
-                            <div key={areaId} className="border-b border-blue-200 pb-3 last:border-b-0 last:pb-0">
-                              <h4 className="font-medium text-blue-900 mb-2">{area?.nombre}</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            <div key={areaId} className="rounded-2xl border border-blue-100 bg-blue-50/50 p-3 sm:p-4">
+                              <div className="mb-3 flex items-center justify-between gap-2">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-blue-700">{area?.nombre}</h4>
+                                <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                                  {materiasDelArea.length} {materiasDelArea.length === 1 ? 'materia' : 'materias'}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
                                 {materiasDelArea.map((materia) => (
-                                  <div key={materia.id} className="text-sm text-slate-600">
-                                    • {materia.nombre}
-                                  </div>
+                                  <span key={materia.id} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">
+                                    {materia.nombre}
+                                  </span>
                                 ))}
                               </div>
                             </div>
                           );
                         })}
-                      </div>
                     </div>
                   </div>
 
                   {/* Resumen de Asignaciones */}
                   {materiasPorCurso.length > 0 && (
                     <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                        <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
-                        Asignaciones a Grados ({materiasPorCurso.length})
-                      </h3>
-                      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                        <div className="space-y-3">
+                      <div className="mb-3 flex items-center gap-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-700">3</span>
+                        <h3 className="font-semibold text-slate-900">Asignaciones a grados</h3>
+                      </div>
+                      <div className="space-y-4">
                           {gradosCargados.map((grado) => {
                             const asignacionesDelGrado = materiasPorCurso.filter(mc => mc.gradoId === grado.id);
                             if (asignacionesDelGrado.length === 0) return null;
                             
                             return (
-                              <div key={grado.id} className="border-b border-green-200 pb-3 last:border-b-0 last:pb-0">
-                                <h4 className="font-medium text-green-900 mb-2">{grado.nombre}</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                              <div key={grado.id} className="overflow-hidden rounded-xl border border-emerald-100 bg-white shadow-sm">
+                                <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-3 py-2">
+                                  <span className="text-sm font-bold text-slate-800">{grado.nombre}</span>
+                                  <span className="text-xs font-medium text-emerald-700">
+                                    {asignacionesDelGrado.length} {asignacionesDelGrado.length === 1 ? 'materia' : 'materias'}
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 p-3">
                                   {asignacionesDelGrado.map((asignacion) => {
                                     const materia = materias.find(m => m.id === asignacion.materiaId);
                                     return (
-                                      <div key={asignacion.materiaId} className="text-sm text-slate-600">
-                                        • {materia?.nombre}
-                                      </div>
+                                      <span key={asignacion.materiaId} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                                        {materia?.nombre}
+                                      </span>
                                     );
                                   })}
                                 </div>
                               </div>
                             );
                           })}
-                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Estadísticas */}
-                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                      <div>
-                        <div className="text-2xl font-bold text-purple-600">{areasActivas.length}</div>
-                        <div className="text-sm text-slate-600">Áreas</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-blue-600">{materias.length}</div>
-                        <div className="text-sm text-slate-600">Materias</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-green-600">{materiasPorCurso.length}</div>
-                        <div className="text-sm text-slate-600">Asignaciones</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-amber-600">{gradosCargados.length}</div>
-                        <div className="text-sm text-slate-600">Grados</div>
-                      </div>
-                    </div>
-                  </div>
-
             <div className="pt-4 mt-4 border-t border-[var(--color-border-light)] flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => setMostrarResumenAreas(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setMostrarResumenAreas(false)}
+                disabled={saving}
+              >
                 Cancelar
               </Button>
               <Button type="button" variant="primary" onClick={handleSaveAreasYMaterias} disabled={saving}>
@@ -2842,62 +4220,66 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
 
               {/* Resumen de Grados Cargados */}
               {cargandoGrados ? (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center">
-                    <svg className="animate-spin w-5 h-5 mr-3 text-blue-600" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span className="text-blue-700">Cargando grados desde la base de datos...</span>
-                  </div>
+                <div className="mb-6">
+                  <WizardDataSkeleton label="Cargando grados disponibles…" sections={2} />
                 </div>
               ) : gradosCargados.length > 0 ? (
-                <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h4 className="font-semibold text-green-900 mb-3 flex items-center">
-                    <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
-                    Grados Disponibles ({gradosCargados.length})
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {gradosCargados.map((grado) => (
-                      <div key={grado.id} className="bg-white rounded-lg p-3 border border-green-200">
-                        <div className="font-medium text-slate-900">{grado.nombre}</div>
-                        <div className="text-sm text-slate-600">
-                          {grado.cursos.length} curso{grado.cursos.length !== 1 ? 's' : ''}
-                        </div>
-                        <div className="mt-2 space-y-1">
-                          {grado.cursos.length === 0 ? (
-                            <span className="text-xs text-slate-500">Sin cursos registrados</span>
-                          ) : (
-                            grado.cursos.map((curso: any) => (
-                              <div
-                                key={curso.id}
-                                className="flex items-center justify-between text-xs text-slate-600 bg-slate-50 rounded border border-slate-200 px-2 py-1"
-                              >
-                                <span>{curso.nombre}</span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setCursoParaEliminar({
-                                      cursoId: curso.id,
-                                      gradoId: grado.id,
-                                      nombre: curso.nombre
-                                    })
-                                  }
-                                  className="text-red-600 hover:bg-red-50 rounded p-1 transition-colors"
-                                  aria-label={`Eliminar curso ${curso.nombre}`}
-                                  title="Eliminar curso"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ))
-                          )}
-                        </div>
+                <div className="mb-6 overflow-hidden rounded-xl border border-green-200 bg-green-50">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarGradosDisponibles((prev) => !prev)}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-green-100/70"
+                    aria-expanded={mostrarGradosDisponibles}
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-green-600" />
+                      <h4 className="font-semibold text-green-900">
+                        Grados Disponibles ({gradosCargados.length})
+                      </h4>
+                      <span className="hidden text-xs text-green-700 sm:inline">
+                        Solo consulta — no se pueden eliminar aquí
+                      </span>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-xs font-semibold text-green-800 border border-green-200">
+                      {mostrarGradosDisponibles ? 'Ocultar' : 'Ver'}
+                      <svg
+                        className={`h-4 w-4 transition-transform ${mostrarGradosDisponibles ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </button>
+                  {mostrarGradosDisponibles && (
+                    <div className="border-t border-green-200 px-4 pb-4 pt-3">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        {gradosCargados.map((grado) => (
+                          <div key={grado.id} className="rounded-lg border border-green-200 bg-white p-3">
+                            <div className="font-medium text-slate-900">{grado.nombre}</div>
+                            <div className="text-sm text-slate-600">
+                              {grado.cursos.length} curso{grado.cursos.length !== 1 ? 's' : ''}
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {grado.cursos.length === 0 ? (
+                                <span className="text-xs text-slate-500">Sin cursos registrados</span>
+                              ) : (
+                                grado.cursos.map((curso: any) => (
+                                  <span
+                                    key={curso.id}
+                                    className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
+                                  >
+                                    {curso.nombre}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
@@ -2910,62 +4292,141 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </div>
               )}
 
+              {/* Áreas y materias ya guardadas */}
+              {cargandoAreasMaterias ? (
+                <div className="mb-6">
+                  <WizardDataSkeleton label="Cargando áreas y materias guardadas…" sections={2} />
+                </div>
+              ) : areasCargadas.length > 0 || materiasCargadas.length > 0 ? (
+                <div className="mb-6 overflow-hidden rounded-xl border border-blue-200 bg-blue-50">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarAreasMateriasDisponibles((prev) => !prev)}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-blue-100/70"
+                    aria-expanded={mostrarAreasMateriasDisponibles}
+                  >
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-blue-600" />
+                      <h4 className="font-semibold text-blue-900">
+                        Áreas y materias guardadas ({areasCargadas.length} área
+                        {areasCargadas.length !== 1 ? 's' : ''}, {materiasCargadas.length} materia
+                        {materiasCargadas.length !== 1 ? 's' : ''})
+                      </h4>
+                      <span className="hidden text-xs text-blue-700 sm:inline">
+                        Solo consulta — no se pueden eliminar aquí
+                      </span>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-blue-800">
+                      {mostrarAreasMateriasDisponibles ? 'Ocultar' : 'Ver'}
+                      <svg
+                        className={`h-4 w-4 transition-transform ${mostrarAreasMateriasDisponibles ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </button>
+                  {mostrarAreasMateriasDisponibles && (
+                    <div className="space-y-4 border-t border-blue-200 px-4 pb-4 pt-3">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        {areasCargadas.map((area: any) => {
+                          const materiasDelArea = materiasCargadas.filter(
+                            (m: any) => m.area_id === area.id || m.areaId === area.id
+                          );
+                          return (
+                            <div
+                              key={area.id}
+                              className="rounded-lg border border-blue-200 bg-white p-3"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="font-medium text-slate-900">{area.nombre}</div>
+                                  <div className="text-sm text-slate-600">
+                                    {materiasDelArea.length} materia
+                                    {materiasDelArea.length !== 1 ? 's' : ''}
+                                  </div>
+                                </div>
+                                {area.es_opcional && (
+                                  <span className="shrink-0 rounded bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                                    Opcional
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {materiasDelArea.length === 0 ? (
+                                  <span className="text-xs text-slate-500">Sin materias registradas</span>
+                                ) : (
+                                  materiasDelArea.map((materia: any) => (
+                                    <span
+                                      key={materia.id}
+                                      className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
+                                    >
+                                      {materia.nombre}
+                                    </span>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {materiasGradosCargados.length > 0 && (
+                        <div>
+                          <h5 className="mb-2 text-sm font-semibold text-blue-900">
+                            Asignaciones a grados ({materiasGradosCargados.length})
+                          </h5>
+                          <div className="space-y-2">
+                            {gradosCargados.map((grado: any) => {
+                              const asignaciones = materiasGradosCargados.filter(
+                                (mg: any) => mg.grado_id === grado.id || mg.gradoId === grado.id
+                              );
+                              if (asignaciones.length === 0) return null;
+                              return (
+                                <div
+                                  key={grado.id}
+                                  className="rounded-lg border border-blue-100 bg-white p-3"
+                                >
+                                  <div className="mb-2 text-sm font-medium text-slate-800">
+                                    {grado.nombre}
+                                  </div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {asignaciones.map((mg: any) => (
+                                      <span
+                                        key={mg.id ?? `${mg.materia_id}-${mg.grado_id}`}
+                                        className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
+                                      >
+                                        {mg.materia?.nombre ||
+                                          materiasCargadas.find(
+                                            (m: any) => m.id === (mg.materia_id ?? mg.materiaId)
+                                          )?.nombre ||
+                                          'Materia'}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
               {/* Sección 1: Activar/Desactivar Áreas */}
               <div className="mb-8">
                 <h4 className="text-lg font-semibold text-slate-900 mb-4">
                   2.1 Seleccionar Áreas
                 </h4>
-                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {areasPredeterminadas.map((area) => (
-                      <div
-                        key={area.id}
-                        className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border transition-colors ${
-                          areasActivas.includes(area.id)
-                            ? 'bg-blue-50 border-blue-200'
-                            : 'bg-white border-slate-200'
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium text-slate-900 break-words">
-                              {area.nombre}
-                            </span>
-                            {area.es_opcional && (
-                              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded shrink-0">
-                                Opcional
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (areasActivas.includes(area.id)) {
-                              setAreasActivas(areasActivas.filter(id => id !== area.id));
-                              // Eliminar materias de esta área
-                              setMaterias(materias.filter(m => m.areaId !== area.id));
-                            } else {
-                              setAreasActivas([...areasActivas, area.id]);
-                            }
-                          }}
-                          className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
-                            areasActivas.includes(area.id)
-                              ? 'bg-blue-600'
-                              : 'bg-slate-300'
-                          }`}
-                        >
-                          <div
-                            className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                              areasActivas.includes(area.id)
-                                ? 'translate-x-6'
-                                : 'translate-x-0.5'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <AreasTogglePanel
+                  areas={areasPredeterminadas}
+                  value={areasActivas}
+                  onChange={handleAreasActivasChange}
+                />
               </div>
 
               {/* Sección 2: Crear Materias */}
@@ -2974,96 +4435,13 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                   <h4 className="text-lg font-semibold text-slate-900 mb-4">
                     2.2 Crear Materias por Área
                   </h4>
-                  <div className="space-y-4">
-                    {areasActivas.map((areaId) => {
-                      const area = areasPredeterminadas.find(a => a.id === areaId);
-                      const materiasDelArea = materias.filter(m => m.areaId === areaId);
-                      
-                      return (
-                        <div key={areaId} className="bg-white rounded-lg p-4 border border-slate-200">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
-                            <div className="flex flex-wrap items-center gap-2 min-w-0">
-                              <h5 className="font-semibold text-slate-900 break-words">
-                                {area?.nombre}
-                              </h5>
-                              <div className="relative group ml-2">
-                                <button
-                                  type="button"
-                                  aria-label={`Ejemplo de materias para ${area?.nombre}`}
-                                  className="text-slate-400 hover:text-slate-600 transition-colors"
-                                >
-                                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 8a1 1 0 112 0v5a1 1 0 11-2 0V8zm1-4a1.25 1.25 0 110 2.5A1.25 1.25 0 0110 4z" />
-                                  </svg>
-                                </button>
-                                <div className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-600 shadow-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                                  <div className="font-semibold text-slate-700">Ejemplos:</div>
-                                  {(ejemplosMateriasPorArea[area?.id || 0] || ['Materia A', 'Materia B', 'Materia C'])
-                                    .slice(0, 3)
-                                    .map((ejemplo) => (
-                                      <div key={ejemplo}>{ejemplo}</div>
-                                    ))}
-                                  <div className="mt-2 text-[11px] text-orange-600">
-                                    Ten en cuenta que el nombre de la materia debe seguir los estándares de la institución.
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                const nuevaMateria: Materia = {
-                                  id: `temp-${Date.now()}`,
-                                  nombre: 'Nueva Materia',
-                                  areaId: areaId
-                                };
-                                setMaterias([...materias, nuevaMateria]);
-                              }}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center"
-                            >
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              Agregar Materia
-                            </button>
-                          </div>
-                          
-                          {materiasDelArea.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                              {materiasDelArea.map((materia) => (
-                                <div
-                                  key={materia.id}
-                                  className="flex items-center space-x-2 bg-slate-50 rounded-lg p-2 border border-slate-200"
-                                >
-                                  <input
-                                    type="text"
-                                    value={materia.nombre}
-                                    onChange={(e) => {
-                                      setMaterias(materias.map(m => 
-                                        m.id === materia.id 
-                                          ? { ...m, nombre: e.target.value }
-                                          : m
-                                      ));
-                                    }}
-                                    className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm font-medium text-slate-900"
-                                  />
-                                  <button
-                                    onClick={() => {
-                                      setMaterias(materias.filter(m => m.id !== materia.id));
-                                    }}
-                                    className="text-red-600 hover:bg-red-50 rounded p-1 transition-colors"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <MateriasEditorPanel
+                    activeAreaIds={areasActivas}
+                    areas={areasPredeterminadas}
+                    examples={ejemplosMateriasPorArea}
+                    value={materias}
+                    onChange={setMaterias}
+                  />
                 </div>
               )}
 
@@ -3079,61 +4457,12 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     </p>
                     
                     <div className="space-y-4">
-                      {gradosCargados.map((grado) => (
-                        <div key={grado.id} className="bg-white rounded-lg p-4 border border-slate-200">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
-                            <h5 className="font-semibold text-slate-900 break-words">
-                              {grado.nombre}
-                            </h5>
-                            <span className="text-sm text-slate-500">
-                              {grado.cursos.length} curso{grado.cursos.length !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            {materias.map((materia) => {
-                              const isAsignada = materiasPorCurso.some(mc => 
-                                mc.materiaId === materia.id && mc.gradoId === grado.id
-                              );
-                              
-                              return (
-                                <label
-                                  key={materia.id}
-                                  className={`flex items-center space-x-2 p-2 rounded-lg border cursor-pointer transition-colors ${
-                                    isAsignada
-                                      ? 'bg-blue-50 border-blue-200'
-                                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                                  }`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isAsignada}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        // Agregar asignación
-                                        const nuevaAsignacion = {
-                                          materiaId: materia.id,
-                                          gradoId: grado.id
-                                        };
-                                        setMateriasPorCurso([...materiasPorCurso, nuevaAsignacion]);
-                                      } else {
-                                        // Eliminar asignación
-                                        setMateriasPorCurso(materiasPorCurso.filter(mc => 
-                                          !(mc.materiaId === materia.id && mc.gradoId === grado.id)
-                                        ));
-                                      }
-                                    }}
-                                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                                  />
-                                  <span className="text-sm font-medium text-slate-900">
-                                    {materia.nombre}
-                                  </span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
+                      <AsignarMateriasAGradosPanel
+                        grados={gradosCargados}
+                        materias={materias}
+                        value={materiasPorCurso}
+                        onChange={setMateriasPorCurso}
+                      />
                     </div>
                   </div>
                 </div>
@@ -3162,7 +4491,12 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                   </div>
                   {materias.length === 0 && (
                     <p className="text-sm text-blue-600 mt-2">
-                      💡 Crea al menos una materia para poder guardar
+                      Crea al menos una materia para poder guardar
+                    </p>
+                  )}
+                  {!tieneAreasYMateriasGuardadas && (
+                    <p className="mt-2 text-sm text-amber-700">
+                      Debes guardar áreas y materias antes de continuar al siguiente paso.
                     </p>
                   )}
                 </div>
@@ -3221,263 +4555,22 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                     </button>
                     
                     {seccionActiva === 'datos' && (
-                      <div className="p-4 border-t border-slate-200">
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Nombres *
-                    </label>
-                    <input
-                      type="text"
-                      value={docenteActual.nombres}
-                      onChange={(e) => {
-                        setDocenteActual(prev => ({ ...prev, nombres: e.target.value }));
-                        validarCampo('nombres', e.target.value);
-                      }}
-                      disabled={!camposHabilitados.nombres}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacion.nombres ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitados.nombres ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="Ingresa los nombres"
-                    />
-                    {erroresValidacion.nombres && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacion.nombres}</p>
-                    )}
-                    {camposValidados.nombres && !erroresValidacion.nombres && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Nombres válidos
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Apellidos *
-                    </label>
-                    <input
-                      type="text"
-                      value={docenteActual.apellidos}
-                      onChange={(e) => {
-                        setDocenteActual(prev => ({ ...prev, apellidos: e.target.value }));
-                        validarCampo('apellidos', e.target.value);
-                      }}
-                      disabled={!camposHabilitados.apellidos}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacion.apellidos ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitados.apellidos ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="Ingresa los apellidos"
-                    />
-                    {erroresValidacion.apellidos && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacion.apellidos}</p>
-                    )}
-                    {camposValidados.apellidos && !erroresValidacion.apellidos && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Apellidos válidos
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Teléfono Celular * (con indicativo de país)
-                    </label>
-                    <PhoneInputField
-                      value={docenteActual.telefono}
-                      onChange={(val) => {
-                        setDocenteActual(prev => ({ ...prev, telefono: val }));
-                        validarCampo('telefono', val);
-                      }}
-                      disabled={!camposHabilitados.telefono}
-                      showValidState={true}
-                      invalidMessage=""
-                      aria-label="Teléfono celular"
-                    />
-                    {erroresValidacion.telefono && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacion.telefono}</p>
-                    )}
-                    {camposValidados.telefono && !erroresValidacion.telefono && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Teléfono válido
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Email *
-                    </label>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                      <input
-                        type="email"
-                        value={docenteActual.email}
-                        onChange={(e) => {
-                          setDocenteActual(prev => ({ ...prev, email: e.target.value }));
-                          validarCampo('email', e.target.value);
-                        }}
-                        disabled={!camposHabilitados.email}
-                        className={`flex-1 px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                          erroresValidacion.email ? 'border-red-500' : 'border-slate-300'
-                        } ${!camposHabilitados.email ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                        placeholder="correo@ejemplo.com"
+                      <DocenteDatosPersonalesPanel
+                        value={docenteDatosValue}
+                        onCommitField={handleDocenteDatosCommit}
+                        onClearFieldError={handleClearDocenteFieldError}
+                        camposHabilitados={camposHabilitados}
+                        erroresValidacion={erroresValidacion}
+                        camposValidados={camposValidados}
+                        emailVerificado={emailVerificado}
+                        verificandoEmail={verificandoEmail}
+                        mostrarPassword={mostrarPassword}
+                        onTogglePassword={() => setMostrarPassword((prev) => !prev)}
+                        onVerifyEmail={verificarEmailManual}
+                        onGeneratePassword={generarPassword}
+                        passwordEnabled={campoPasswordHabilitado()}
+                        passwordButtonsEnabled={botonesPasswordHabilitados()}
                       />
-                      <button
-                        type="button"
-                        onClick={verificarEmailManual}
-                        disabled={!camposValidados.email || verificandoEmail}
-                        className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                          camposValidados.email && !verificandoEmail
-                            ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                            : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                        }`}
-                      >
-                        {verificandoEmail ? (
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Verificando...
-                          </div>
-                        ) : (
-                          'Verificar'
-                        )}
-                      </button>
-                    </div>
-                    {erroresValidacion.email && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacion.email}</p>
-                    )}
-                    {verificandoEmail && (
-                      <p className="text-blue-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Comprobando email...
-                      </p>
-                    )}
-                    {emailVerificado && !erroresValidacion.email && !verificandoEmail && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Email verificado y disponible
-                      </p>
-                    )}
-                    {camposValidados.email && !emailVerificado && !erroresValidacion.email && !verificandoEmail && (
-                      <p className="text-amber-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        Email válido. Haz clic en &quot;Verificar&quot; para comprobar disponibilidad
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Contraseña */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Contraseña *
-                  </label>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <div className="relative flex-1">
-                      <input
-                        type={mostrarPassword ? 'text' : 'password'}
-                        value={docenteActual.password}
-                        onChange={(e) => {
-                          setDocenteActual(prev => ({ ...prev, password: e.target.value }));
-                          validarCampo('password', e.target.value);
-                        }}
-                        disabled={!campoPasswordHabilitado()}
-                        className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 ${
-                          erroresValidacion.password ? 'border-red-500' : 'border-slate-300'
-                        } ${!campoPasswordHabilitado() ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                        placeholder="Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setMostrarPassword(!mostrarPassword)}
-                        disabled={!botonesPasswordHabilitados()}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed"
-                      >
-                        {mostrarPassword ? (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878L3 3m6.878 6.878L21 21" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={generarPassword}
-                      disabled={!botonesPasswordHabilitados()}
-                      className={`w-full sm:w-auto px-3 py-2 rounded-lg transition-colors flex items-center justify-center ${
-                        botonesPasswordHabilitados()
-                          ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                          : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                      }`}
-                    >
-                      <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      🎲 Generar
-                    </button>
-                  </div>
-                  {erroresValidacion.password && (
-                    <p className="text-red-500 text-xs mt-1">{erroresValidacion.password}</p>
-                  )}
-                  {camposValidados.password && !erroresValidacion.password && (
-                    <p className="text-green-600 text-xs mt-1 flex items-center">
-                      <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Contraseña válida
-                    </p>
-                  )}
-                  <div className="mt-2 text-xs text-slate-500 space-y-1">
-                    {(() => {
-                      const reqs = getPasswordRequirementsDocente(docenteActual.password);
-                      const item = (ok: boolean, label: string) => (
-                        <p key={label} className={ok ? 'text-green-600' : 'text-slate-500'}>
-                          {ok ? '✓' : '•'} {label}
-                        </p>
-                      );
-                      return (
-                        <>
-                          {item(reqs.length, 'Al menos 8 caracteres')}
-                          {item(reqs.upper, 'Una letra mayúscula')}
-                          {item(reqs.lower, 'Una letra minúscula')}
-                          {item(reqs.number, 'Un número')}
-                          {item(reqs.symbol, 'Un símbolo (@$!%*?&)')}
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                        {/* Información de sede */}
-                        <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                          <h5 className="font-medium text-blue-900 mb-2">🏢 Asignación Institucional</h5>
-                          <p className="text-sm text-blue-700">
-                            El docente será asignado automáticamente a la misma sede del administrador
-                          </p>
-                        </div>
-                      </div>
                     )}
                   </div>
 
@@ -3557,7 +4650,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                           eliminarGradoCurso(grado.id, curso.id);
                                         }
                                       }}
-                                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-green-300 rounded mr-3"
+                                      className="wizard-quiet-focus mr-3 h-4 w-4 rounded border-green-300 text-green-600"
                                     />
                                     <span className="text-sm text-green-800 break-words">
                                       {curso.nombre}
@@ -3651,9 +4744,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                           </p>
                   
                           {cargandoAreasMaterias ? (
-                            <p className="text-sm text-purple-600">
-                              Cargando materias disponibles...
-                            </p>
+                            <WizardDataSkeleton label="Cargando materias disponibles…" sections={1} />
                           ) : asignacionesGradoCurso.length === 0 ? (
                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                               <p className="text-sm text-yellow-700">
@@ -3681,7 +4772,7 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                                               type="checkbox"
                                               checked={asignacion.materiasSeleccionadas.includes(materia.id)}
                                               onChange={(e) => handleMateriaGradoCurso(asignacion.gradoId, asignacion.cursoId, materia.id, e.target.checked)}
-                                              className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-purple-300 rounded"
+                                              className="wizard-quiet-focus h-4 w-4 rounded border-purple-300 text-purple-600"
                                             />
                                             <span className="ml-2 text-sm text-purple-800">
                                               {materia.nombre}
@@ -3974,298 +5065,18 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
                 </p>
               </div>
 
-              {/* Formulario de Estudiante */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                  Agregar Estudiante
-                </h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Nombres */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Nombres del Estudiante *
-                    </label>
-                    <input
-                      type="text"
-                      value={estudianteActual.nombres}
-                      onChange={(e) => {
-                        setEstudianteActual(prev => ({ ...prev, nombres: e.target.value }));
-                        validarCampoEstudiante('nombres', e.target.value);
-                      }}
-                      disabled={!camposHabilitadosEstudiante.nombres}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacionEstudiante.nombres ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitadosEstudiante.nombres ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="Ingresa los nombres"
-                    />
-                    {erroresValidacionEstudiante.nombres && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.nombres}</p>
-                    )}
-                    {camposValidadosEstudiante.nombres && !erroresValidacionEstudiante.nombres && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        ✓ Válido
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Apellidos */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Apellidos del Estudiante *
-                    </label>
-                    <input
-                      type="text"
-                      value={estudianteActual.apellidos}
-                      onChange={(e) => {
-                        setEstudianteActual(prev => ({ ...prev, apellidos: e.target.value }));
-                        validarCampoEstudiante('apellidos', e.target.value);
-                      }}
-                      disabled={!camposHabilitadosEstudiante.apellidos}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacionEstudiante.apellidos ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitadosEstudiante.apellidos ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="Ingresa los apellidos"
-                    />
-                    {erroresValidacionEstudiante.apellidos && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.apellidos}</p>
-                    )}
-                    {camposValidadosEstudiante.apellidos && !erroresValidacionEstudiante.apellidos && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        ✓ Válido
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Código del Estudiante */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Código del Estudiante *
-                    </label>
-                    <input
-                      type="text"
-                      value={estudianteActual.codigo_estudiantil}
-                      onChange={(e) => {
-                        setEstudianteActual(prev => ({ ...prev, codigo_estudiantil: e.target.value }));
-                        validarCampoEstudiante('codigo_estudiantil', e.target.value);
-                      }}
-                      disabled={!camposHabilitadosEstudiante.codigo_estudiantil}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacionEstudiante.codigo_estudiantil ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitadosEstudiante.codigo_estudiantil ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="Ej: EST001"
-                    />
-                    {erroresValidacionEstudiante.codigo_estudiantil && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.codigo_estudiantil}</p>
-                    )}
-                    {camposValidadosEstudiante.codigo_estudiantil && !erroresValidacionEstudiante.codigo_estudiantil && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        ✓ Válido
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Nombre del Acudiente */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Nombre del Acudiente *
-                    </label>
-                    <input
-                      type="text"
-                      value={estudianteActual.nombre_acudiente}
-                      onChange={(e) => {
-                        setEstudianteActual(prev => ({ ...prev, nombre_acudiente: e.target.value }));
-                        validarCampoEstudiante('nombre_acudiente', e.target.value);
-                      }}
-                      disabled={!camposHabilitadosEstudiante.nombre_acudiente}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacionEstudiante.nombre_acudiente ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitadosEstudiante.nombre_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="Nombre completo del acudiente"
-                    />
-                    {erroresValidacionEstudiante.nombre_acudiente && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.nombre_acudiente}</p>
-                    )}
-                    {camposValidadosEstudiante.nombre_acudiente && !erroresValidacionEstudiante.nombre_acudiente && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        ✓ Válido
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Correo del Acudiente */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Correo del Acudiente *
-                    </label>
-                    <input
-                      type="email"
-                      value={estudianteActual.correo_acudiente}
-                      onChange={(e) => {
-                        setEstudianteActual(prev => ({ ...prev, correo_acudiente: e.target.value }));
-                        validarCampoEstudiante('correo_acudiente', e.target.value);
-                      }}
-                      disabled={!camposHabilitadosEstudiante.correo_acudiente}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacionEstudiante.correo_acudiente ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitadosEstudiante.correo_acudiente ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      placeholder="correo@ejemplo.com"
-                    />
-                    {erroresValidacionEstudiante.correo_acudiente && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.correo_acudiente}</p>
-                    )}
-                    {camposValidadosEstudiante.correo_acudiente && !erroresValidacionEstudiante.correo_acudiente && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        ✓ Válido
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Teléfono del Acudiente */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Teléfono del Acudiente * (con indicativo de país)
-                    </label>
-                    <PhoneInputField
-                      value={estudianteActual.telefono_acudiente}
-                      onChange={(val) => {
-                        setEstudianteActual(prev => ({ ...prev, telefono_acudiente: val }));
-                        validarCampoEstudiante('telefono_acudiente', val);
-                      }}
-                      disabled={!camposHabilitadosEstudiante.telefono_acudiente}
-                      showValidState={true}
-                      invalidMessage=""
-                      aria-label="Teléfono del acudiente"
-                    />
-                    {erroresValidacionEstudiante.telefono_acudiente && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.telefono_acudiente}</p>
-                    )}
-                    {camposValidadosEstudiante.telefono_acudiente && !erroresValidacionEstudiante.telefono_acudiente && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        ✓ Válido
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Grado */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Grado *
-                    </label>
-                    <select
-                      value={estudianteActual.grado_id}
-                      onChange={(e) => {
-                        const gradoId = parseInt(e.target.value);
-                        setEstudianteActual(prev => ({ ...prev, grado_id: gradoId, curso_id: 0 }));
-                        validarCampoEstudiante('grado_id', gradoId);
-                      }}
-                      disabled={!camposHabilitadosEstudiante.grado_id}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacionEstudiante.grado_id ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitadosEstudiante.grado_id ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    >
-                      <option value={0}>Selecciona un grado</option>
-                      {gradosDisponibles.map((grado) => (
-                        <option key={grado.id} value={grado.id}>
-                          {grado.nombre} - {grado.nivel}
-                        </option>
-                      ))}
-                    </select>
-                    {erroresValidacionEstudiante.grado_id && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.grado_id}</p>
-                    )}
-                    {camposValidadosEstudiante.grado_id && !erroresValidacionEstudiante.grado_id && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        ✓ Válido
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Curso */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Curso *
-                    </label>
-                    <select
-                      value={estudianteActual.curso_id}
-                      onChange={(e) => {
-                        const cursoId = parseInt(e.target.value);
-                        setEstudianteActual(prev => ({ ...prev, curso_id: cursoId }));
-                        validarCampoEstudiante('curso_id', cursoId);
-                      }}
-                      disabled={!camposHabilitadosEstudiante.curso_id || cursosDisponibles.length === 0}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 ${
-                        erroresValidacionEstudiante.curso_id ? 'border-red-500' : 'border-slate-300'
-                      } ${!camposHabilitadosEstudiante.curso_id || cursosDisponibles.length === 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    >
-                      <option value={0}>
-                        {cursosDisponibles.length === 0 ? 'Selecciona un grado primero' : 'Selecciona un curso'}
-                      </option>
-                      {cursosDisponibles.map((curso) => (
-                        <option key={curso.id} value={curso.id}>
-                          {curso.nombre}
-                        </option>
-                      ))}
-                    </select>
-                    {erroresValidacionEstudiante.curso_id && (
-                      <p className="text-red-500 text-xs mt-1">{erroresValidacionEstudiante.curso_id}</p>
-                    )}
-                    {camposValidadosEstudiante.curso_id && !erroresValidacionEstudiante.curso_id && (
-                      <p className="text-green-600 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        ✓ Válido
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Botones */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-6">
-                  <button
-                    onClick={limpiarFormularioEstudiante}
-                    className="w-full sm:w-auto px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors text-left sm:text-center"
-                  >
-                    Limpiar formulario
-                  </button>
-                  <button
-                    onClick={handleAgregarEstudiante}
-                    disabled={Object.keys(erroresValidacionEstudiante).length > 0}
-                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition-colors flex items-center justify-center ${
-                      Object.keys(erroresValidacionEstudiante).length > 0
-                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
-                    }`}
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Agregar Estudiante
-                  </button>
-                </div>
-              </div>
+              <EstudianteFormPanel
+                value={estudianteActual}
+                onFieldChange={handleEstudianteFieldChange}
+                camposHabilitados={camposHabilitadosEstudiante}
+                erroresValidacion={erroresValidacionEstudiante}
+                camposValidados={camposValidadosEstudiante}
+                gradosDisponibles={gradosDisponibles}
+                cursosDisponibles={cursosDisponibles}
+                cargandoCursos={cargandoCursos}
+                onLimpiar={limpiarFormularioEstudiante}
+                onAgregar={handleAgregarEstudiante}
+              />
 
               {/* Lista de Estudiantes */}
               {estudiantes.length > 0 && (
@@ -4553,12 +5364,14 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4 bg-slate-50">
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <div className="shrink-0 rounded-b-2xl border-t border-slate-200 bg-slate-50 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {currentStep > 0 ? (
               <button
+                type="button"
                 onClick={handleBack}
-                className="w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
+                disabled={saving}
+                className="w-full rounded-lg bg-slate-200 px-6 py-2 font-medium text-slate-700 transition-colors hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 Anterior
               </button>
@@ -4566,18 +5379,36 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
               <div className="w-full sm:w-auto sm:min-w-[100px]" aria-hidden="true" />
             )}
 
-            <div className="text-sm text-slate-600 text-center">
+            <div className="text-center text-sm text-slate-600">
               {currentStep === 0 ? 'Introducción' : `Paso ${currentStep} de 5`}
             </div>
 
             <button
+              type="button"
               onClick={handleNext}
-              disabled={currentStep === 5}
-              className={`w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors ${
-                currentStep === 5
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              disabled={
+                saving ||
+                currentStep === 5 ||
+                (currentStep === 1 && !tieneGradosYCursosGuardados) ||
+                (currentStep === 2 && !tieneAreasYMateriasGuardadas)
+              }
+              className={`w-full rounded-lg px-6 py-2 font-medium transition-colors sm:w-auto ${
+                saving ||
+                currentStep === 5 ||
+                (currentStep === 1 && !tieneGradosYCursosGuardados) ||
+                (currentStep === 2 && !tieneAreasYMateriasGuardadas)
+                  ? 'cursor-not-allowed bg-slate-200 text-slate-400'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
+              title={
+                saving
+                  ? 'Espera a que termine el guardado'
+                  : currentStep === 1 && !tieneGradosYCursosGuardados
+                  ? 'Guarda al menos un grado con cursos para continuar'
+                  : currentStep === 2 && !tieneAreasYMateriasGuardadas
+                    ? 'Guarda áreas y materias para continuar'
+                    : undefined
+              }
             >
               {currentStep === 5 ? 'Finalizar' : 'Siguiente'}
             </button>
@@ -4588,44 +5419,148 @@ export default function SetupWizard({ institucionId, onClose }: SetupWizardProps
       <Modal
         open={mostrarConfirmacionGuardado}
         onClose={() => !saving && setMostrarConfirmacionGuardado(false)}
-        title="Confirmar guardado"
-        size="md"
-        zIndex={70}
-        closeOnOverlayClick={!saving}
-      >
-        <p className="text-sm text-[var(--color-text-secondary)] mb-4">¿Estás seguro de guardar los docentes?</p>
-        <div className="bg-[var(--color-surface-nested)] rounded-lg p-4 mb-4 border border-[var(--color-border-light)]">
-          <h3 className="font-medium text-[var(--color-text-primary)] mb-2">Resumen a guardar</h3>
-          <div className="space-y-1 text-sm text-[var(--color-text-secondary)]">
-            <div className="flex justify-between">
-              <span>Docentes:</span>
-              <span className="font-medium">{docentes.length}</span>
+        title={
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-inset ring-white/20">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
             </div>
-            <div className="flex justify-between">
-              <span>Asignaciones totales:</span>
-              <span className="font-medium">
-                {Object.values(asignacionesPorDocente).reduce((total, asign) => total + asign.asignaciones.length, 0)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Materias asignadas:</span>
-              <span className="font-medium">
-                {Object.values(asignacionesPorDocente).reduce((total, asign) => total + asign.asignaciones.reduce((subtotal, a) => subtotal + a.materiasSeleccionadas.length, 0), 0)}
-              </span>
+            <div>
+              <div className="text-lg font-bold leading-tight text-white sm:text-xl">Resumen de docentes</div>
+              <div className="mt-1 text-xs font-medium text-blue-100 sm:text-sm">
+                Revisa antes de confirmar el guardado
+              </div>
             </div>
           </div>
-        </div>
-        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-          <strong>Importante:</strong> Una vez guardados, los docentes recibirán un email con sus credenciales de acceso.
-        </p>
-        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-          <Button type="button" variant="outline" onClick={() => setMostrarConfirmacionGuardado(false)} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button type="button" variant="primary" onClick={guardarDocentes} disabled={saving}>
-            {saving ? 'Guardando…' : 'Confirmar y guardar'}
-          </Button>
-        </div>
+        }
+        size="full"
+        className="max-w-3xl overflow-hidden"
+        zIndex={120}
+        closeOnOverlayClick={!saving}
+        showCloseButton={!saving}
+        contentClassName="overflow-y-auto flex-1 px-6 py-4 max-h-[70vh]"
+        headerClassName="border-b-0 bg-slate-800 px-5 py-5 sm:px-6"
+        titleClassName="min-w-0"
+        closeButtonClassName="text-white/80 hover:bg-white/15 hover:text-white"
+      >
+        {(() => {
+          const totalAsignaciones = Object.values(asignacionesPorDocente).reduce(
+            (total, asign) => total + asign.asignaciones.length,
+            0
+          );
+          const totalMaterias = Object.values(asignacionesPorDocente).reduce(
+            (total, asign) =>
+              total + asign.asignaciones.reduce((subtotal, a) => subtotal + a.materiasSeleccionadas.length, 0),
+            0
+          );
+
+          return (
+            <>
+              <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5-4.5A11.95 11.95 0 0112 2a11.95 11.95 0 01-8 3.5c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">Todo listo para guardar</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                      Verifica los docentes y sus asignaciones. Al confirmar se crearán las cuentas y se enviarán las credenciales.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                  <div className="text-2xl font-bold leading-none text-blue-700">{docentes.length}</div>
+                  <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-blue-700/80">Docentes</div>
+                </div>
+                <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4">
+                  <div className="text-2xl font-bold leading-none text-purple-700">{totalAsignaciones}</div>
+                  <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-purple-700/80">Asignaciones</div>
+                </div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="text-2xl font-bold leading-none text-emerald-700">{totalMaterias}</div>
+                  <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-emerald-700/80">Materias</div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700">1</span>
+                  <h3 className="font-semibold text-slate-900">Docentes a crear</h3>
+                </div>
+                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+                  {docentes.map((docente) => {
+                    const asignaciones = asignacionesPorDocente[docente.id]?.asignaciones ?? [];
+                    const materiasCount = asignaciones.reduce(
+                      (sum, a) => sum + a.materiasSeleccionadas.length,
+                      0
+                    );
+
+                    return (
+                      <div
+                        key={docente.id}
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-900 break-words">
+                              {docente.nombres} {docente.apellidos}
+                            </div>
+                            <div className="mt-0.5 text-sm text-slate-600 break-all">{docente.email}</div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-full bg-purple-100 px-2.5 py-1 text-[11px] font-semibold text-purple-700">
+                              {asignaciones.length} {asignaciones.length === 1 ? 'asignación' : 'asignaciones'}
+                            </span>
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                              {materiasCount} {materiasCount === 1 ? 'materia' : 'materias'}
+                            </span>
+                          </div>
+                        </div>
+                        {asignaciones.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                            {asignaciones.map((asignacion, idx) => (
+                              <span
+                                key={`${docente.id}-${asignacion.gradoId}-${asignacion.cursoId}-${idx}`}
+                                className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700"
+                              >
+                                {asignacion.gradoNombre || 'Grado'} · {asignacion.cursoNombre || 'Curso'} ·{' '}
+                                {asignacion.materiasSeleccionadas.length} mat.
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 sm:p-4">
+                <strong>Importante:</strong> Una vez guardados, los docentes recibirán un email con sus credenciales de acceso.
+              </p>
+
+              <div className="flex flex-col gap-3 border-t border-[var(--color-border-light)] pt-4 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setMostrarConfirmacionGuardado(false)}
+                  disabled={saving}
+                >
+                  Cancelar
+                </Button>
+                <Button type="button" variant="primary" onClick={guardarDocentes} disabled={saving}>
+                  {saving ? 'Guardando…' : 'Confirmar y guardar'}
+                </Button>
+              </div>
+            </>
+          );
+        })()}
       </Modal>
 
       {/* Modal eliminado - ya no se necesita */}

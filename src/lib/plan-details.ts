@@ -56,6 +56,7 @@ export function getPlanMarketingDetail(plan: {
       title: 'Ventajas Plan Plus',
       items: [
         'Mayor alcance con WhatsApp y push',
+        'Plan de clases semanal: PDF con extracción y edición web',
         'Prioridad en soporte técnico',
         'Ideal para instituciones con alta comunicación diaria',
       ],
@@ -65,6 +66,7 @@ export function getPlanMarketingDetail(plan: {
       title: 'Ventajas Plan Básico',
       items: [
         'Todo lo esencial para digitalizar la agenda escolar',
+        'Plan de clases semanal por formulario con vista web',
         'Precio accesible para instituciones pequeñas y medianas',
         'Implementación rápida sin complejidad',
       ],

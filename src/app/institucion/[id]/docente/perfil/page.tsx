@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Asignacion, Docente } from '@/types/docente';
+import type { Docente } from '@/types/docente';
 import DocenteAuthGuard from '@/components/auth/DocenteAuthGuard';
 import Footer from '../../Footer';
 import Header from '../../Header';
+import { ProfilePageSkeleton } from '@/components/ui/PageSkeletons';
+import DocentePlanSemanalSection from '../PlanSemanalSection';
 
 export default function DocentePerfilPage() {
   const params = useParams();
@@ -15,6 +17,7 @@ export default function DocentePerfilPage() {
   const [docente, setDocente] = useState<Docente | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [asignacionesOpen, setAsignacionesOpen] = useState(true);
 
   useEffect(() => {
     // Esperar a que el AuthContext termine de cargar
@@ -80,12 +83,7 @@ export default function DocentePerfilPage() {
   if (loading) {
     return (
       <DocenteAuthGuard>
-        <div className="min-h-screen bg-blue-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-slate-600">Cargando perfil del docente...</p>
-          </div>
-        </div>
+        <ProfilePageSkeleton />
       </DocenteAuthGuard>
     );
   }
@@ -104,7 +102,7 @@ export default function DocentePerfilPage() {
             <p className="text-slate-600 mb-6">{error}</p>
             <Link 
               href={`/institucion/${params.id}/docente`}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
               Volver al Dashboard
             </Link>
@@ -126,7 +124,7 @@ export default function DocentePerfilPage() {
           <div className="mb-8 flex flex-wrap gap-3">
             <Link
               href={`/institucion/${params.id}/docente`}
-              className="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+              className="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -183,52 +181,76 @@ export default function DocentePerfilPage() {
 
           {/* Asignaciones */}
           {docente.docenteAsignaciones && docente.docenteAsignaciones.length > 0 && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-8">
-              <h2 className="text-xl font-semibold text-slate-800 mb-4">Mis Asignaciones ({docente.docenteAsignaciones.length})</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {docente.docenteAsignaciones.map((asignacion, index) => (
-                  <div key={index} className="bg-slate-50 rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow">
-                    <div className="space-y-2">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">Área</label>
-                        <p className="text-sm font-semibold text-indigo-700">
-                          {asignacion.materia.area?.nombre}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">Materia</label>
-                        <p className="text-sm font-medium text-slate-900">
-                          {asignacion.materia.nombre}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Grado</label>
-                          <p className="text-xs text-slate-800">
-                            {asignacion.grado.nombre}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {asignacion.grado.nivel}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Curso</label>
-                          <p className="text-xs text-slate-800">
-                            {asignacion.curso.nombre}
-                          </p>
-                          {asignacion.curso.jornada && (
-                            <p className="text-xs text-slate-500">
-                              {asignacion.curso.jornada}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 mb-8 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setAsignacionesOpen((open) => !open)}
+                className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-slate-50/80 transition-colors"
+                aria-expanded={asignacionesOpen}
+              >
+                <h2 className="text-xl font-semibold text-slate-800">
+                  Mis Asignaciones ({docente.docenteAsignaciones.length})
+                </h2>
+                <svg
+                  className={`w-5 h-5 text-slate-500 transition-transform flex-shrink-0 ${asignacionesOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {asignacionesOpen && (
+                <div className="px-6 pb-6 border-t border-slate-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+                    {docente.docenteAsignaciones.map((asignacion, index) => (
+                      <div key={index} className="bg-slate-50 rounded-lg border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Área</label>
+                            <p className="text-sm font-semibold text-indigo-700">
+                              {asignacion.materia.area?.nombre}
                             </p>
-                          )}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Materia</label>
+                            <p className="text-sm font-medium text-slate-900">
+                              {asignacion.materia.nombre}
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">Grado</label>
+                              <p className="text-xs text-slate-800">
+                                {asignacion.grado.nombre}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {asignacion.grado.nivel}
+                              </p>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-1">Curso</label>
+                              <p className="text-xs text-slate-800">
+                                {asignacion.curso.nombre}
+                              </p>
+                              {asignacion.curso.jornada && (
+                                <p className="text-xs text-slate-500">
+                                  {asignacion.curso.jornada}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
           )}
+
+          <DocentePlanSemanalSection asignaciones={docente.docenteAsignaciones || []} />
         </div>
         <Footer />
       </div>

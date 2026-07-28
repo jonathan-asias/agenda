@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import ResetPasswordForm from '@/components/platform-admin/ResetPasswordForm';
 import { PLATFORM_ADMIN_BASE } from '@/lib/platform-admin/constants';
+import { showError, showSuccess } from '@/lib/notifications';
+import { DetailSectionsSkeleton } from '@/components/ui/PageSkeletons';
 
 export default function InstitucionDetailPage() {
   const params = useParams();
@@ -15,6 +17,7 @@ export default function InstitucionDetailPage() {
     counts: Record<string, number>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resendingVerification, setResendingVerification] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -30,8 +33,31 @@ export default function InstitucionDetailPage() {
     load();
   }, [load]);
 
+  const handleResendVerification = async () => {
+    setResendingVerification(true);
+    try {
+      const res = await fetch(
+        `/api/gestion-vortico/instituciones/${id}/resend-verification`,
+        { method: 'POST' }
+      );
+      const payload = await res.json();
+      if (!res.ok) {
+        await showError('No se pudo reenviar', payload.error ?? 'Error desconocido');
+        return;
+      }
+      await showSuccess(
+        payload.alreadyConfirmed ? 'Correo ya verificado' : 'Correo reenviado',
+        payload.message
+      );
+    } catch {
+      await showError('Error', 'Error de conexión al reenviar la verificación');
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
   if (loading) {
-    return <p className="text-slate-400">Cargando institución…</p>;
+    return <DetailSectionsSkeleton dark />;
   }
 
   if (!data?.institucion) {
@@ -91,7 +117,28 @@ export default function InstitucionDetailPage() {
             <Row label="Push" value={inst.push_enabled ? 'Activo' : 'Inactivo'} />
             <Row label="Registro" value={new Date(inst.created_at).toLocaleDateString('es-CO')} />
           </dl>
-          <div className="mt-4 pt-4 border-t border-slate-800">
+          <div className="mt-4 pt-4 border-t border-slate-800 space-y-3">
+            <button
+              type="button"
+              onClick={() => void handleResendVerification()}
+              disabled={resendingVerification}
+              className="inline-flex items-center gap-2 rounded-lg border border-violet-500/40 bg-violet-600/15 px-3 py-2 text-xs font-semibold text-violet-300 hover:bg-violet-600/25 disabled:opacity-50 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              {resendingVerification
+                ? 'Reenviando…'
+                : 'Reenviar comprobación de correo'}
+            </button>
+            <p className="text-[11px] text-slate-500">
+              Úselo si el responsable no recibió el correo de confirmación de Supabase Auth.
+            </p>
             <ResetPasswordForm
               email={inst.email}
               userType="institucion"

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AdminAuthGuard from '@/components/auth/AdminAuthGuard';
 import Footer from '../../Footer';
 import Header from '../../Header';
+import { ProfilePageSkeleton } from '@/components/ui/PageSkeletons';
 
 import type { Administrador } from '@/types';
 
@@ -47,12 +48,7 @@ export default function AdminPerfilPage() {
   if (loading) {
     return (
       <AdminAuthGuard>
-        <div className="min-h-screen bg-blue-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-slate-600">Cargando perfil del administrador...</p>
-          </div>
-        </div>
+        <ProfilePageSkeleton />
       </AdminAuthGuard>
     );
   }
@@ -71,7 +67,7 @@ export default function AdminPerfilPage() {
             <p className="text-slate-600 mb-6">{error}</p>
             <Link 
               href={`/institucion/${params.id}/admin`}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
               Volver al Dashboard
             </Link>
@@ -94,7 +90,7 @@ export default function AdminPerfilPage() {
           <div className="mb-8 flex flex-wrap gap-3">
             <Link
               href={`/institucion/${params.id}/admin`}
-              className="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+              className="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

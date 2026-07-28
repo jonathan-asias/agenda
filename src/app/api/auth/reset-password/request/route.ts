@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendPasswordResetEmail } from '@/lib/auth/send-password-reset-email';
 import { resolveAppUrl } from '@/lib/app-url';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import {
+  extractCaptchaToken,
+  requireTurnstileOrError,
+} from '@/lib/security/turnstile';
 import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit';
 import { withSystemDb } from '@/lib/db/with-tenant-request';
 import crypto from 'crypto';
@@ -15,6 +19,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { email, userType } = body;
+
+    const captchaError = await requireTurnstileOrError(extractCaptchaToken(body));
+    if (captchaError) return captchaError;
 
     if (!email || !userType) {
       return NextResponse.json(

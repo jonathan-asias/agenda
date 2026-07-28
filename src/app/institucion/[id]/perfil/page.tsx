@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type InputHTMLAttributes } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
@@ -12,6 +12,8 @@ import AddAdministradorModal from '../AddAdministradorModal';
 import Footer from '../Footer';
 import Header from '../Header';
 import InstitutionPlanSection from './InstitutionPlanSection';
+import { useSubscriptionAccess } from '@/contexts/SubscriptionAccessContext';
+import { ProfilePageSkeleton } from '@/components/ui/PageSkeletons';
 
 interface PerfilFormData {
   email: string;
@@ -20,10 +22,51 @@ interface PerfilFormData {
   telefono_contacto: string;
 }
 
+function BufferedProfileInput({
+  value,
+  onCommit,
+  className,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> & {
+  value: string;
+  onCommit: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  return (
+    <input
+      {...props}
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => {
+        if (draft !== value) onCommit(draft);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') event.currentTarget.blur();
+      }}
+      className={`form-quiet-focus ${className || ''}`.trim()}
+    />
+  );
+}
+
 export default function PerfilPage() {
+  return (
+    <InstitucionAuthGuard>
+      <PerfilPageContent />
+    </InstitucionAuthGuard>
+  );
+}
+
+function PerfilPageContent() {
   const params = useParams();
   const router = useRouter();
   const { signOut } = useAuth();
+  const { mode: subscriptionMode } = useSubscriptionAccess();
+  const trialBillingOnly = subscriptionMode === 'trial_billing_only';
   const [institucion, setInstitucion] = useState<Institucion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -60,11 +103,11 @@ export default function PerfilPage() {
           telefono_contacto: data.telefono_contacto || ''
         });
       } else {
-        setError('Instituci?n no encontrada');
+        setError('Institución no encontrada');
       }
     } catch (error) {
-      console.error('Error al cargar la instituci?n:', error);
-      setError('Error al cargar la instituci?n');
+      console.error('Error al cargar la institución:', error);
+      setError('Error al cargar la institución');
     } finally {
       setLoading(false);
     }
@@ -96,7 +139,7 @@ export default function PerfilPage() {
 
   const obtainSupabaseClient = () => {
     if (!isSupabaseConfigured()) {
-      showError('Error', 'Supabase no est? configurado.');
+      showError('Error', 'Supabase no está configurado.');
       return null;
     }
     try {
@@ -187,8 +230,8 @@ export default function PerfilPage() {
 
       if (!brandingResponse.ok) {
         showWarning(
-          'Actualizaci?n parcial',
-          'Se guard? la informaci?n, pero no se pudo actualizar el branding.'
+          'Actualización parcial',
+          'Se guardó la información, pero no se pudo actualizar el branding.'
         );
         return;
       }
@@ -200,10 +243,10 @@ export default function PerfilPage() {
       setLogoFile(null);
       setBannerFile(null);
       setIsEditing(false);
-      showSuccess('Actualizaci?n exitosa', 'Los datos de la instituci?n y la personalizaci?n fueron guardados.');
+      showSuccess('Actualización exitosa', 'Los datos de la institución y la personalización fueron guardados.');
     } catch (saveError) {
       console.error('Error al guardar cambios:', saveError);
-      showError('Error inesperado', 'Ocurri? un problema al guardar los cambios. Intenta nuevamente.');
+      showError('Error inesperado', 'Ocurrió un problema al guardar los cambios. Intenta nuevamente.');
     } finally {
       setIsSaving(false);
     }
@@ -214,20 +257,20 @@ export default function PerfilPage() {
 
     const warning = await showConfirm({
       icon: 'warning',
-      title: '?Eliminar cuenta de la instituci?n?',
+      title: '¿Eliminar cuenta de la institución?',
       html: `
         <div class="text-left space-y-3 text-sm">
-          <p class="font-semibold text-red-700">Esta acci?n es permanente e irreversible.</p>
-          <p>Se eliminar?n de la base de datos todos los datos relacionados con <strong>${institucion.nombre}</strong>, incluyendo:</p>
+          <p class="font-semibold text-red-700">Esta acción es permanente e irreversible.</p>
+          <p>Se eliminarán de la base de datos todos los datos relacionados con <strong>${institucion.nombre}</strong>, incluyendo:</p>
           <ul class="list-disc pl-5 space-y-1">
             <li>Administradores y sus accesos</li>
             <li>Docentes, estudiantes y acudientes</li>
-            <li>Grados, cursos, ?reas y materias</li>
+            <li>Grados, cursos, áreas y materias</li>
             <li>Recordatorios y suscripciones push</li>
-            <li>Suscripci?n, pagos y personalizaci?n (logo/banner)</li>
-            <li>Cuentas de acceso en el sistema de autenticaci?n</li>
+            <li>Suscripción, pagos y personalización (logo/banner)</li>
+            <li>Cuentas de acceso en el sistema de autenticación</li>
           </ul>
-          <p class="text-slate-600">No podr? recuperar esta informaci?n despu?s.</p>
+          <p class="text-slate-600">No podrá recuperar esta información después.</p>
         </div>
       `,
       confirmButtonText: 'Continuar',
@@ -241,8 +284,8 @@ export default function PerfilPage() {
 
     const confirmInput = await showConfirm({
       icon: 'error',
-      title: 'Confirmaci?n final',
-      html: '<p class="text-sm text-slate-600">Escriba <strong>ELIMINAR</strong> para confirmar la eliminaci?n permanente de la cuenta.</p>',
+      title: 'Confirmación final',
+      html: '<p class="text-sm text-slate-600">Escriba <strong>ELIMINAR</strong> para confirmar la eliminación permanente de la cuenta.</p>',
       inputPlaceholder: 'ELIMINAR',
       confirmButtonText: 'Eliminar cuenta permanentemente',
       cancelButtonText: 'Cancelar',
@@ -262,7 +305,7 @@ export default function PerfilPage() {
     setIsDeletingAccount(true);
     showLoading(
       'Eliminando cuenta',
-      'Estamos eliminando todos los datos de la instituci?n. Por favor espere?'
+      'Estamos eliminando todos los datos de la institución. Por favor espere…'
     );
 
     try {
@@ -280,7 +323,7 @@ export default function PerfilPage() {
       }
 
       await signOut();
-      await showSuccess('Cuenta eliminada', 'La instituci?n y todos sus datos fueron eliminados permanentemente.');
+      await showSuccess('Cuenta eliminada', 'La institución y todos sus datos fueron eliminados permanentemente.');
       router.push('/');
     } catch (deleteError) {
       closeLoading();
@@ -292,14 +335,7 @@ export default function PerfilPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando perfil...</p>
-        </div>
-      </div>
-    );
+    return <ProfilePageSkeleton />;
   }
 
   if (error || !institucion) {
@@ -317,7 +353,7 @@ export default function PerfilPage() {
             href="/registro-institucion"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Registrar Nueva Instituci?n
+            Registrar Nueva Institución
           </Link>
         </div>
       </div>
@@ -325,25 +361,42 @@ export default function PerfilPage() {
   }
 
   return (
-    <InstitucionAuthGuard>
+    <>
       <Header
         key={`institucion-header-${headerRefreshKey}`}
-        title={`Perfil de ${institucion.nombre}`}
-        subtitle="Informaci?n detallada de la instituci?n"
+        title={trialBillingOnly ? 'Renovar o eliminar cuenta' : `Perfil de ${institucion.nombre}`}
+        subtitle={
+          trialBillingOnly
+            ? 'Período de prueba finalizado'
+            : 'Información detallada de la institución'
+        }
       />
       <div className="min-h-screen bg-blue-50 flex flex-col">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
 
+        {trialBillingOnly && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+            <p className="font-semibold">Período de prueba finalizado</p>
+            <p className="mt-1">
+              El acceso al resto de la plataforma está bloqueado para administradores y docentes.
+              Desde aquí puede contratar un plan para reactivar el servicio o eliminar todos los
+              datos de la institución.
+            </p>
+          </div>
+        )}
+
         <InstitutionPlanSection institucionId={institucion.id} />
 
-        {/* Informaci?n Principal */}
+        {!trialBillingOnly && (
+        <>
+        {/* Información Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Informaci?n B?sica */}
+          {/* Información Básica */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Informaci?n B?sica</h2>
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Información Básica</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">Nombre de la Instituci?n</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Nombre de la Institución</label>
                 <p className="text-slate-800 font-medium text-lg">{institucion.nombre}</p>
               </div>
               <div>
@@ -353,26 +406,26 @@ export default function PerfilPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
                 {isEditing ? (
-                  <input
+                  <BufferedProfileInput
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onCommit={(value) => setFormData(prev => ({ ...prev, email: value }))}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900"
                   />
                 ) : (
                   <p className="text-slate-800 font-medium">{institucion.email}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">Direcci?n Principal</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Dirección Principal</label>
                 {isEditing ? (
-                  <input
+                  <BufferedProfileInput
                     type="text"
                     value={formData.direccion_principal}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, direccion_principal: e.target.value }))
+                    onCommit={(value) =>
+                      setFormData(prev => ({ ...prev, direccion_principal: value }))
                     }
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900"
                   />
                 ) : (
                   <p className="text-slate-800 font-medium">{institucion.direccion_principal}</p>
@@ -381,35 +434,35 @@ export default function PerfilPage() {
             </div>
           </div>
 
-          {/* Informaci?n de Contacto */}
+          {/* Información de Contacto */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Informaci?n de Contacto</h2>
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Información de Contacto</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">Nombre de Contacto</label>
                 {isEditing ? (
-                  <input
+                  <BufferedProfileInput
                     type="text"
                     value={formData.nombre_contacto}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, nombre_contacto: e.target.value }))
+                    onCommit={(value) =>
+                      setFormData(prev => ({ ...prev, nombre_contacto: value }))
                     }
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900"
                   />
                 ) : (
                   <p className="text-slate-800 font-medium">{institucion.nombre_contacto}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1">Tel?fono de Contacto</label>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Teléfono de Contacto</label>
                 {isEditing ? (
-                  <input
+                  <BufferedProfileInput
                     type="tel"
                     value={formData.telefono_contacto}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, telefono_contacto: e.target.value }))
+                    onCommit={(value) =>
+                      setFormData(prev => ({ ...prev, telefono_contacto: value }))
                     }
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900"
                   />
                 ) : (
                   <p className="text-slate-800 font-medium">{institucion.telefono_contacto}</p>
@@ -435,7 +488,7 @@ export default function PerfilPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Jornadas */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
-            <h2 className="text-xl font-semibold text-slate-800 mb-4">Jornadas de la Instituci?n</h2>
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Jornadas de la Institución</h2>
             {(institucion.jornadas ?? []).length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {(institucion.jornadas ?? []).map((jornada, index) => (
@@ -492,7 +545,7 @@ export default function PerfilPage() {
         </div>
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-8">
-          <h2 className="text-xl font-semibold text-slate-800 mb-4">Personalizaci?n</h2>
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Personalización</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -591,13 +644,15 @@ export default function PerfilPage() {
             </>
           )}
         </div>
+        </>
+        )}
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-red-200 p-6 mb-8">
           <h2 className="text-xl font-semibold text-red-800 mb-2">Zona de peligro</h2>
           <p className="text-sm text-slate-600 mb-4">
-            Eliminar la cuenta borrar? permanentemente la instituci?n y todos los datos asociados
-            (administradores, docentes, estudiantes, recordatorios, suscripci?n y accesos de
-            autenticaci?n). Esta acci?n no se puede deshacer.
+            Eliminar la cuenta borrará permanentemente la institución y todos los datos asociados
+            (administradores, docentes, estudiantes, recordatorios, suscripción y accesos de
+            autenticación). Esta acción no se puede deshacer.
           </p>
           <button
             type="button"
@@ -616,16 +671,16 @@ export default function PerfilPage() {
         isOpen={showAddAdminModal}
         onClose={() => setShowAddAdminModal(false)}
         onSuccess={() => {
-          // Recargar la informaci?n de la instituci?n
+          // Recargar la información de la institución
           fetch(`/api/instituciones/${params.id}`)
             .then(res => res.json())
             .then(data => setInstitucion(data))
-            .catch(err => console.error('Error al recargar instituci?n:', err));
+            .catch(err => console.error('Error al recargar institución:', err));
         }}
         institucionId={parseInt(params.id as string)}
       />
       <Footer />
     </div>
-    </InstitucionAuthGuard>
+    </>
   );
 }

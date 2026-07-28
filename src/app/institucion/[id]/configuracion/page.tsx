@@ -7,6 +7,7 @@ import type { Institucion } from '@/types';
 import InstitucionAuthGuard from '@/components/auth/InstitucionAuthGuard';
 import Footer from '../Footer';
 import Header from '../Header';
+import Skeleton from '@/components/ui/Skeleton';
 
 type NotificationSettings = {
   recordatorios: boolean;
@@ -70,9 +71,18 @@ export default function ConfiguracionPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
 
           {loading && (
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-                  <p className="text-slate-500">Cargando configuración...</p>
-                </div>
+            <div
+              className="max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4"
+              role="status"
+              aria-label="Cargando configuración"
+            >
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-3 w-64" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-10 w-36 rounded-lg" />
+            </div>
           )}
 
           {!loading && error && (
@@ -100,8 +110,11 @@ export default function ConfiguracionPage() {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={preferences.recordatorios}
+                    aria-label="Recordatorios automáticos"
                     onClick={() => handleTogglePreference('recordatorios')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    className={`focus-ring-toggle relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       preferences.recordatorios ? 'bg-blue-600' : 'bg-slate-300'
                     }`}
                   >
@@ -122,8 +135,11 @@ export default function ConfiguracionPage() {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={preferences.alertasEmail}
+                    aria-label="Alertas por correo"
                     onClick={() => handleTogglePreference('alertasEmail')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    className={`focus-ring-toggle relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       preferences.alertasEmail ? 'bg-blue-600' : 'bg-slate-300'
                     }`}
                   >
@@ -144,8 +160,11 @@ export default function ConfiguracionPage() {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={preferences.alertasSms}
+                    aria-label="Alertas SMS"
                     onClick={() => handleTogglePreference('alertasSms')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    className={`focus-ring-toggle relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       preferences.alertasSms ? 'bg-blue-600' : 'bg-slate-300'
                     }`}
                   >

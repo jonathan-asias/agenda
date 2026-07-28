@@ -1,7 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import PhoneInput from 'react-phone-number-input';
-import { isValidPhoneNumber, getCountries } from 'react-phone-number-input';
+import {
+  isValidPhoneNumber,
+  getCountries,
+  getCountryCallingCode,
+  type Country,
+} from 'react-phone-number-input';
 import flags from 'react-phone-number-input/flags';
 import es from 'react-phone-number-input/locale/es.json';
 import 'react-phone-number-input/style.css';
@@ -15,24 +21,57 @@ const COUNTRY_OPTIONS_ORDER: ReturnType<typeof getCountries> = [...getCountries(
   (a, b) => (es[a as keyof typeof es] as string || a).localeCompare((es[b as keyof typeof es] as string) || b, 'es')
 );
 
-/** Recorta el valor E.164 para no superar `maxDigits` dígitos. */
-function limitPhoneDigits(phone: string, maxDigits: number): string {
+/**
+ * Recorta el número nacional (sin indicativo) a `maxNationalDigits`.
+ * El valor se guarda en E.164: +{indicativo}{nacional}.
+ */
+function limitNationalDigits(phone: string, maxNationalDigits: number, country: Country): string {
+  if (!phone) return '';
+
+  let callingCode: string;
+  try {
+    callingCode = getCountryCallingCode(country);
+  } catch {
+    return phone;
+  }
+
   const digits = phone.replace(/\D/g, '');
-  if (digits.length <= maxDigits) return phone;
-  const truncated = digits.slice(0, maxDigits);
-  return phone.startsWith('+') ? `+${truncated}` : truncated;
+
+  // Aún escribiendo el indicativo
+  if (digits.length <= callingCode.length) {
+    return phone.startsWith('+') ? `+${digits}` : digits;
+  }
+
+  const prefix = digits.startsWith(callingCode) ? callingCode : '';
+  const national = prefix ? digits.slice(prefix.length) : digits;
+  const truncatedNational = national.slice(0, maxNationalDigits);
+
+  if (prefix) {
+    return `+${prefix}${truncatedNational}`;
+  }
+
+  return phone.startsWith('+') ? `+${truncatedNational}` : truncatedNational;
 }
 
 export interface PhoneInputFieldProps {
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   disabled?: boolean;
-  /** Máximo de dígitos (indicativo + número). Por defecto 12 (ej. +57 + 10 dígitos). */
-  maxDigits?: number;
+  /**
+   * Máximo de dígitos del número nacional (sin contar el indicativo de país).
+   * Por defecto 10 (celular Colombia: 300 123 4567).
+   */
+  maxNationalDigits?: number;
   /** Mensaje cuando el número es inválido (valor con indicativo). */
   invalidMessage?: string;
   /** Mostrar borde verde cuando el número es válido. */
   showValidState?: boolean;
+  /**
+   * Si se define, controla el estilo de error (en lugar de validar en vivo).
+   * Útil para no pintar rojo mientras el usuario escribe.
+   */
+  error?: boolean;
   id?: string;
   'aria-label'?: string;
   placeholder?: string;
@@ -47,32 +86,37 @@ const defaultInvalidMessage = 'Ingrese un número de teléfono válido con indic
 export default function PhoneInputField({
   value,
   onChange,
+  onBlur,
   disabled = false,
-  maxDigits = 12,
+  maxNationalDigits = 10,
   invalidMessage = defaultInvalidMessage,
   showValidState = false,
+  error,
   id,
   'aria-label': ariaLabel = 'Número de teléfono',
   placeholder = 'Ej: 300 123 4567',
   className = '',
   numberInputClassName = '',
 }: PhoneInputFieldProps) {
-  const invalid = !!value && !isPhoneValid(value);
-  const valid = showValidState && !!value && isPhoneValid(value);
+  const [country, setCountry] = useState<Country>('CO');
+
+  const autoInvalid = !!value && !isPhoneValid(value);
+  const invalid = error !== undefined ? error : autoInvalid;
+  const valid = showValidState && !!value && isPhoneValid(value) && !invalid;
 
   const handleChange = (next: string | undefined) => {
     const raw = next ?? '';
-    onChange(maxDigits != null ? limitPhoneDigits(raw, maxDigits) : raw);
+    onChange(limitNationalDigits(raw, maxNationalDigits, country));
   };
 
   const inputClassName = [
-    'flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 min-w-0',
+    'flex-1 px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 transition-colors duration-150 placeholder:text-slate-400 min-w-0 form-quiet-focus',
     disabled
       ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
       : invalid
-      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+      ? 'border-[var(--color-danger-border-input)]'
       : valid
-      ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
+      ? 'border-green-300'
       : 'border-slate-300',
     numberInputClassName,
   ]
@@ -93,6 +137,10 @@ export default function PhoneInputField({
       <PhoneInput
         international
         defaultCountry="CO"
+        country={country}
+        onCountryChange={(next) => {
+          if (next) setCountry(next);
+        }}
         countries={COUNTRY_OPTIONS_ORDER}
         flags={flags}
         labels={es}
@@ -108,6 +156,8 @@ export default function PhoneInputField({
           required: true,
           disabled,
           'aria-label': ariaLabel,
+          onBlur,
+          inputMode: 'numeric',
         }}
       />
       {invalid && invalidMessage && <p className="mt-1 text-xs text-red-600">{invalidMessage}</p>}

@@ -42,9 +42,17 @@ function safeEqual(a: string, b: string): boolean {
   }
 }
 
-/** Token firmado para enlace de registro post-pago (email + referencia + expiración). */
-export function createRegistroAccessToken(email: string, referencia: string): string {
-  const exp = Date.now() + getTtlMs();
+/** Token firmado para enlace de registro post-pago o invitación de prueba. */
+export function createRegistroAccessToken(
+  email: string,
+  referencia: string,
+  ttlHours?: number
+): string {
+  const hours =
+    ttlHours != null && Number.isFinite(ttlHours) && ttlHours > 0
+      ? ttlHours
+      : getRegistroAccessTtlHours();
+  const exp = Date.now() + hours * 60 * 60 * 1000;
   const data = JSON.stringify({
     e: email.trim().toLowerCase(),
     r: referencia.trim(),

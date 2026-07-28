@@ -1,8 +1,12 @@
--- Políticas Storage para bucket de branding (ejecutar en Supabase SQL Editor)
+-- Políticas Storage para bucket de branding y sílabus (ejecutar en Supabase SQL Editor)
 -- Bucket: instituciones (o el valor de SUPABASE_STORAGE_BUCKET)
 --
--- El upload lo hace el backend con service role (PUT /api/instituciones/[id]/branding).
+-- El upload lo hace el backend con service role
+-- (PUT /api/instituciones/[id]/branding, POST /api/docentes/silabus).
 -- Estas políticas evitan que clientes con anon key suban/lean archivos de otros tenants.
+--
+-- MIME types / tamaño: scripts/migrations/update-storage-bucket-silabus-mimes.sql
+--   node scripts/apply-storage-silabus-mimes.mjs
 
 -- Lectura pública solo de objetos bajo rutas que expongas vía signed URL desde el servidor.
 -- Ajuste el bucket si usa otro nombre.

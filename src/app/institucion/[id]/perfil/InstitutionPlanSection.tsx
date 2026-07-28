@@ -13,9 +13,11 @@ import {
 } from '@/lib/plan-billing';
 import BillingCycleToggle from '@/components/billing/BillingCycleToggle';
 import type { InstitutionPlanInfo } from '@/lib/subscription/get-institution-plan';
+import Skeleton from '@/components/ui/Skeleton';
 
 const ESTADO_LABELS: Record<string, string> = {
   ACTIVA: 'Activa',
+  PRUEBA: 'Versión de prueba',
   CANCELADA: 'Cancelada',
   USADA: 'Usada',
   VENCIDA: 'Vencida',
@@ -23,6 +25,7 @@ const ESTADO_LABELS: Record<string, string> = {
 
 const ESTADO_STYLES: Record<string, string> = {
   ACTIVA: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  PRUEBA: 'bg-blue-100 text-blue-800 border-blue-200',
   CANCELADA: 'bg-red-100 text-red-800 border-red-200',
   USADA: 'bg-slate-100 text-slate-700 border-slate-200',
   VENCIDA: 'bg-amber-100 text-amber-800 border-amber-200',
@@ -48,7 +51,7 @@ export default function InstitutionPlanSection({ institucionId }: { institucionI
     wompiConfigured: false,
     wompiMinAmountCop: 1500,
   });
-  const { refresh: refreshSubscriptionAccess } = useSubscriptionAccess();
+  const { refresh: refreshSubscriptionAccess, mode } = useSubscriptionAccess();
 
   const fetchPlanInfo = useCallback(async () => {
     try {
@@ -180,8 +183,16 @@ export default function InstitutionPlanSection({ institucionId }: { institucionI
 
   if (loading) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-8">
-        <p className="text-sm text-slate-500">Cargando información del plan...</p>
+      <div
+        className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-8 space-y-4"
+        role="status"
+        aria-label="Cargando plan"
+      >
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-56" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+        <Skeleton className="h-10 w-36 rounded-lg" />
       </div>
     );
   }
@@ -192,8 +203,12 @@ export default function InstitutionPlanSection({ institucionId }: { institucionI
 
   const { plan, suscripcion, availablePlans } = planInfo;
   const isActive = suscripcion?.estado === 'ACTIVA';
+  const isTrialPlan = suscripcion?.estado === 'PRUEBA';
+  const trialExpired = mode === 'trial_billing_only';
   const plansToOffer =
-    !isActive || !plan ? availablePlans : availablePlans.filter((p) => p.id !== plan.id);
+    trialExpired || !isActive || !plan
+      ? availablePlans
+      : availablePlans.filter((p) => p.id !== plan.id);
   const currentDetail = plan ? getPlanMarketingDetail(plan) : null;
 
   return (
@@ -210,6 +225,16 @@ export default function InstitutionPlanSection({ institucionId }: { institucionI
           </span>
         )}
       </div>
+
+      {trialExpired && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 mb-6 text-sm text-red-900">
+          <p className="font-semibold">Período de prueba finalizado</p>
+          <p className="mt-1">
+            Contrate un plan para reactivar el acceso de todos los usuarios o elimine la institución
+            si ya no desea continuar.
+          </p>
+        </div>
+      )}
 
       {plan ? (
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 mb-6">
@@ -243,7 +268,9 @@ export default function InstitutionPlanSection({ institucionId }: { institucionI
                   <span className="font-medium text-slate-700">
                     {suscripcion.estado === 'CANCELADA' || suscripcion.estado === 'VENCIDA'
                       ? 'Acceso hasta:'
-                      : 'Fecha de caducidad:'}
+                      : isTrialPlan
+                        ? 'Prueba hasta:'
+                        : 'Fecha de caducidad:'}
                   </span>{' '}
                   {formatDate(suscripcion.fecha_fin)}
                 </p>
@@ -280,7 +307,9 @@ export default function InstitutionPlanSection({ institucionId }: { institucionI
         <div className="mb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h3 className="text-lg font-semibold text-slate-800">
-              {!plan || !isActive ? 'Contratar un plan' : 'Cambiar de plan'}
+              {trialExpired || isTrialPlan || !plan || !isActive
+                ? 'Contratar un plan'
+                : 'Cambiar de plan'}
             </h3>
             <BillingCycleToggle cycle={billingCycle} onChange={setBillingCycle} />
           </div>
@@ -344,7 +373,7 @@ export default function InstitutionPlanSection({ institucionId }: { institucionI
         </div>
       )}
 
-      {isActive && plan && (
+      {isActive && plan && !isTrialPlan && (
         <div className="pt-4 border-t border-slate-200">
           <button
             type="button"

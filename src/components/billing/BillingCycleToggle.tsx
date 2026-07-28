@@ -30,7 +30,7 @@ export default function BillingCycleToggle({
         aria-checked={isAnnual}
         aria-label="Alternar entre facturación mensual y anual"
         onClick={() => onChange(isAnnual ? 'monthly' : 'annual')}
-        className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 ${
+        className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-ring-toggle ${
           isAnnual ? 'bg-slate-900' : 'bg-slate-300'
         }`}
       >

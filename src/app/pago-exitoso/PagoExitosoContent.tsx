@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { LoaderPage } from '@/components/ui';
 
-const REDIRECT_SECONDS = 8;
+const REDIRECT_SECONDS = 20;
 
 type ConfirmState = 'loading' | 'confirmed' | 'pending' | 'error';
 

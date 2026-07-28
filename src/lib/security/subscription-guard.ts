@@ -24,18 +24,20 @@ function isWriteMethod(method: string | undefined): boolean {
   return WRITE_METHODS.has(method?.toUpperCase() ?? '');
 }
 
-/** Rutas permitidas en periodo de gracia (solo renovación). */
+/** Rutas permitidas en periodo de gracia o prueba vencida (solo renovación / cierre). */
 function isSubscriptionWriteExempt(pathname: string): boolean {
   return (
     /\/api\/instituciones\/\d+\/plan\/change-checkout$/i.test(pathname) ||
-    /\/api\/instituciones\/\d+\/plan\/cancel$/i.test(pathname)
+    /\/api\/instituciones\/\d+\/plan\/cancel$/i.test(pathname) ||
+    /\/api\/instituciones\/\d+\/delete-account$/i.test(pathname)
   );
 }
 
 export async function enforceInstitutionReadAccess(
-  institutionId: number
+  institutionId: number,
+  role?: import('@/types/auth').UserRole | null
 ): Promise<InstitutionSubscriptionAccess> {
-  const access = await resolveInstitutionSubscriptionAccess(institutionId);
+  const access = await resolveInstitutionSubscriptionAccess(institutionId, role);
   if (access.mode === 'blocked') {
     throw new SubscriptionAccessError(access);
   }
@@ -44,9 +46,10 @@ export async function enforceInstitutionReadAccess(
 
 export async function enforceInstitutionWriteAccess(
   institutionId: number,
-  request?: NextRequest
+  request?: NextRequest,
+  role?: import('@/types/auth').UserRole | null
 ): Promise<InstitutionSubscriptionAccess> {
-  const access = await enforceInstitutionReadAccess(institutionId);
+  const access = await enforceInstitutionReadAccess(institutionId, role);
 
   if (access.mode === 'full') {
     return access;

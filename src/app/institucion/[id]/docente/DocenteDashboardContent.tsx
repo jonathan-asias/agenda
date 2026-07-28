@@ -10,6 +10,7 @@ import ViewRecordatorioModal from './ViewRecordatorioModal';
 import EditRecordatorioModal from './EditRecordatorioModal';
 import Footer from '../Footer';
 import Header from '../Header';
+import { DashboardPageSkeleton, ListPageSkeleton } from '@/components/ui/PageSkeletons';
 
 
 export default function DocenteDashboardContent() {
@@ -214,14 +215,7 @@ export default function DocenteDashboardContent() {
   }, [filtros.area, filtros.materia, filtros.tipo, filtros.fecha, filtros.cantidadEstudiantes]);
 
   if (loading || !docente) {
-    return (
-      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando información del docente...</p>
-        </div>
-      </div>
-    );
+    return <DashboardPageSkeleton />;
   }
 
   return (
@@ -373,7 +367,7 @@ export default function DocenteDashboardContent() {
                       onChange={(e) => {
                         setFiltros(prev => ({ ...prev, area: e.target.value, materia: '' }));
                       }}
-                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                     >
                       <option value="">Todas las áreas</option>
                       {opcionesFiltros.areas.map((area) => (
@@ -392,7 +386,7 @@ export default function DocenteDashboardContent() {
                     <select
                       value={filtros.materia}
                       onChange={(e) => setFiltros(prev => ({ ...prev, materia: e.target.value }))}
-                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                       disabled={!filtros.area}
                     >
                       <option value="">Todas las materias</option>
@@ -414,7 +408,7 @@ export default function DocenteDashboardContent() {
                     <select
                       value={filtros.tipo}
                       onChange={(e) => setFiltros(prev => ({ ...prev, tipo: e.target.value }))}
-                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                     >
                       <option value="">Todos los tipos</option>
                       <option value="tarea">Tarea</option>
@@ -432,7 +426,7 @@ export default function DocenteDashboardContent() {
                     <select
                       value={filtros.fecha}
                       onChange={(e) => setFiltros(prev => ({ ...prev, fecha: e.target.value }))}
-                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                     >
                       <option value="">Todas las fechas</option>
                       <option value="pasado">Pasados</option>
@@ -449,7 +443,7 @@ export default function DocenteDashboardContent() {
                     <select
                       value={filtros.cantidadEstudiantes}
                       onChange={(e) => setFiltros(prev => ({ ...prev, cantidadEstudiantes: e.target.value }))}
-                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
                     >
                       <option value="">Todas las cantidades</option>
                       <option value="1-5">1 - 5 estudiantes</option>
@@ -479,10 +473,7 @@ export default function DocenteDashboardContent() {
             
             {/* Lista de recordatorios */}
             {loadingRecordatorios ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-slate-600">Cargando recordatorios...</p>
-              </div>
+              <ListPageSkeleton rows={5} />
             ) : recordatorios.length > 0 ? (
               recordatoriosFiltrados.length > 0 ? (
                 <>

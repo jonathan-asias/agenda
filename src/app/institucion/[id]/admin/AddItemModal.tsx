@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import AddCursoModal from './modals/AddCursoModal';
@@ -20,6 +20,39 @@ type ModalType = 'materia' | 'curso' | 'docente' | 'estudiante' | 'estudiantes_m
 
 export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess }: AddItemModalProps) {
   const [selectedType, setSelectedType] = useState<ModalType>(null);
+  const [checkingEstructura, setCheckingEstructura] = useState(false);
+  const [puedeCargaMasiva, setPuedeCargaMasiva] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || selectedType) return;
+
+    let cancelled = false;
+    const checkEstructura = async () => {
+      setCheckingEstructura(true);
+      try {
+        const response = await fetch(`/api/instituciones/${institucionId}/dashboard`);
+        if (!response.ok) {
+          if (!cancelled) setPuedeCargaMasiva(false);
+          return;
+        }
+        const data = await response.json();
+        const grados = Number(data?.estadisticas?.grados ?? 0);
+        const cursos = Number(data?.estadisticas?.cursos ?? 0);
+        if (!cancelled) {
+          setPuedeCargaMasiva(grados > 0 && cursos > 0);
+        }
+      } catch {
+        if (!cancelled) setPuedeCargaMasiva(false);
+      } finally {
+        if (!cancelled) setCheckingEstructura(false);
+      }
+    };
+
+    void checkEstructura();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, institucionId, selectedType]);
 
   if (!isOpen) return null;
 
@@ -58,19 +91,41 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
   }
 
   return (
-    <Modal open={isOpen} onClose={handleClose} title="Agregar elemento" size="lg">
-      <div className="rounded-lg bg-[var(--color-primary-light)] border border-[var(--color-border-light)] p-4 mb-6">
-        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-          Desde aquí puedes crear nuevos elementos para tu institución. Cada opción abre un formulario donde podrás registrar la información necesaria.
-        </p>
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      title="Agregar elemento"
+      size="full"
+      className="max-w-7xl"
+    >
+      <div className="mb-6 border-b border-[var(--color-border-light)] pb-5">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white shadow-sm">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1 self-center text-left">
+            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              Elige una opción según la información que necesites registrar. Puedes ampliar la
+              estructura académica, habilitar usuarios o cargar varios estudiantes desde Excel.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <p className="text-[var(--color-text-secondary)] mb-4">
-        Selecciona el tipo de elemento que deseas agregar:
+      <p className="mb-3 text-xs text-[var(--color-text-tertiary)]">
+        Selecciona una opción para continuar:
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <button
+              type="button"
               onClick={() => setSelectedType('materia')}
               className="w-full p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors group h-full"
             >
@@ -88,6 +143,7 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
             </button>
 
             <button
+              type="button"
               onClick={() => setSelectedType('curso')}
               className="w-full p-4 text-left bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 transition-colors group h-full"
             >
@@ -105,6 +161,7 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
             </button>
 
             <button
+              type="button"
               onClick={() => setSelectedType('docente')}
               className="w-full p-4 text-left bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors group h-full"
             >
@@ -122,6 +179,7 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
             </button>
 
             <button
+              type="button"
               onClick={() => setSelectedType('estudiante')}
               className="w-full p-4 text-left bg-pink-50 hover:bg-pink-100 rounded-lg border border-pink-200 transition-colors group h-full"
             >
@@ -137,33 +195,82 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
                 </div>
               </div>
             </button>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-slate-200">
             <button
               type="button"
-              onClick={() => setSelectedType('estudiantes_masivo')}
-              className="w-full p-4 text-left bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 transition-colors group"
+              onClick={() => {
+                if (!puedeCargaMasiva || checkingEstructura) return;
+                setSelectedType('estudiantes_masivo');
+              }}
+              disabled={!puedeCargaMasiva || checkingEstructura}
+              aria-disabled={!puedeCargaMasiva || checkingEstructura}
+              title={
+                checkingEstructura
+                  ? 'Comprobando estructura académica…'
+                  : !puedeCargaMasiva
+                    ? 'Primero crea grados y cursos'
+                    : undefined
+              }
+              className={`w-full p-4 text-left rounded-lg border transition-colors group h-full ${
+                puedeCargaMasiva && !checkingEstructura
+                  ? 'bg-teal-50 hover:bg-teal-100 border-teal-200 cursor-pointer'
+                  : 'bg-slate-50 border-slate-200 cursor-not-allowed opacity-70'
+              }`}
             >
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center group-hover:bg-teal-700 transition-colors flex-shrink-0">
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    puedeCargaMasiva && !checkingEstructura
+                      ? 'bg-teal-600 group-hover:bg-teal-700 transition-colors'
+                      : 'bg-slate-400'
+                  }`}
+                >
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-slate-900 mb-1">Subir masivamente estudiantes</h3>
-                  <p className="text-sm text-slate-600 leading-snug">
-                    Descargue una plantilla Excel con los grados, cursos y materias de su sede, complete
-                    los datos de los estudiantes y cárguela para registrarlos de una sola vez.
-                  </p>
+                  <h3
+                    className={`font-medium mb-1 ${
+                      puedeCargaMasiva && !checkingEstructura ? 'text-slate-900' : 'text-slate-500'
+                    }`}
+                  >
+                    Subir masivamente estudiantes
+                  </h3>
+                  {checkingEstructura ? (
+                    <p className="text-sm text-slate-500 leading-snug">
+                      Comprobando si hay grados y cursos…
+                    </p>
+                  ) : puedeCargaMasiva ? (
+                    <p className="text-sm text-slate-600 leading-snug">
+                      Descargue una plantilla Excel con los grados, cursos y materias de su sede, complete
+                      los datos de los estudiantes y cárguela para registrarlos de una sola vez.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-amber-700 leading-snug">
+                      Primero crea grados y cursos (desde la configuración inicial o agregando un curso).
+                      La carga masiva necesita esa estructura para asignar a cada estudiante.
+                    </p>
+                  )}
                 </div>
               </div>
             </button>
           </div>
 
-      <div className="mt-8 flex justify-end pt-4 border-t border-[var(--color-border-light)]">
-        <Button type="button" variant="outline" onClick={handleClose}>
+      <div className="mt-8 flex justify-end border-t border-[var(--color-border-light)] pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleClose}
+          className="gap-2 border-slate-300 bg-white px-5 shadow-sm hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
           Cancelar
         </Button>
       </div>

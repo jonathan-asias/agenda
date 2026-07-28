@@ -11,6 +11,13 @@ export type ValidacionFilaDetalle = {
   codigo_estudiantil: string;
   nombres: string;
   apellidos: string;
+  nombre_acudiente: string;
+  telefono_acudiente: string;
+  correo_acudiente: string | null;
+  grado_id: number;
+  grado_nombre: string | null;
+  curso_id: number;
+  curso_nombre: string | null;
   valida: boolean;
   errores: string[];
 };
@@ -86,11 +93,11 @@ export async function validateEstudiantesForImport(
   const [grados, cursos] = await Promise.all([
     tx.grados.findMany({
       where: baseWhere,
-      select: { id: true, sede_id: true },
+      select: { id: true, nombre: true, sede_id: true },
     }),
     tx.cursos.findMany({
       where: baseWhere,
-      select: { id: true, grado_id: true, sede_id: true },
+      select: { id: true, nombre: true, grado_id: true, sede_id: true },
     }),
   ]);
 
@@ -154,6 +161,13 @@ export async function validateEstudiantesForImport(
       codigo_estudiantil: row.codigo_estudiantil,
       nombres: row.nombres,
       apellidos: row.apellidos,
+      nombre_acudiente: row.nombre_acudiente,
+      telefono_acudiente: row.telefono_acudiente,
+      correo_acudiente: row.correo_acudiente,
+      grado_id: row.grado_id,
+      grado_nombre: grado?.nombre ?? null,
+      curso_id: row.curso_id,
+      curso_nombre: curso?.nombre ?? null,
       valida: filaValida,
       errores: filaErrores,
     });

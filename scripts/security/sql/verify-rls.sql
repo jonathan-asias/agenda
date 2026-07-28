@@ -27,6 +27,7 @@ WHERE n.nspname = 'public'
     'Materias',
     'Areas',
     'Recordatorios',
+    'DocenteSilabus',
     'Pagos',
     'Suscripciones',
     'PushSubscriptions',

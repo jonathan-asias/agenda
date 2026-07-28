@@ -48,62 +48,65 @@ export async function POST(request: NextRequest) {
 
       const mgWhere = materiaGradosWhere(institucionId, scope);
 
-      const asignacionesExistentes = await tx.materiaGrados.findMany({
+      await tx.materiaGrados.deleteMany({
         where: mgWhere
       });
 
-      if (asignacionesExistentes.length > 0) {
-        await tx.materiaGrados.deleteMany({
-          where: mgWhere
+      if (asignaciones.length === 0) {
+        return NextResponse.json({
+          success: true,
+          asignaciones: 0,
+          data: { asignacionesCreadas: [] }
         });
       }
 
-      for (const asignacion of asignaciones) {
-        const materia = await tx.materias.findUnique({
-          where: { id: asignacion.materiaId }
-        });
-        
+      const materiaIds = [...new Set(asignaciones.map((a) => a.materiaId))];
+      const gradoIds = [...new Set(asignaciones.map((a) => a.gradoId))];
+
+      const [materias, grados] = await Promise.all([
+        tx.materias.findMany({ where: { id: { in: materiaIds } } }),
+        tx.grados.findMany({ where: { id: { in: gradoIds } } }),
+      ]);
+
+      const materiasById = new Map(materias.map((m) => [m.id, m]));
+      const gradosById = new Map(grados.map((g) => [g.id, g]));
+
+      for (const materiaId of materiaIds) {
+        const materia = materiasById.get(materiaId);
         if (!materia) {
-          throw new Error(`Materia con ID ${asignacion.materiaId} no encontrada`);
+          throw new Error(`Materia con ID ${materiaId} no encontrada`);
         }
-
         assertRecordBelongsToSede(materia.sede_id, scope);
-        
-        const grado = await tx.grados.findUnique({
-          where: { id: asignacion.gradoId }
-        });
-        
-        if (!grado) {
-          throw new Error(`Grado con ID ${asignacion.gradoId} no encontrado`);
-        }
+      }
 
+      for (const gradoId of gradoIds) {
+        const grado = gradosById.get(gradoId);
+        if (!grado) {
+          throw new Error(`Grado con ID ${gradoId} no encontrado`);
+        }
         assertRecordBelongsToSede(grado.sede_id, scope);
       }
 
-      const asignacionesCreadas = await Promise.all(
-        asignaciones.map(async (asignacion) => {
-          try {
-            return await tx.materiaGrados.create({
-              data: {
-                materia_id: asignacion.materiaId,
-                grado_id: asignacion.gradoId
-              }
-            });
-          } catch (createError) {
-            console.error('Error creando asignación específica:', createError);
-            console.error('Datos que causaron el error:', asignacion);
-            throw createError;
-          }
-        })
-      );
+      // Deduplicar pares materia-grado por si el cliente envía duplicados
+      const uniquePairs = new Map<string, MateriaGradoAsignacion>();
+      for (const asignacion of asignaciones) {
+        uniquePairs.set(`${asignacion.materiaId}:${asignacion.gradoId}`, asignacion);
+      }
+      const paresUnicos = [...uniquePairs.values()];
 
-      const response = {
+      const createResult = await tx.materiaGrados.createMany({
+        data: paresUnicos.map((asignacion) => ({
+          materia_id: asignacion.materiaId,
+          grado_id: asignacion.gradoId,
+        })),
+        skipDuplicates: true,
+      });
+
+      return NextResponse.json({
         success: true,
-        asignaciones: asignacionesCreadas.length,
-        data: { asignacionesCreadas }
-      };
-
-      return NextResponse.json(response);
+        asignaciones: createResult.count,
+        data: { asignacionesCreadas: createResult.count }
+      });
     });
 
   } catch (error) {

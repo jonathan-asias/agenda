@@ -6,7 +6,7 @@ import FeaturesSection from '@/components/landing/FeaturesSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import PricingSection from '@/components/landing/PricingSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
-import CTASection from '@/components/landing/CTASection';
+import FAQSection from '@/components/landing/FAQSection';
 import Footer from '@/components/landing/Footer';
 import LegacyPaymentSuccessRedirect from '@/components/payments/LegacyPaymentSuccessRedirect';
 
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Agenda Virtual | Recordatorios escolares por Email y WhatsApp',
     description:
-      'Plataforma para instituciones. Recordatorios por Email y WhatsApp. Plan Básico y Plan Plus. Prueba gratis.',
+      'Plataforma para instituciones. Recordatorios por Email y WhatsApp. Plan Básico y Plan Plus.',
     url: siteUrl,
     siteName: 'Agenda Virtual',
     locale: 'es_CO',
@@ -53,7 +53,7 @@ export default function Home() {
         <HowItWorksSection />
         <PricingSection />
         <TestimonialsSection />
-        <CTASection />
+        <FAQSection />
       </main>
       <Footer />
       <LegacyPaymentSuccessRedirect />

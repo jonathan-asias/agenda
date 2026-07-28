@@ -8,17 +8,17 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)] focus:ring-[var(--color-primary-focus)] disabled:opacity-50',
+    'bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)] focus-visible:ring-white focus-visible:ring-offset-[var(--color-primary)] disabled:opacity-50',
   secondary:
-    'bg-[var(--color-secondary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-secondary-hover)] focus:ring-[var(--color-secondary-focus)] disabled:opacity-50',
+    'bg-[var(--color-secondary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-secondary-hover)] focus-visible:ring-white focus-visible:ring-offset-[var(--color-secondary)] disabled:opacity-50',
   destructive:
-    'bg-[var(--color-danger)] text-[var(--color-text-inverse)] hover:bg-[var(--color-danger-hover)] focus:ring-[var(--color-danger-focus)] disabled:opacity-50',
+    'bg-[var(--color-danger)] text-[var(--color-text-inverse)] hover:bg-[var(--color-danger-hover)] focus-visible:ring-white focus-visible:ring-offset-[var(--color-danger)] disabled:opacity-50',
   success:
-    'bg-[var(--color-success)] text-[var(--color-text-inverse)] hover:bg-[var(--color-success-hover)] focus:ring-[var(--color-success-focus)] disabled:opacity-50',
+    'bg-[var(--color-success)] text-[var(--color-text-inverse)] hover:bg-[var(--color-success-hover)] focus-visible:ring-white focus-visible:ring-offset-[var(--color-success)] disabled:opacity-50',
   outline:
-    'bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] focus:ring-[var(--color-secondary-focus)]',
+    'bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] focus-ring-outline',
   ghost:
-    'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] focus:ring-[var(--color-secondary-focus)]',
+    'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] focus-ring-outline',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

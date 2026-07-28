@@ -4,6 +4,7 @@ export interface ToastDetail {
   type: ToastType;
   title: string;
   text?: string;
+  /** Milisegundos hasta cerrar automáticamente. 0 = solo cierre manual. */
   duration?: number;
 }
 

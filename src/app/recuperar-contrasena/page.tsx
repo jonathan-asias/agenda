@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import TurnstileField, { isTurnstileVerified } from '@/components/ui/TurnstileField';
 
 export default function RecuperarContrasenaPage() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,8 @@ export default function RecuperarContrasenaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,13 +21,19 @@ export default function RecuperarContrasenaPage() {
     setLoading(true);
     setError('');
 
+    if (!isTurnstileVerified(turnstileToken)) {
+      setError('Debes completar la verificación de seguridad');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/reset-password/request', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, userType }),
+        body: JSON.stringify({ email, userType, turnstileToken }),
       });
 
       if (response.ok) {
@@ -32,10 +41,14 @@ export default function RecuperarContrasenaPage() {
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Error al solicitar recuperación de contraseña');
+        setTurnstileToken(null);
+        setCaptchaResetKey((k) => k + 1);
       }
     } catch (error) {
       console.error('Error:', error);
       setError('Error de conexión');
+      setTurnstileToken(null);
+      setCaptchaResetKey((k) => k + 1);
     } finally {
       setLoading(false);
     }
@@ -74,7 +87,7 @@ export default function RecuperarContrasenaPage() {
             <div className="space-y-3">
               <Link
                 href="/login"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
               >
                 Volver al Login
               </Link>
@@ -83,7 +96,7 @@ export default function RecuperarContrasenaPage() {
                   setSuccess(false);
                   setEmail('');
                 }}
-                className="w-full flex justify-center py-3 px-4 border border-slate-300 rounded-xl shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                className="w-full flex justify-center py-3 px-4 border border-slate-300 rounded-xl shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus-ring-outline transition-all duration-200"
               >
                 Enviar otro email
               </button>
@@ -169,7 +182,7 @@ export default function RecuperarContrasenaPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                 placeholder="correo@ejemplo.com"
               />
             </div>
@@ -190,11 +203,22 @@ export default function RecuperarContrasenaPage() {
               </div>
             )}
 
+            <TurnstileField
+              resetKey={captchaResetKey}
+              onChange={setTurnstileToken}
+            />
+
+            {!isTurnstileVerified(turnstileToken) && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Marca la casilla &quot;No soy un robot&quot; para continuar.
+              </p>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              disabled={loading || !isTurnstileVerified(turnstileToken)}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <div className="flex items-center">

@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import PhoneInputField, { isPhoneValid } from '@/components/ui/PhoneInputField';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
@@ -15,6 +15,164 @@ interface AddDocenteModalProps {
   institucionId: number;
   onSuccess: () => void;
 }
+
+const DocenteGradosCursosPanel = memo(function DocenteGradosCursosPanel({
+  grados,
+  cursosPorGradoData,
+  gradosSeleccionados,
+  cursosPorGrado,
+  loadingData,
+  onToggleGrado,
+  onToggleCurso,
+}: {
+  grados: any[];
+  cursosPorGradoData: { [gradoId: number]: any[] };
+  gradosSeleccionados: number[];
+  cursosPorGrado: { [gradoId: number]: number[] };
+  loadingData: boolean;
+  onToggleGrado: (gradoId: number) => void;
+  onToggleCurso: (gradoId: number, cursoId: number) => void;
+}) {
+  if (loadingData) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-600" />
+        <span className="ml-3 text-slate-600">Cargando grados y cursos...</span>
+      </div>
+    );
+  }
+
+  if (grados.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-slate-500">No hay grados configurados en esta institución.</p>
+        <p className="mt-2 text-sm text-slate-400">Primero debes configurar los grados en el Setup Wizard.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-h-80 space-y-4 overflow-y-auto pr-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {grados.map((grado) => (
+          <div key={grado.id} className="rounded-lg border border-slate-200 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <label className="flex cursor-pointer items-center space-x-3">
+                <input
+                  type="checkbox"
+                  checked={gradosSeleccionados.includes(grado.id)}
+                  onChange={() => onToggleGrado(grado.id)}
+                  className="form-quiet-focus h-4 w-4 rounded border-slate-300 text-indigo-600"
+                />
+                <span className="text-sm font-medium text-slate-900">
+                  {grado.nombre} - {grado.nivel}
+                </span>
+              </label>
+            </div>
+            {gradosSeleccionados.includes(grado.id) && (
+              <div className="ml-7 space-y-2">
+                <p className="mb-2 text-xs text-slate-600">Selecciona los cursos:</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {cursosPorGradoData[grado.id]?.map((curso) => (
+                    <label key={curso.id} className="flex cursor-pointer items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={cursosPorGrado[grado.id]?.includes(curso.id) || false}
+                        onChange={() => onToggleCurso(grado.id, curso.id)}
+                        className="form-quiet-focus h-3 w-3 rounded border-slate-300 text-indigo-600"
+                      />
+                      <span className="text-xs text-slate-700">{curso.nombre}</span>
+                    </label>
+                  )) || (
+                    <p className="col-span-2 text-xs text-slate-500">No hay cursos disponibles para este grado</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const DocenteAreasMateriasPanel = memo(function DocenteAreasMateriasPanel({
+  areas,
+  materiasPorAreaData,
+  areasSeleccionadas,
+  materiasPorArea,
+  loadingData,
+  onToggleArea,
+  onToggleMateria,
+}: {
+  areas: any[];
+  materiasPorAreaData: { [areaId: number]: any[] };
+  areasSeleccionadas: number[];
+  materiasPorArea: { [areaId: number]: number[] };
+  loadingData: boolean;
+  onToggleArea: (areaId: number) => void;
+  onToggleMateria: (areaId: number, materiaId: number) => void;
+}) {
+  if (loadingData) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-600" />
+        <span className="ml-3 text-slate-600">Cargando áreas y materias...</span>
+      </div>
+    );
+  }
+
+  if (areas.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-slate-500">No hay áreas configuradas en esta institución.</p>
+        <p className="mt-2 text-sm text-slate-400">Primero debes configurar las áreas en el Setup Wizard.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-h-80 space-y-4 overflow-y-auto pr-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {areas.map((area) => (
+          <div key={area.id} className="rounded-lg border border-slate-200 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <label className="flex cursor-pointer items-center space-x-3">
+                <input
+                  type="checkbox"
+                  checked={areasSeleccionadas.includes(area.id)}
+                  onChange={() => onToggleArea(area.id)}
+                  className="form-quiet-focus h-4 w-4 rounded border-slate-300 text-indigo-600"
+                />
+                <span className="text-sm font-medium text-slate-900">
+                  {area.nombre} {area.es_opcional && <span className="text-xs text-slate-500">(Opcional)</span>}
+                </span>
+              </label>
+            </div>
+            {areasSeleccionadas.includes(area.id) && (
+              <div className="ml-7 space-y-2">
+                <p className="mb-2 text-xs text-slate-600">Selecciona las materias:</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {materiasPorAreaData[area.id]?.map((materia) => (
+                    <label key={materia.id} className="flex cursor-pointer items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={materiasPorArea[area.id]?.includes(materia.id) || false}
+                        onChange={() => onToggleMateria(area.id, materia.id)}
+                        className="form-quiet-focus h-3 w-3 rounded border-slate-300 text-indigo-600"
+                      />
+                      <span className="text-xs text-slate-700">{materia.nombre}</span>
+                    </label>
+                  )) || <p className="text-xs text-slate-500">No hay materias disponibles para esta área</p>}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
 
 // Grados predeterminados del sistema
 const gradosPredeterminados = [
@@ -221,69 +379,53 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
     }
   };
 
-  // Funciones para manejar grados y cursos
-  const toggleGrado = (gradoId: number) => {
-    const nuevoGradosSeleccionados = gradosSeleccionados.includes(gradoId)
-      ? gradosSeleccionados.filter(id => id !== gradoId)
-      : [...gradosSeleccionados, gradoId];
-    
-    setGradosSeleccionados(nuevoGradosSeleccionados);
-    
-    // Limpiar cursos del grado si se deselecciona
-    if (!nuevoGradosSeleccionados.includes(gradoId)) {
-      setCursosPorGrado(prev => {
-        const nuevo = { ...prev };
-        delete nuevo[gradoId];
-        return nuevo;
-      });
-    }
-  };
+  const toggleGrado = useCallback((gradoId: number) => {
+    setGradosSeleccionados((prev) => {
+      const next = prev.includes(gradoId) ? prev.filter((id) => id !== gradoId) : [...prev, gradoId];
+      if (!next.includes(gradoId)) {
+        setCursosPorGrado((cursosPrev) => {
+          const nuevo = { ...cursosPrev };
+          delete nuevo[gradoId];
+          return nuevo;
+        });
+      }
+      return next;
+    });
+  }, []);
 
-  const toggleCurso = (gradoId: number, cursoId: number) => {
-    setCursosPorGrado(prev => {
+  const toggleCurso = useCallback((gradoId: number, cursoId: number) => {
+    setCursosPorGrado((prev) => {
       const cursosDelGrado = prev[gradoId] || [];
       const nuevoCursos = cursosDelGrado.includes(cursoId)
-        ? cursosDelGrado.filter(id => id !== cursoId)
+        ? cursosDelGrado.filter((id) => id !== cursoId)
         : [...cursosDelGrado, cursoId];
-      
-      return {
-        ...prev,
-        [gradoId]: nuevoCursos
-      };
+      return { ...prev, [gradoId]: nuevoCursos };
     });
-  };
+  }, []);
 
-  // Funciones para manejar áreas y materias
-  const toggleArea = (areaId: number) => {
-    const nuevasAreasSeleccionadas = areasSeleccionadas.includes(areaId)
-      ? areasSeleccionadas.filter(id => id !== areaId)
-      : [...areasSeleccionadas, areaId];
-    
-    setAreasSeleccionadas(nuevasAreasSeleccionadas);
-    
-    // Limpiar materias del área si se deselecciona
-    if (!nuevasAreasSeleccionadas.includes(areaId)) {
-      setMateriasPorArea(prev => {
-        const nuevo = { ...prev };
-        delete nuevo[areaId];
-        return nuevo;
-      });
-    }
-  };
+  const toggleArea = useCallback((areaId: number) => {
+    setAreasSeleccionadas((prev) => {
+      const next = prev.includes(areaId) ? prev.filter((id) => id !== areaId) : [...prev, areaId];
+      if (!next.includes(areaId)) {
+        setMateriasPorArea((materiasPrev) => {
+          const nuevo = { ...materiasPrev };
+          delete nuevo[areaId];
+          return nuevo;
+        });
+      }
+      return next;
+    });
+  }, []);
 
-  const toggleMateria = (areaId: number, materiaId: number) => {
-    setMateriasPorArea(prev => {
+  const toggleMateria = useCallback((areaId: number, materiaId: number) => {
+    setMateriasPorArea((prev) => {
       const materiasDelArea = prev[areaId] || [];
       const nuevasMaterias = materiasDelArea.includes(materiaId)
-        ? materiasDelArea.filter(id => id !== materiaId)
+        ? materiasDelArea.filter((id) => id !== materiaId)
         : [...materiasDelArea, materiaId];
-      
-      return {
-        ...prev,
-        [areaId]: nuevasMaterias
-      };
+      return { ...prev, [areaId]: nuevasMaterias };
     });
-  };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -414,7 +556,7 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
         body: JSON.stringify({
           institucionId,
           docentes: [formData],
-          asignaciones: asignaciones
+          asignaciones: asignaciones,
         }),
       });
 
@@ -442,8 +584,8 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                   <input
                     type="text"
                     value={formData.nombres}
-                    onChange={(e) => setFormData({ ...formData, nombres: e.target.value })}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
+                    onChange={(e) => setFormData((prev) => ({ ...prev, nombres: e.target.value }))}
+                    className="form-quiet-focus w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                     placeholder="Nombres"
                     required
                   />
@@ -453,9 +595,9 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                   <input
                     type="text"
                     value={formData.apellidos}
-                    onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, apellidos: e.target.value }))}
                     disabled={!formData.nombres.trim()}
-                    className={`w-full px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 ${
+                    className={`form-quiet-focus w-full px-4 py-2.5 text-sm border rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 ${
                       !formData.nombres.trim() ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed' : 'border-slate-300'
                     }`}
                     placeholder="Apellidos"
@@ -483,19 +625,20 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                     type="email"
                     value={formData.email}
                     onChange={(e) => {
-                      setFormData({ ...formData, email: e.target.value });
+                      setFormData((prev) => ({ ...prev, email: e.target.value }));
                       setEmailAvailable(null);
                       setEmailError('');
                       setCanProceedToPassword(false);
                     }}
                     disabled={!isPhoneValid(formData.telefono)}
-                    className={`w-full px-4 py-2.5 pr-12 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 ${
+                    aria-invalid={!!emailError}
+                    className={`form-quiet-focus w-full px-4 py-2.5 pr-12 text-sm border rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 ${
                       !isPhoneValid(formData.telefono)
                         ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                         : emailError
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                        ? 'border-[var(--color-danger-border-input)]'
                         : emailAvailable === true
-                        ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
+                        ? 'border-green-300'
                         : 'border-slate-300'
                     }`}
                     placeholder="correo@ejemplo.com"
@@ -539,32 +682,34 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     disabled={!canProceedToPassword}
-                    className={`w-full px-4 py-2.5 pr-10 text-sm border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400 ${
+                    className={`form-quiet-focus h-11 w-full px-4 py-2.5 pr-11 text-sm leading-5 border rounded-lg bg-white text-slate-900 font-sans tracking-normal transition-colors duration-150 placeholder:text-slate-400 ${
                       !canProceedToPassword
                         ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                         : validatePassword(formData.password)
-                        ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
+                        ? 'border-green-300'
                         : 'border-slate-300'
                     }`}
                     placeholder="Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo"
                     required
+                    style={{ fontFamily: 'inherit' }}
                   />
                   <button
                     type="button"
                     onClick={() => setMostrarPassword(!mostrarPassword)}
                     disabled={!canProceedToPassword}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed"
+                    aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 hover:text-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed"
                   >
-                    {mostrarPassword ? (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      {mostrarPassword ? (
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878L3 3m6.878 6.878L21 21" />
-                      </svg>
-                    ) : (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    )}
+                      ) : (
+                        <>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </>
+                      )}
+                    </svg>
                   </button>
                 </div>
                 <button
@@ -612,60 +757,15 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                 {!validatePassword(formData.password) && (
                   <p className="text-sm text-slate-500 mb-3">Complete la contraseña con todos los requisitos para habilitar esta sección.</p>
                 )}
-                {loadingData ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    <span className="ml-3 text-slate-600">Cargando grados y cursos...</span>
-                  </div>
-                ) : gradosInstitucion.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-slate-500">No hay grados configurados en esta institución.</p>
-                    <p className="text-sm text-slate-400 mt-2">Primero debes configurar los grados en el Setup Wizard.</p>
-                  </div>
-                ) : (
-                  <div className="max-h-80 overflow-y-auto space-y-4 pr-2">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {gradosInstitucion.map((grado) => (
-                    <div key={grado.id} className="border border-slate-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <label className="flex items-center space-x-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={gradosSeleccionados.includes(grado.id)}
-                            onChange={() => toggleGrado(grado.id)}
-                            className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                          />
-                          <span className="text-sm font-medium text-slate-900">
-                            {grado.nombre} - {grado.nivel}
-                          </span>
-                        </label>
-                      </div>
-                      
-                      {gradosSeleccionados.includes(grado.id) && (
-                        <div className="ml-7 space-y-2">
-                          <p className="text-xs text-slate-600 mb-2">Selecciona los cursos:</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {cursosInstitucion[grado.id]?.map((curso) => (
-                              <label key={curso.id} className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={cursosPorGrado[grado.id]?.includes(curso.id) || false}
-                                  onChange={() => toggleCurso(grado.id, curso.id)}
-                                  className="w-3 h-3 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                                />
-                                <span className="text-xs text-slate-700">{curso.nombre}</span>
-                              </label>
-                            )) || (
-                              <p className="text-xs text-slate-500 col-span-2">No hay cursos disponibles para este grado</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <DocenteGradosCursosPanel
+                  grados={gradosInstitucion}
+                  cursosPorGradoData={cursosInstitucion}
+                  gradosSeleccionados={gradosSeleccionados}
+                  cursosPorGrado={cursosPorGrado}
+                  loadingData={loadingData}
+                  onToggleGrado={toggleGrado}
+                  onToggleCurso={toggleCurso}
+                />
               </div>
 
               {/* Sección de Áreas y Materias */}
@@ -679,67 +779,26 @@ export default function AddDocenteModal({ isOpen, onClose, institucionId, onSucc
                 {!(gradosSeleccionados.length > 0 && Object.values(cursosPorGrado).some((arr) => arr.length > 0)) && (
                   <p className="text-sm text-slate-500 mb-3">Seleccione al menos un grado y un curso arriba para habilitar esta sección.</p>
                 )}
-                {loadingData ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    <span className="ml-3 text-slate-600">Cargando áreas y materias...</span>
-                  </div>
-                ) : areasInstitucion.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-slate-500">No hay áreas configuradas en esta institución.</p>
-                    <p className="text-sm text-slate-400 mt-2">Primero debes configurar las áreas en el Setup Wizard.</p>
-                  </div>
-                ) : (
-                  <div className="max-h-80 overflow-y-auto space-y-4 pr-2">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {areasInstitucion.map((area) => (
-                    <div key={area.id} className="border border-slate-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <label className="flex items-center space-x-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={areasSeleccionadas.includes(area.id)}
-                            onChange={() => toggleArea(area.id)}
-                            className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                          />
-                          <span className="text-sm font-medium text-slate-900">
-                            {area.nombre} {area.es_opcional && <span className="text-xs text-slate-500">(Opcional)</span>}
-                          </span>
-                        </label>
-                      </div>
-                      
-                      {areasSeleccionadas.includes(area.id) && (
-                        <div className="ml-7 space-y-2">
-                          <p className="text-xs text-slate-600 mb-2">Selecciona las materias:</p>
-                          <div className="grid grid-cols-1 gap-2">
-                            {materiasInstitucion[area.id]?.map((materia) => (
-                              <label key={materia.id} className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={materiasPorArea[area.id]?.includes(materia.id) || false}
-                                  onChange={() => toggleMateria(area.id, materia.id)}
-                                  className="w-3 h-3 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                                />
-                                <span className="text-xs text-slate-700">{materia.nombre}</span>
-                              </label>
-                            )) || (
-                              <p className="text-xs text-slate-500">No hay materias disponibles para esta área</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <DocenteAreasMateriasPanel
+                  areas={areasInstitucion}
+                  materiasPorAreaData={materiasInstitucion}
+                  areasSeleccionadas={areasSeleccionadas}
+                  materiasPorArea={materiasPorArea}
+                  loadingData={loadingData}
+                  onToggleArea={toggleArea}
+                  onToggleMateria={toggleMateria}
+                />
               </div>
 
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-[var(--color-border-light)]">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" disabled={loading}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading}
+          >
             {loading ? 'Guardando…' : 'Guardar docente'}
           </Button>
         </div>

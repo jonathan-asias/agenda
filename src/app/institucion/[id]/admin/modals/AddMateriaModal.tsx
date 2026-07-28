@@ -185,7 +185,7 @@ export default function AddMateriaModal({ isOpen, onClose, institucionId, onSucc
                 area_id: areaPredeterminada ? String(areaPredeterminada.id) : '0',
               });
             }}
-            className="w-full max-w-full min-w-0 px-4 py-2.5 text-base border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-focus)] truncate"
+            className="w-full max-w-full min-w-0 px-4 py-2.5 text-base border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] truncate"
             required
           >
             <option value="">Seleccionar área</option>

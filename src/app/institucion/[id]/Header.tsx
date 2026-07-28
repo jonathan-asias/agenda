@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import SubscriptionAccessBanner from '@/components/subscription/SubscriptionAccessBanner';
 import type { BrandingData } from '@/types';
 
 interface HeaderProps {
@@ -37,7 +36,7 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
   const [userType, setUserType] = useState<'institucion' | 'admin' | 'docente' | null>(null);
   const institucionId = params?.id as string;
   const [branding, setBranding] = useState<BrandingData | null>(() => getCachedBranding(institucionId));
-  const [brandingChecked, setBrandingChecked] = useState(Boolean(getCachedBranding(institucionId)));
+  const [brandingChecked, setBrandingChecked] = useState(() => Boolean(getCachedBranding(institucionId)));
 
   // Detectar el tipo de usuario basándose en la ruta actual
   useEffect(() => {
@@ -98,7 +97,7 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
   const handleSignOut = async () => {
     try {
       await signOut();
-      router.push('/');
+      router.push('/login');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
@@ -225,7 +224,6 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
 
   return (
     <>
-      <SubscriptionAccessBanner />
       <header
         className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50"
         style={{
@@ -361,7 +359,9 @@ export default function Header({ title, subtitle, showNavigation = true, showBra
       {showBranding && (
         <div
           className="w-full flex justify-center"
-          style={{ backgroundColor: branding?.colorPrimario || '#2563eb' }}
+          style={{
+            backgroundColor: branding?.colorPrimario || 'var(--brand-primary)',
+          }}
         >
           {branding?.bannerUrl ? (
             <Image

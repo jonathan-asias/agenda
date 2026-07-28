@@ -5,6 +5,15 @@ import { isPaymentRequiredForRegistration } from '@/lib/env';
 import { sanitizeInstitucionResponse } from '@/lib/security/sanitize-response';
 import { verifyRegistroAccessToken } from '@/lib/security/registro-access-token';
 import { writeAuditLog } from '@/lib/security/audit-log';
+import { isTrialReferencia } from '@/lib/trial/constants';
+import {
+  completeTrialRegistration,
+  validateTrialInviteByReferencia,
+} from '@/lib/trial/validate-trial-invite';
+import {
+  extractCaptchaToken,
+  requireTurnstileOrError,
+} from '@/lib/security/turnstile';
 
 interface SedeInput {
   nombre: string;
@@ -27,6 +36,8 @@ interface CreateInstitucionPayload {
   tiene_sedes: boolean;
   jornadas?: string[];
   sedes?: SedeInput[];
+  turnstileToken?: string;
+  recaptchaToken?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -47,8 +58,11 @@ export async function POST(request: NextRequest) {
       color_secundario,
       tiene_sedes,
       jornadas = [],
-      sedes = []
+      sedes = [],
     } = body;
+
+    const captchaError = await requireTurnstileOrError(extractCaptchaToken(body));
+    if (captchaError) return captchaError;
 
     // Validaciones básicas
     if (!nombre || nombre.trim().length === 0) {
@@ -156,6 +170,8 @@ export async function POST(request: NextRequest) {
       let planId: number | null = null;
       let suscripcionId: number | null = null;
       let pushEnabled = false;
+      let trialReferencia: string | null = null;
+      let trialDays = 30;
 
       if (requirePayment) {
         const token = registroToken?.trim();
@@ -178,37 +194,62 @@ export async function POST(request: NextRequest) {
           return { tokenError: 'invalid' as const };
         }
 
-        const pagoAprobado = await tx.pago.findUnique({
-          where: { referencia: verified.referencia },
-          include: { plan: true },
-        });
+        if (isTrialReferencia(verified.referencia)) {
+          const trialInvite = await validateTrialInviteByReferencia(tx, verified.referencia);
+          if (!trialInvite.ok) {
+            return { tokenError: 'invalid' as const };
+          }
 
-        if (
-          !pagoAprobado ||
-          pagoAprobado.email !== emailNormalized ||
-          pagoAprobado.estado !== 'APPROVED' ||
-          !pagoAprobado.procesado
-        ) {
-          return { paymentRequired: true as const };
+          if (
+            nit.trim() !== trialInvite.nit ||
+            nombre.trim() !== trialInvite.institucionNombre
+          ) {
+            return { trialDataMismatch: true as const };
+          }
+
+          const plan = await tx.plan.findUnique({ where: { id: trialInvite.planId } });
+          if (!plan) {
+            return { tokenError: 'invalid' as const };
+          }
+
+          planId = trialInvite.planId;
+          suscripcionId = trialInvite.suscripcionId;
+          pushEnabled = Boolean(plan.push);
+          trialReferencia = trialInvite.referencia;
+          trialDays = trialInvite.trialDays;
+        } else {
+          const pagoAprobado = await tx.pago.findUnique({
+            where: { referencia: verified.referencia },
+            include: { plan: true },
+          });
+
+          if (
+            !pagoAprobado ||
+            pagoAprobado.email !== emailNormalized ||
+            pagoAprobado.estado !== 'APPROVED' ||
+            !pagoAprobado.procesado
+          ) {
+            return { paymentRequired: true as const };
+          }
+
+          const suscripcion = await tx.suscripcion.findFirst({
+            where: {
+              email: emailNormalized,
+              estado: 'ACTIVA',
+              institucion_id: null,
+              plan_id: pagoAprobado.plan_id,
+            },
+            orderBy: { created_at: 'desc' },
+          });
+
+          if (!suscripcion) {
+            return { paymentRequired: true as const };
+          }
+
+          planId = pagoAprobado.plan_id;
+          suscripcionId = suscripcion.id;
+          pushEnabled = Boolean(pagoAprobado.plan.push);
         }
-
-        const suscripcion = await tx.suscripcion.findFirst({
-          where: {
-            email: emailNormalized,
-            estado: 'ACTIVA',
-            institucion_id: null,
-            plan_id: pagoAprobado.plan_id,
-          },
-          orderBy: { created_at: 'desc' },
-        });
-
-        if (!suscripcion) {
-          return { paymentRequired: true as const };
-        }
-
-        planId = pagoAprobado.plan_id;
-        suscripcionId = suscripcion.id;
-        pushEnabled = Boolean(pagoAprobado.plan.push);
       }
 
       const institucion = await tx.instituciones.create({
@@ -243,10 +284,18 @@ export async function POST(request: NextRequest) {
       }
 
       if (suscripcionId) {
-        await tx.suscripcion.update({
-          where: { id: suscripcionId },
-          data: { institucion_id: institucion.id },
-        });
+        if (trialReferencia) {
+          await completeTrialRegistration(tx, {
+            referencia: trialReferencia,
+            institucionId: institucion.id,
+            trialDays,
+          });
+        } else {
+          await tx.suscripcion.update({
+            where: { id: suscripcionId },
+            data: { institucion_id: institucion.id },
+          });
+        }
       }
 
       return { paymentRequired: false as const, institucion };
@@ -269,6 +318,17 @@ export async function POST(request: NextRequest) {
             result.tokenError === 'expired'
               ? 'REGISTRO_TOKEN_EXPIRED'
               : 'REGISTRO_TOKEN_INVALID',
+        },
+        { status: 403 }
+      );
+    }
+
+    if ('trialDataMismatch' in result && result.trialDataMismatch) {
+      return NextResponse.json(
+        {
+          error:
+            'Los datos de la institución no coinciden con la invitación de prueba. Use el nombre y NIT indicados por su asesor.',
+          code: 'TRIAL_DATA_MISMATCH',
         },
         { status: 403 }
       );

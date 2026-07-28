@@ -106,8 +106,7 @@ export async function POST(request: NextRequest) {
       });
 
       const materiasCreadas: Materias[] = [];
-      for (let i = 0; i < materias.length; i++) {
-        const materia = materias[i];
+      for (const materia of materias) {
         const areaKey = Number(materia.areaId);
 
         if (!Number.isFinite(areaKey)) {
@@ -115,29 +114,20 @@ export async function POST(request: NextRequest) {
         }
 
         const areaId = areaIdMap.get(areaKey);
-        
+
         if (!areaId) {
           throw new Error(`No se encontró el área con orden ${materia.areaId}`);
         }
 
-        try {
-          const materiaCreada = await tx.materias.create({
-            data: {
-              nombre: materia.nombre,
-              area_id: areaId,
-              institucion_id: institucionId,
-              ...sedeData,
-            }
-          });
-          materiasCreadas.push(materiaCreada);
-          
-          if (i < materias.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+        const materiaCreada = await tx.materias.create({
+          data: {
+            nombre: materia.nombre,
+            area_id: areaId,
+            institucion_id: institucionId,
+            ...sedeData,
           }
-        } catch (error) {
-          console.error('Error creando materia:', error);
-          throw error;
-        }
+        });
+        materiasCreadas.push(materiaCreada);
       }
 
       const response = {

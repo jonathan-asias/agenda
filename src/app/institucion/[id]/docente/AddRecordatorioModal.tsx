@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo, startTransition } from 'react';
 import { showConfirm } from '@/lib/notifications';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
@@ -17,6 +17,105 @@ interface AddRecordatorioModalProps {
   institucionId: number;
   asignaciones?: AsignacionLike[];
 }
+
+const EstudiantesSelector = memo(function EstudiantesSelector({
+  estudiantes,
+  value,
+  loading,
+  onChange,
+}: {
+  estudiantes: Estudiante[];
+  value: number[];
+  loading: boolean;
+  onChange: (next: number[]) => void;
+}) {
+  const [selectedIds, setSelectedIds] = useState(() => new Set(value));
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === value.length && value.every((id) => prev.has(id))) {
+        return prev;
+      }
+      return new Set(value);
+    });
+  }, [value]);
+
+  const commit = useCallback(
+    (next: Set<number>) => {
+      setSelectedIds(next);
+      startTransition(() => onChange(Array.from(next)));
+    },
+    [onChange]
+  );
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-8 text-center">
+        <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+        <p className="text-sm text-slate-600">Cargando estudiantes...</p>
+      </div>
+    );
+  }
+
+  if (estudiantes.length === 0) {
+    return (
+      <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-4 text-center">
+        <p className="text-sm text-slate-600">No hay estudiantes en este curso</p>
+      </div>
+    );
+  }
+
+  const allSelected = selectedIds.size === estudiantes.length;
+
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-semibold text-slate-700">Estudiantes</label>
+        <button
+          type="button"
+          onClick={() => commit(allSelected ? new Set() : new Set(estudiantes.map((item) => item.id)))}
+          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+        >
+          {allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+        </button>
+      </div>
+      <div className="max-h-64 space-y-2 overflow-y-auto rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
+        {estudiantes.map((estudiante) => {
+          const selected = selectedIds.has(estudiante.id);
+          return (
+            <label
+              key={estudiante.id}
+              className="flex cursor-pointer items-center rounded-lg p-3 transition-colors hover:bg-white"
+            >
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => {
+                  const next = new Set(selectedIds);
+                  if (selected) next.delete(estudiante.id);
+                  else next.add(estudiante.id);
+                  commit(next);
+                }}
+                className="form-quiet-focus h-4 w-4 rounded text-blue-600"
+              />
+              <span className="ml-3 flex-1 text-slate-800">
+                {estudiante.nombres} {estudiante.apellidos}
+                {estudiante.codigo_estudiantil && (
+                  <span className="ml-2 text-sm text-slate-500">({estudiante.codigo_estudiantil})</span>
+                )}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      {selectedIds.size > 0 && (
+        <p className="text-xs text-slate-500">
+          {selectedIds.size} estudiante{selectedIds.size !== 1 ? 's' : ''} seleccionado{selectedIds.size !== 1 ? 's' : ''}
+        </p>
+      )}
+    </>
+  );
+});
 
 export default function AddRecordatorioModal({
   isOpen,
@@ -123,19 +222,21 @@ export default function AddRecordatorioModal({
     return Array.from(materiasMap.values());
   }, [asignaciones, formData.areaId]);
 
-  // Cargar estudiantes cuando se selecciona un curso
   useEffect(() => {
-    const cargarEstudiantes = async () => {
-      if (!formData.cursoId) {
-        setEstudiantes([]);
-        setEstudiantesSeleccionados([]);
-        return;
-      }
+    if (!formData.cursoId) {
+      setEstudiantes([]);
+      setEstudiantesSeleccionados([]);
+      return;
+    }
 
+    const controller = new AbortController();
+
+    const cargarEstudiantes = async () => {
       setCargandoEstudiantes(true);
       try {
         const response = await fetch(
-          `/api/estudiantes/by-curso/${formData.cursoId}?institucionId=${institucionId}`
+          `/api/estudiantes/by-curso/${formData.cursoId}?institucionId=${institucionId}`,
+          { signal: controller.signal }
         );
         if (response.ok) {
           const data = await response.json();
@@ -145,14 +246,18 @@ export default function AddRecordatorioModal({
           setEstudiantes([]);
         }
       } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
         console.error('Error al cargar estudiantes:', error);
         setEstudiantes([]);
       } finally {
-        setCargandoEstudiantes(false);
+        if (!controller.signal.aborted) {
+          setCargandoEstudiantes(false);
+        }
       }
     };
 
-    cargarEstudiantes();
+    void cargarEstudiantes();
+    return () => controller.abort();
   }, [formData.cursoId, institucionId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -166,50 +271,24 @@ export default function AddRecordatorioModal({
   };
 
   const handleRadioChange = (name: string, value: string) => {
-    setFormData(prev => {
-      const newData: any = { ...prev, [name]: value };
-      
-      // Si se cambia el grado, limpiar curso y estudiantes
-      if (name === 'gradoId') {
-        newData.cursoId = '';
-        setEstudiantes([]);
-        setEstudiantesSeleccionados([]);
-      }
-      
-      // Si se cambia el curso, limpiar estudiantes
-      if (name === 'cursoId') {
-        setEstudiantesSeleccionados([]);
-      }
-      
-      // Si se cambia el área, limpiar materia
-      if (name === 'areaId') {
-        newData.materiaId = '';
-      }
-      
-      return newData;
-    });
-    // Limpiar error al seleccionar
-    if (error) setError('');
-  };
+    const next = { ...formData, [name]: value };
 
-  const handleEstudianteToggle = (estudianteId: number) => {
-    setEstudiantesSeleccionados(prev => {
-      if (prev.includes(estudianteId)) {
-        return prev.filter(id => id !== estudianteId);
-      } else {
-        return [...prev, estudianteId];
-      }
-    });
-    // Limpiar error al seleccionar
-    if (error) setError('');
-  };
-
-  const handleSeleccionarTodos = () => {
-    if (estudiantesSeleccionados.length === estudiantes.length) {
+    if (name === 'gradoId') {
+      next.cursoId = '';
+      setEstudiantes([]);
       setEstudiantesSeleccionados([]);
-    } else {
-      setEstudiantesSeleccionados(estudiantes.map(e => e.id));
     }
+
+    if (name === 'cursoId') {
+      setEstudiantesSeleccionados([]);
+    }
+
+    if (name === 'areaId') {
+      next.materiaId = '';
+    }
+
+    setFormData(next);
+    if (error) setError('');
   };
 
   const validarFormulario = (): boolean => {
@@ -388,7 +467,7 @@ export default function AddRecordatorioModal({
               onChange={handleInputChange}
               required
               maxLength={255}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               placeholder="Ej: Revisar exámenes de Matemáticas"
             />
           </div>
@@ -404,7 +483,7 @@ export default function AddRecordatorioModal({
                 value={formData.tipo}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none cursor-pointer pr-10"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 appearance-none cursor-pointer pr-10"
               >
                 <option value="">Selecciona un tipo</option>
                 {tiposRecordatorio.map((tipo) => (
@@ -436,7 +515,7 @@ export default function AddRecordatorioModal({
               required
               rows={4}
               maxLength={1000}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 resize-none"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 resize-none"
               placeholder="Describe los detalles del recordatorio..."
             />
             <p className="text-xs text-slate-500">
@@ -456,7 +535,7 @@ export default function AddRecordatorioModal({
               onChange={handleInputChange}
               required
               min={hoy}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
             />
             <p className="text-xs text-slate-500">
               Selecciona la fecha para la cual es el recordatorio
@@ -481,7 +560,7 @@ export default function AddRecordatorioModal({
                     type="checkbox"
                     checked={modoEnvio.includes(opcion.value)}
                     onChange={() => toggleModoEnvio(opcion.value)}
-                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 focus:ring-2"
+                    className="form-quiet-focus h-4 w-4 rounded border-slate-300 text-blue-600"
                   />
                   <span className="text-slate-800 font-medium">{opcion.label}</span>
                 </label>
@@ -507,7 +586,7 @@ export default function AddRecordatorioModal({
                       value={area.id.toString()}
                       checked={formData.areaId === area.id.toString()}
                       onChange={(e) => handleRadioChange('areaId', e.target.value)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
                     <span className="ml-3 text-slate-800">{area.nombre}</span>
                   </label>
@@ -534,7 +613,7 @@ export default function AddRecordatorioModal({
                       value={materia.id.toString()}
                       checked={formData.materiaId === materia.id.toString()}
                       onChange={(e) => handleRadioChange('materiaId', e.target.value)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
                     <span className="ml-3 text-slate-800">{materia.nombre}</span>
                   </label>
@@ -561,7 +640,7 @@ export default function AddRecordatorioModal({
                       value={grado.id.toString()}
                       checked={formData.gradoId === grado.id.toString()}
                       onChange={(e) => handleRadioChange('gradoId', e.target.value)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
                     <span className="ml-3 text-slate-800">
                       {grado.nombre} <span className="text-slate-500 text-sm">({grado.nivel})</span>
@@ -590,7 +669,7 @@ export default function AddRecordatorioModal({
                       value={curso.id.toString()}
                       checked={formData.cursoId === curso.id.toString()}
                       onChange={(e) => handleRadioChange('cursoId', e.target.value)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
                     <span className="ml-3 text-slate-800">
                       {curso.nombre}
@@ -607,59 +686,12 @@ export default function AddRecordatorioModal({
           {/* Estudiantes - Solo aparece cuando se ha seleccionado un curso */}
           {formData.cursoId && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-semibold text-slate-700">
-                  Estudiantes
-                </label>
-                {estudiantes.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleSeleccionarTodos}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    {estudiantesSeleccionados.length === estudiantes.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
-                  </button>
-                )}
-              </div>
-              {cargandoEstudiantes ? (
-                <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-slate-600 text-sm">Cargando estudiantes...</p>
-                </div>
-              ) : estudiantes.length > 0 ? (
-                <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 space-y-2 max-h-64 overflow-y-auto">
-                  {estudiantes.map((estudiante) => (
-                    <label
-                      key={estudiante.id}
-                      className="flex items-center p-3 rounded-lg hover:bg-white cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={estudiantesSeleccionados.includes(estudiante.id)}
-                        onChange={() => handleEstudianteToggle(estudiante.id)}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2 rounded"
-                      />
-                      <span className="ml-3 text-slate-800 flex-1">
-                        {estudiante.nombres} {estudiante.apellidos}
-                        {estudiante.codigo_estudiantil && (
-                          <span className="text-slate-500 text-sm ml-2">
-                            ({estudiante.codigo_estudiantil})
-                          </span>
-                        )}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 text-center">
-                  <p className="text-slate-600 text-sm">No hay estudiantes en este curso</p>
-                </div>
-              )}
-              {estudiantesSeleccionados.length > 0 && (
-                <p className="text-xs text-slate-500">
-                  {estudiantesSeleccionados.length} estudiante{estudiantesSeleccionados.length !== 1 ? 's' : ''} seleccionado{estudiantesSeleccionados.length !== 1 ? 's' : ''}
-                </p>
-              )}
+              <EstudiantesSelector
+                estudiantes={estudiantes}
+                value={estudiantesSeleccionados}
+                loading={cargandoEstudiantes}
+                onChange={setEstudiantesSeleccionados}
+              />
             </div>
           )}
           

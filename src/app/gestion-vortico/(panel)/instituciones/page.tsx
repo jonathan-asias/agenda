@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { PLATFORM_ADMIN_BASE } from '@/lib/platform-admin/constants';
+import { TableRowsSkeleton } from '@/components/ui/PageSkeletons';
 
 interface InstitucionRow {
   id: number;
@@ -66,11 +67,7 @@ export default function InstitucionesListPage() {
           </thead>
           <tbody className="divide-y divide-slate-800">
             {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                  Cargando…
-                </td>
-              </tr>
+              <TableRowsSkeleton rows={6} cols={6} dark />
             ) : items.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-slate-500">

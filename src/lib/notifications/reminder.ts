@@ -16,6 +16,18 @@ export type SendReminderEmailParams = {
 
 const MAX_EMAILS_WARNING = 200;
 
+function toFechaISODate(fecha: Date): string {
+  return fecha.toISOString().slice(0, 10);
+}
+
+function buildConsultarRecordatoriosUrl(baseUrl: string, fechaLimite?: Date | null): string {
+  const base = baseUrl.replace(/\/$/, '');
+  const fecha = fechaLimite ? toFechaISODate(fechaLimite) : '';
+  return fecha
+    ? `${base}/consultar-recordatorios?fecha=${encodeURIComponent(fecha)}`
+    : `${base}/consultar-recordatorios`;
+}
+
 function buildReminderHtml(params: SendReminderEmailParams): string {
   const { institucionNombre, titulo, descripcion, fechaLimite, baseUrl, primerEstudianteId } = params;
   const fechaTexto = fechaLimite
@@ -24,8 +36,10 @@ function buildReminderHtml(params: SendReminderEmailParams): string {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+        timeZone: 'UTC',
       })
     : '';
+  const consultarUrl = baseUrl ? buildConsultarRecordatoriosUrl(baseUrl, fechaLimite) : '';
 
   return `
 <!DOCTYPE html>
@@ -44,9 +58,10 @@ function buildReminderHtml(params: SendReminderEmailParams): string {
     <div style="padding:24px;">
       <h2 style="margin:0 0 16px;font-size:1.125rem;color:#0f172a;">${escapeHtml(titulo)}</h2>
       <div style="color:#475569;line-height:1.6;white-space:pre-wrap;">${escapeHtml(descripcion)}</div>
-      ${fechaLimite ? `<p style="margin:20px 0 0;padding:12px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:0.875rem;"><strong>Fecha límite:</strong> ${escapeHtml(fechaTexto)}</p>` : ''}
+      ${fechaLimite ? `<p style="margin:20px 0 0;padding:12px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:0.875rem;"><strong>Fecha:</strong> ${escapeHtml(fechaTexto)}</p>` : ''}
+      <p style="margin:16px 0 0;color:#64748b;font-size:0.875rem;line-height:1.5;">Puedes consultar los recordatorios del estudiante con su nombre completo o código estudiantil y la fecha.</p>
       <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px;">
-        <span style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:8px;font-weight:500;">Ver en la plataforma</span>
+        ${consultarUrl ? `<a href="${escapeHtml(consultarUrl)}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:8px;font-weight:500;text-decoration:none;">Consultar recordatorios</a>` : '<span style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:8px;font-weight:500;">Consultar recordatorios</span>'}
         ${baseUrl && typeof primerEstudianteId === 'number' ? (() => {
           try {
             const sig = createPushActivationSig(primerEstudianteId);

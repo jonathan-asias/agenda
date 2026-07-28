@@ -9,6 +9,7 @@ import {
   type BillingCycle,
 } from '@/lib/plan-billing';
 import BillingCycleToggle from '@/components/billing/BillingCycleToggle';
+import Skeleton from '@/components/ui/Skeleton';
 
 interface PlanFromApi {
   id: number;
@@ -22,6 +23,7 @@ interface PlanFromApi {
 const basicFeatures = [
   'Recordatorios por Email',
   'Gestión académica completa',
+  'Plan de clases semanal (formulario)',
   'Panel administrativo',
   'Soporte estándar',
 ];
@@ -30,8 +32,64 @@ const plusFeatures = [
   'Todo lo del Básico',
   'Recordatorios por WhatsApp',
   'Notificaciones push',
+  'Plan semanal PDF con extracción a web',
   'Prioridad en soporte',
 ];
+
+function PricingCardsSkeleton() {
+  return (
+    <div
+      className="mt-12 grid gap-8 lg:mx-auto lg:max-w-4xl lg:grid-cols-2 lg:gap-10"
+      role="status"
+      aria-label="Cargando planes"
+    >
+      {[false, true].map((dark, cardIndex) => (
+        <div
+          key={cardIndex}
+          className={`rounded-2xl border-2 p-8 shadow-lg ${
+            dark
+              ? 'border-slate-900 bg-slate-900'
+              : 'border-slate-200 bg-white'
+          }`}
+        >
+          <Skeleton
+            className={`h-6 w-32 ${dark ? 'bg-slate-700' : 'bg-slate-200'}`}
+          />
+          <div className="mt-4 flex items-end gap-2">
+            <Skeleton
+              className={`h-10 w-40 ${dark ? 'bg-slate-700' : 'bg-slate-200'}`}
+            />
+            <Skeleton
+              className={`mb-1 h-4 w-20 ${dark ? 'bg-slate-700' : 'bg-slate-200'}`}
+            />
+          </div>
+          <div className="mt-8 space-y-4">
+            {Array.from({ length: 4 }).map((_, featureIndex) => (
+              <div key={featureIndex} className="flex items-center gap-3">
+                <Skeleton
+                  className={`h-5 w-5 shrink-0 rounded-full ${
+                    dark ? 'bg-slate-700' : 'bg-slate-200'
+                  }`}
+                />
+                <Skeleton
+                  className={`h-4 ${
+                    featureIndex % 2 === 0 ? 'w-48' : 'w-40'
+                  } ${dark ? 'bg-slate-700' : 'bg-slate-200'}`}
+                />
+              </div>
+            ))}
+          </div>
+          <Skeleton
+            className={`mt-8 h-14 w-full rounded-xl ${
+              dark ? 'bg-slate-700' : 'bg-slate-200'
+            }`}
+          />
+        </div>
+      ))}
+      <span className="sr-only">Cargando información de planes…</span>
+    </div>
+  );
+}
 
 function PlanPriceBlock({
   monthlyPrice,
@@ -96,7 +154,7 @@ export default function PricingSection() {
 
   return (
     <section
-      id="pricing"
+      id="planes"
       className="border-t border-slate-200 bg-white px-4 py-16 sm:px-6 sm:py-24"
       aria-labelledby="pricing-heading"
     >
@@ -122,7 +180,7 @@ export default function PricingSection() {
         </div>
 
         {loadingPlans ? (
-          <p className="mt-16 text-center text-slate-500">Cargando planes...</p>
+          <PricingCardsSkeleton />
         ) : (
           <div className="mt-12 grid gap-8 lg:grid-cols-2 lg:gap-10 lg:max-w-4xl lg:mx-auto">
             {planBasico && (

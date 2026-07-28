@@ -9,7 +9,8 @@ import AddEstudianteModal from '../modals/AddEstudianteModal';
 import ViewEstudianteModal from '../modals/ViewEstudianteModal';
 import EditEstudianteModal from '../modals/EditEstudianteModal';
 import DeleteEstudianteModal from '../modals/DeleteEstudianteModal';
-import { Button, Card, LoaderPage, EmptyState, ErrorBanner } from '@/components/ui';
+import { Button, Card, EmptyState, ErrorBanner } from '@/components/ui';
+import { ListPageSkeleton } from '@/components/ui/PageSkeletons';
 import type { Estudiante, EstudianteGetResponse } from '@/types';
 
 interface EstudianteResumen {
@@ -119,9 +120,7 @@ export default function AdminEstudiantesPage() {
               </Button>
             </div>
 
-            {loading && (
-              <LoaderPage message="Cargando estudiantes..." />
-            )}
+            {loading && <ListPageSkeleton rows={6} />}
             {error && !loading && (
               <ErrorBanner
                 title="No pudimos cargar los estudiantes"

@@ -184,7 +184,7 @@ export default function EditRecordatorioModal({
               onChange={handleInputChange}
               required
               maxLength={255}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 placeholder:text-slate-400"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               placeholder="Ej: Revisar exámenes de Matemáticas"
             />
           </div>
@@ -201,7 +201,7 @@ export default function EditRecordatorioModal({
               required
               rows={4}
               maxLength={1000}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 resize-none"
+              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-200 resize-none"
               placeholder="Describe los detalles del recordatorio..."
             />
             <p className="text-xs text-slate-500">
@@ -221,7 +221,7 @@ export default function EditRecordatorioModal({
               onChange={handleInputChange}
               required
               min={hoy}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
             />
             <p className="text-xs text-slate-500">
               Selecciona la fecha para la cual es el recordatorio

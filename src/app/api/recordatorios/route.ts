@@ -194,13 +194,22 @@ export async function POST(request: NextRequest) {
           },
           select: { id: true }
         });
+        const fechaISO = fechaDateTime.toISOString().slice(0, 10);
+        const pushBaseUrl =
+          process.env.NEXT_PUBLIC_SITE_URL ??
+          request.nextUrl?.origin ??
+          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+        const consultarPath = `/consultar-recordatorios?fecha=${encodeURIComponent(fechaISO)}`;
         sendPushNotification({
           institucionId: userInstitutionId,
           title: nombre.trim(),
           body:
             descripcion.trim().slice(0, 200) +
             (descripcion.trim().length > 200 ? '...' : ''),
-          acudienteIds: acudientes.length > 0 ? acudientes.map((a) => a.id) : undefined
+          acudienteIds: acudientes.length > 0 ? acudientes.map((a) => a.id) : undefined,
+          data: {
+            url: pushBaseUrl ? `${pushBaseUrl.replace(/\/$/, '')}${consultarPath}` : consultarPath,
+          },
         }).catch((err) => {
           if (process.env.NODE_ENV !== 'test') {
             console.error('Error en envío push tras recordatorio:', err);

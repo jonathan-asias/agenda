@@ -333,8 +333,8 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                       validarCampo('nombres', e.target.value);
                     }}
                     disabled={!camposHabilitados.nombres}
-                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      erroresValidacion.nombres ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      erroresValidacion.nombres ? 'border-[var(--color-danger-border-input)]' : ''
                     } ${!camposHabilitados.nombres ? 'bg-slate-100' : ''}`}
                     placeholder="Nombres"
                     required
@@ -363,8 +363,8 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                       validarCampo('apellidos', e.target.value);
                     }}
                     disabled={!camposHabilitados.apellidos}
-                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      erroresValidacion.apellidos ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      erroresValidacion.apellidos ? 'border-[var(--color-danger-border-input)]' : ''
                     } ${!camposHabilitados.apellidos ? 'bg-slate-100' : ''}`}
                     placeholder="Apellidos"
                     required
@@ -395,8 +395,8 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                     validarCampo('codigo_estudiantil', e.target.value);
                   }}
                   disabled={!camposHabilitados.codigo_estudiantil}
-                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    erroresValidacion.codigo_estudiantil ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                  className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    erroresValidacion.codigo_estudiantil ? 'border-[var(--color-danger-border-input)]' : ''
                   } ${!camposHabilitados.codigo_estudiantil ? 'bg-slate-100' : ''}`}
                   placeholder="Ej: 2024001"
                   required
@@ -429,8 +429,8 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                       value={formData.grado_id}
                       onChange={(e) => handleGradoChange(parseInt(e.target.value))}
                       disabled={!camposHabilitados.grado_id}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:cursor-not-allowed ${
-                        erroresValidacion.grado_id ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 disabled:cursor-not-allowed ${
+                        erroresValidacion.grado_id ? 'border-[var(--color-danger-border-input)]' : ''
                       } ${!camposHabilitados.grado_id ? 'bg-slate-100' : ''}`}
                       required
                     >
@@ -454,8 +454,8 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                       validarCampo('curso_id', parseInt(e.target.value));
                     }}
                     disabled={!camposHabilitados.curso_id || cursosDisponibles.length === 0}
-                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:cursor-not-allowed ${
-                      erroresValidacion.curso_id ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 disabled:cursor-not-allowed ${
+                      erroresValidacion.curso_id ? 'border-[var(--color-danger-border-input)]' : ''
                     } ${!camposHabilitados.curso_id ? 'bg-slate-100' : ''}`}
                     required
                   >
@@ -484,8 +484,8 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                       validarCampo('nombre_acudiente', e.target.value);
                     }}
                     disabled={!camposHabilitados.nombre_acudiente}
-                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      erroresValidacion.nombre_acudiente ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                    className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      erroresValidacion.nombre_acudiente ? 'border-[var(--color-danger-border-input)]' : ''
                     } ${!camposHabilitados.nombre_acudiente ? 'bg-slate-100' : ''}`}
                     placeholder="Nombre completo del acudiente"
                     required
@@ -543,8 +543,8 @@ export default function AddEstudianteModal({ isOpen, onClose, institucionId, onS
                         validarCampo('correo_acudiente', e.target.value);
                       }}
                       disabled={!camposHabilitados.correo_acudiente}
-                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
-                        erroresValidacion.correo_acudiente ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
+                      className={`w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+                        erroresValidacion.correo_acudiente ? 'border-[var(--color-danger-border-input)]' : ''
                       } ${!camposHabilitados.correo_acudiente ? 'bg-slate-100' : ''}`}
                       placeholder="correo@ejemplo.com"
                     />

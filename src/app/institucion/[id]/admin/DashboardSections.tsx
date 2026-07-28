@@ -39,6 +39,38 @@ interface DashboardSectionsProps {
   institucionId: number;
 }
 
+function DebouncedFilterInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (draft === value) return;
+    const timer = window.setTimeout(() => onChange(draft), 180);
+    return () => window.clearTimeout(timer);
+  }, [draft, onChange, value]);
+
+  return (
+    <input
+      type="text"
+      placeholder={placeholder}
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      className="form-quiet-focus w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 transition-all duration-200 placeholder:text-slate-400"
+    />
+  );
+}
+
 export default function DashboardSections({
   areas,
   materias,
@@ -560,7 +592,7 @@ export default function DashboardSections({
               <select
                 value={filtrosDocentes.grado}
                 onChange={(e) => handleFiltroDocenteChange('grado', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los grados</option>
                 {grados.map((grado) => (
@@ -577,7 +609,7 @@ export default function DashboardSections({
               <select
                 value={filtrosDocentes.curso}
                 onChange={(e) => handleFiltroDocenteChange('curso', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los cursos</option>
                 {cursos.map((curso) => (
@@ -591,12 +623,10 @@ export default function DashboardSections({
             {/* Filtro por Nombre del Docente */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
-              <input
-                type="text"
+              <DebouncedFilterInput
                 placeholder="Buscar por nombre..."
                 value={filtrosDocentes.nombre}
-                onChange={(e) => handleFiltroDocenteChange('nombre', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
+                onChange={(value) => handleFiltroDocenteChange('nombre', value)}
               />
             </div>
 
@@ -606,7 +636,7 @@ export default function DashboardSections({
               <select
                 value={filtrosDocentes.area}
                 onChange={(e) => handleFiltroDocenteChange('area', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todas las áreas</option>
                 {areas.map((area) => (
@@ -623,7 +653,7 @@ export default function DashboardSections({
               <select
                 value={filtrosDocentes.materia}
                 onChange={(e) => handleFiltroDocenteChange('materia', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 placeholder:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todas las materias</option>
                 {materias.map((materia) => (
@@ -769,7 +799,7 @@ export default function DashboardSections({
               <select
                 value={filtrosEstudiantes.grado}
                 onChange={(e) => handleFiltroChange('grado', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los grados</option>
                 {grados.map((grado) => (
@@ -786,7 +816,7 @@ export default function DashboardSections({
               <select
                 value={filtrosEstudiantes.curso}
                 onChange={(e) => handleFiltroChange('curso', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los cursos</option>
                 {cursos.map((curso) => (
@@ -803,7 +833,7 @@ export default function DashboardSections({
               <select
                 value={filtrosEstudiantes.estado}
                 onChange={(e) => handleFiltroChange('estado', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
+                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
               >
                 <option value="">Todos los estados</option>
                 <option value="activo">Activos</option>
@@ -814,24 +844,20 @@ export default function DashboardSections({
             {/* Filtro por Acudiente */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Acudiente</label>
-              <input
-                type="text"
+              <DebouncedFilterInput
                 placeholder="Buscar por acudiente..."
                 value={filtrosEstudiantes.acudiente}
-                onChange={(e) => handleFiltroChange('acudiente', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
+                onChange={(value) => handleFiltroChange('acudiente', value)}
               />
             </div>
 
             {/* Filtro por Código */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Código</label>
-              <input
-                type="text"
+              <DebouncedFilterInput
                 placeholder="Buscar por código..."
                 value={filtrosEstudiantes.codigo}
-                onChange={(e) => handleFiltroChange('codigo', e.target.value)}
-                className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 placeholder:text-slate-400"
+                onChange={(value) => handleFiltroChange('codigo', value)}
               />
             </div>
           </div>

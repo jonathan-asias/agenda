@@ -2,12 +2,12 @@ import type { NextConfig } from 'next';
 
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co https://*.mercadopago.com https://*.mercadolibre.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mercadopago.com https://production.wompi.co https://sandbox.wompi.co",
-  "frame-src 'self' https://www.mercadopago.com https://www.mercadopago.com.co https://checkout.wompi.co",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mercadopago.com https://production.wompi.co https://sandbox.wompi.co https://challenges.cloudflare.com",
+  "frame-src 'self' https://www.mercadopago.com https://www.mercadopago.com.co https://checkout.wompi.co https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -31,6 +31,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Permite acceder vía devtunnels/ngrok en `npm run dev` (Next.js 15+)
+  allowedDevOrigins: [
+    '*.devtunnels.ms',
+    '*.use.devtunnels.ms',
+    '*.ngrok-free.app',
+    '*.ngrok.io',
+    '*.trycloudflare.com',
+  ],
   async headers() {
     return [
       {

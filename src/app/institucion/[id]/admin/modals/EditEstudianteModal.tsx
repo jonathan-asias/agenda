@@ -158,7 +158,7 @@ export default function EditEstudianteModal({
                     type="text"
                     value={formData.nombres}
                     onChange={(e) => setFormData(prev => ({ ...prev, nombres: e.target.value }))}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                     required
                   />
                 </div>
@@ -170,7 +170,7 @@ export default function EditEstudianteModal({
                     type="text"
                     value={formData.apellidos}
                     onChange={(e) => setFormData(prev => ({ ...prev, apellidos: e.target.value }))}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                     required
                   />
                 </div>
@@ -182,7 +182,7 @@ export default function EditEstudianteModal({
                     type="text"
                     value={formData.codigo_estudiantil}
                     onChange={(e) => setFormData(prev => ({ ...prev, codigo_estudiantil: e.target.value }))}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                     required
                   />
                 </div>
@@ -192,7 +192,7 @@ export default function EditEstudianteModal({
                       type="checkbox"
                       checked={formData.activo}
                       onChange={(e) => setFormData(prev => ({ ...prev, activo: e.target.checked }))}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-blue-600"
                     />
                     <span className="ml-2 text-sm text-slate-700">Estudiante activo</span>
                   </label>
@@ -211,7 +211,7 @@ export default function EditEstudianteModal({
                   <select
                     value={formData.grado_id}
                     onChange={(e) => handleGradoChange(parseInt(e.target.value))}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                     required
                   >
                     <option value={0}>Seleccionar grado</option>
@@ -229,7 +229,7 @@ export default function EditEstudianteModal({
                   <select
                     value={formData.curso_id}
                     onChange={(e) => setFormData(prev => ({ ...prev, curso_id: parseInt(e.target.value) }))}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                     required
                     disabled={cursosDisponibles.length === 0}
                   >
@@ -256,7 +256,7 @@ export default function EditEstudianteModal({
                     type="text"
                     value={formData.nombre_acudiente}
                     onChange={(e) => setFormData(prev => ({ ...prev, nombre_acudiente: e.target.value }))}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                     required
                   />
                 </div>
@@ -268,7 +268,7 @@ export default function EditEstudianteModal({
                     type="tel"
                     value={formData.telefono_acudiente}
                     onChange={(e) => setFormData(prev => ({ ...prev, telefono_acudiente: e.target.value }))}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                     required
                   />
                 </div>
@@ -280,7 +280,7 @@ export default function EditEstudianteModal({
                     type="email"
                     value={formData.correo_acudiente}
                     onChange={(e) => setFormData(prev => ({ ...prev, correo_acudiente: e.target.value }))}
-                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder:text-slate-400"
+                    className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
                   />
                 </div>
               </div>

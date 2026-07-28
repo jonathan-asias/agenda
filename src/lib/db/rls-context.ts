@@ -14,13 +14,18 @@ async function setSessionConfig(
  * Ejecuta operaciones con bypass RLS (webhooks, registro público, push, pagos).
  * Requiere migración enable_rls aplicada y rol DB sin BYPASSRLS para tener efecto.
  */
+const DEFAULT_TX_OPTIONS = {
+  maxWait: 10_000,
+  timeout: 20_000,
+} as const;
+
 export async function withDbBypass<T>(
   fn: (tx: Prisma.TransactionClient) => Promise<T>
 ): Promise<T> {
   return prismaBypass.$transaction(async (tx) => {
     await setSessionConfig(tx, 'app.bypass_rls', 'true');
     return fn(tx);
-  });
+  }, DEFAULT_TX_OPTIONS);
 }
 
 /**
@@ -33,5 +38,5 @@ export async function withDbTenant<T>(
   return prisma.$transaction(async (tx) => {
     await setSessionConfig(tx, 'app.current_institution_id', String(institutionId));
     return fn(tx);
-  });
+  }, DEFAULT_TX_OPTIONS);
 }

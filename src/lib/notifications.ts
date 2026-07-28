@@ -23,7 +23,7 @@ export function showSuccess(title: string, text?: string): Promise<void> {
 }
 
 export function showError(title: string, text?: string): Promise<void> {
-  dispatchToast({ type: 'error', title, text, duration: 6000 });
+  dispatchToast({ type: 'error', title, text });
   return Promise.resolve();
 }
 

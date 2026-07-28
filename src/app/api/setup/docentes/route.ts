@@ -12,7 +12,6 @@ import {
   sedeDataForCreate,
   sedeErrorToResponse,
 } from '@/lib/sede-scope';
-
 type DocenteInput = {
   nombres: string;
   apellidos: string;
@@ -34,9 +33,9 @@ export async function POST(request: NextRequest) {
     // Verificar variables de entorno
 
     if (!isSupabaseAdminConfigured()) {
-      console.error('Supabase admin no estÃ¡ configurado. No se pueden crear docentes.');
+      console.error('Supabase admin no está configurado. No se pueden crear docentes.');
       return NextResponse.json(
-        { success: false, error: 'El servicio de autenticaciÃ³n no estÃ¡ configurado. Contacta al administrador.' },
+        { success: false, error: 'El servicio de autenticación no está configurado. Contacta al administrador.' },
         { status: 500 }
       );
     }
@@ -50,9 +49,11 @@ export async function POST(request: NextRequest) {
     };
     
     const { institucionId, docentes, asignaciones } = body;
+
+    // reCAPTCHA no se exige aquí: el endpoint ya requiere sesión admin
+    // (withAdminSedeDb). El wizard y el modal pueden enviar token, pero no bloquea.
     
-    
-    // Validaciones bÃ¡sicas
+    // Validaciones básicas
     if (!institucionId) {
       return NextResponse.json(
         { success: false, error: 'institucionId es requerido' },
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar que la instituciÃ³n existe
+    // Verificar que la institución existe
         return await withAdminSedeDb(request, async (tx, { institutionId, scope }) => {
 const institucion = await tx.instituciones.findUnique({
       where: { id: institucionId }
@@ -131,7 +132,7 @@ const institucion = await tx.instituciones.findUnique({
           
           let mensajeError = authError.message;
           if (authError.code === 'email_exists') {
-            mensajeError = `El email ${docente.email} ya estÃ¡ registrado en el sistema`;
+            mensajeError = `El email ${docente.email} ya está registrado en el sistema`;
           }
           
           errores.push({
@@ -183,7 +184,7 @@ const institucion = await tx.instituciones.findUnique({
             const materias = asignaciones.materias[gradoKey] ?? [];
             
             
-            // Extraer IDs de materias (pueden ser objetos o nÃºmeros)
+            // Extraer IDs de materias (pueden ser objetos o números)
             const materiaIds = materias
               .map((materia): number | null => {
                 if (typeof materia === 'object' && materia !== null && 'id' in materia) {

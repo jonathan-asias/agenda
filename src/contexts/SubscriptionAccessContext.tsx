@@ -11,9 +11,11 @@ import {
 } from 'react';
 
 export interface SubscriptionAccessState {
-  mode: 'full' | 'grace_readonly' | 'blocked';
+  mode: 'full' | 'grace_readonly' | 'trial_billing_only' | 'blocked';
   canWrite: boolean;
   canLogin: boolean;
+  isTrial: boolean;
+  trialDaysLeft: number;
   message: string;
   graceUntil: string | null;
   graceDays: number;
@@ -25,6 +27,8 @@ const defaultState: SubscriptionAccessState = {
   mode: 'full',
   canWrite: true,
   canLogin: true,
+  isTrial: false,
+  trialDaysLeft: 0,
   message: '',
   graceUntil: null,
   graceDays: 0,
@@ -45,6 +49,8 @@ export function SubscriptionAccessProvider({
     mode: 'full',
     canWrite: true,
     canLogin: true,
+    isTrial: false,
+    trialDaysLeft: 0,
     message: '',
     graceUntil: null,
     graceDays: 0,
@@ -65,6 +71,8 @@ export function SubscriptionAccessProvider({
           mode: data.mode ?? 'full',
           canWrite: Boolean(data.canWrite),
           canLogin: data.canLogin !== false,
+          isTrial: Boolean(data.isTrial),
+          trialDaysLeft: data.trialDaysLeft ?? 0,
           message: data.message ?? '',
           graceUntil: data.graceUntil ?? null,
           graceDays: data.graceDays ?? 0,

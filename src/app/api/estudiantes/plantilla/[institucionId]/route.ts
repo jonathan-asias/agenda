@@ -4,6 +4,7 @@ import { withAdminSedeDb } from '@/lib/security/require-admin-api';
 import { rbacErrorToResponse } from '@/lib/security/rbac';
 import {
   institutionSedeWhere,
+  cursosSedeWhere,
   sedeFilter,
   sedeErrorToResponse,
 } from '@/lib/sede-scope';
@@ -28,9 +29,10 @@ export async function GET(
       enforceTenant(institutionId, institucionId);
 
       const baseWhere = institutionSedeWhere(institutionId, scope);
+      const cursoWhere = cursosSedeWhere(institutionId, scope);
       const cursoNested = scope.allSedes ? undefined : { where: sedeFilter(scope) };
 
-      const [institucion, gradosRaw, materiasRaw] = await Promise.all([
+      const [institucion, gradosRaw, materiasRaw, cursosCount] = await Promise.all([
         tx.instituciones.findUnique({
           where: { id: institutionId },
           select: { nombre: true },
@@ -50,7 +52,18 @@ export async function GET(
           include: { area: { select: { nombre: true } } },
           orderBy: { nombre: 'asc' },
         }),
+        tx.cursos.count({ where: cursoWhere }),
       ]);
+
+      if (gradosRaw.length === 0 || cursosCount === 0) {
+        return NextResponse.json(
+          {
+            error:
+              'Primero crea grados y cursos. La carga masiva necesita esa estructura para asignar a cada estudiante.',
+          },
+          { status: 400 }
+        );
+      }
 
       const grados = gradosRaw.map((g) => ({
         id: g.id,
