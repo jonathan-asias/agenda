@@ -13,15 +13,24 @@ import {
   requireInstitutionAuth,
   resolveSessionDocenteId,
 } from '@/lib/security/rbac';
-import { APP_URL } from '@/lib/env';
+import { resolvePublicAppUrl } from '@/lib/app-url';
 
 function resolvePublicBaseUrl(request: NextRequest): string {
-  return (
-    APP_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    request.nextUrl?.origin ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')
-  );
+  const publicUrl = resolvePublicAppUrl();
+  if (publicUrl && !/localhost|127\.0\.0\.1/i.test(publicUrl)) {
+    return publicUrl.replace(/\/$/, '');
+  }
+
+  const origin = request.nextUrl?.origin?.replace(/\/$/, '') || '';
+  if (origin && !/localhost|127\.0\.0\.1/i.test(origin)) {
+    return origin;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL.replace(/\/$/, '')}`;
+  }
+
+  return publicUrl.replace(/\/$/, '') || 'https://ahoritapp.com';
 }
 
 export async function POST(request: NextRequest) {
@@ -31,7 +40,10 @@ export async function POST(request: NextRequest) {
       windowSec: 300,
     });
     if (!rate.ok) {
-      return rateLimitResponse(rate.retryAfterSec ?? 300);
+      return rateLimitResponse(
+        rate.retryAfterSec ?? 300,
+        `Has enviado demasiados recordatorios. Espera ${Math.max(1, Math.ceil((rate.retryAfterSec ?? 300) / 60))} minuto(s) e inténtalo de nuevo.`
+      );
     }
 
     const body = await request.json();
@@ -84,7 +96,10 @@ export async function POST(request: NextRequest) {
       { max: 10, windowSec: 300 }
     );
     if (!docenteRate.ok) {
-      return rateLimitResponse(docenteRate.retryAfterSec ?? 300);
+      return rateLimitResponse(
+        docenteRate.retryAfterSec ?? 300,
+        `Has enviado demasiados recordatorios. Espera ${Math.max(1, Math.ceil((docenteRate.retryAfterSec ?? 300) / 60))} minuto(s) e inténtalo de nuevo.`
+      );
     }
 
     const parsedDocenteId = parseInt(docenteId);

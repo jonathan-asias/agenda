@@ -71,9 +71,24 @@ export function checkRateLimit(
   return { ok: true };
 }
 
-export function rateLimitResponse(retryAfterSec: number): NextResponse {
+export function rateLimitResponse(
+  retryAfterSec: number,
+  message?: string
+): NextResponse {
+  const minutes = Math.max(1, Math.ceil(retryAfterSec / 60));
+  const waitLabel =
+    retryAfterSec >= 60
+      ? `${minutes} minuto${minutes === 1 ? '' : 's'}`
+      : `${retryAfterSec} segundo${retryAfterSec === 1 ? '' : 's'}`;
+
   return NextResponse.json(
-    { error: 'Demasiadas solicitudes. Intente más tarde.' },
+    {
+      error:
+        message ??
+        `Demasiadas solicitudes. Espera ${waitLabel} e inténtalo de nuevo.`,
+      code: 'RATE_LIMITED',
+      retryAfterSec,
+    },
     {
       status: 429,
       headers: { 'Retry-After': String(retryAfterSec) },

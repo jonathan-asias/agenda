@@ -196,7 +196,11 @@ function InstitucionPageContent() {
               <h2 className="text-xl font-semibold text-slate-800">Administradores</h2>
               <InfoTooltip label="Información sobre funciones del administrador">
                 <p className="leading-relaxed">
-                  Los administradores pueden crear y gestionar docentes, estudiantes, materias y cursos de la sede a la cual estén vinculados.
+                  Esta cuenta de institución es la dueña del colegio. Los{' '}
+                  <strong>administradores de sede</strong> son perfiles aparte: gestionan
+                  docentes, estudiantes, materias y cursos solo de la sede a la que
+                  estén vinculados. Si no agregas al menos uno, el panel de
+                  administradores quedará vacío aunque tú puedas operar como institución.
                 </p>
               </InfoTooltip>
             </div>
@@ -271,9 +275,14 @@ function InstitucionPageContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">Aquí puede crear un administrador</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                Falta un administrador de sede
+              </h3>
               <p className="text-slate-600 text-sm max-w-md mx-auto mb-6">
-                Los administradores tendrán la función de crear y gestionar docentes, estudiantes, materias y cursos de la sede a la cual estén vinculados.
+                Tu usuario es la cuenta institución (dueña del colegio). Crea al menos
+                un administrador vinculado a una sede para que gestione docentes,
+                estudiantes, materias y cursos de esa sede. Sin eso, este listado
+                permanecerá vacío.
               </p>
               <Button type="button" variant="primary" onClick={() => setShowAddAdminModal(true)} disabled={!canWrite}>
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

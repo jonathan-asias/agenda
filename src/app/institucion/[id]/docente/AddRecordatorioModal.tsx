@@ -355,8 +355,19 @@ export default function AddRecordatorioModal({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.error || 'No pudimos crear el recordatorio. Intenta de nuevo.');
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 429) {
+          const retryAfter = Number(
+            response.headers.get('retry-after') || errorData.retryAfterSec || 60
+          );
+          const minutes = Math.max(1, Math.ceil(retryAfter / 60));
+          setError(
+            errorData.error ||
+              `Has enviado demasiados recordatorios. Espera ${minutes} minuto${minutes === 1 ? '' : 's'} e inténtalo de nuevo.`
+          );
+        } else {
+          setError(errorData.error || 'No pudimos crear el recordatorio. Intenta de nuevo.');
+        }
         setSubmitting(false);
         return;
       }

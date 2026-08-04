@@ -238,13 +238,15 @@ export async function sendReminderEmailNotification(
     process.env.APP_URL?.trim() ||
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    '';
+    (process.env.NODE_ENV === 'production' ? 'https://ahoritapp.com' : '');
   const linkBase =
     baseUrl && !isLocalhostUrl(baseUrl)
       ? baseUrl
       : publicBase && !isLocalhostUrl(publicBase)
         ? publicBase
-        : baseUrl;
+        : process.env.NODE_ENV === 'production'
+          ? 'https://ahoritapp.com'
+          : baseUrl;
 
   const remoteAssetUrl =
     linkBase && !isLocalhostUrl(linkBase)
