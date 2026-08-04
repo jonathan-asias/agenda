@@ -47,6 +47,15 @@ export async function verifyTurnstileToken(
     return { ok: false, error: 'Debes completar la verificación de seguridad' };
   }
 
+  // Solo pruebas locales automatizadas (nunca habilitar en producción).
+  if (
+    process.env.ALLOW_E2E_TURNSTILE_BYPASS === 'true' &&
+    process.env.NODE_ENV !== 'production' &&
+    token.trim() === 'e2e-bypass'
+  ) {
+    return { ok: true };
+  }
+
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',

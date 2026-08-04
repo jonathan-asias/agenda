@@ -1,4 +1,4 @@
-import { sendEmail } from './email';
+import { loadPublicAssetBuffer, sendEmail } from './email';
 import { createPushActivationSig } from '@/lib/security/push-activation-token';
 
 export type SendReminderEmailParams = {
@@ -18,14 +18,24 @@ const MAX_EMAILS_WARNING = 200;
 
 /** Ruta pública de la mascota Copetón (sirve desde /public). */
 export const COPETON_PUBLIC_PATH = '/branding/copeton.png';
+const COPETON_CID = 'copeton';
 
 function toFechaISODate(fecha: Date): string {
   return fecha.toISOString().slice(0, 10);
 }
 
-function buildAbsoluteUrl(baseUrl: string, path: string): string {
+function isLocalhostUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+  } catch {
+    return /localhost|127\.0\.0\.1/i.test(url);
+  }
+}
+
+function buildAbsoluteUrl(baseUrl: string, pathName: string): string {
   const base = baseUrl.replace(/\/$/, '');
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const normalizedPath = pathName.startsWith('/') ? pathName : `/${pathName}`;
   return `${base}${normalizedPath}`;
 }
 
@@ -37,7 +47,9 @@ function buildConsultarRecordatoriosUrl(baseUrl: string, fechaLimite?: Date | nu
     : `${base}/consultar-recordatorios`;
 }
 
-function buildReminderHtml(params: SendReminderEmailParams): string {
+function buildReminderHtml(
+  params: SendReminderEmailParams & { copetonSrc?: string }
+): string {
   const {
     institucionNombre,
     docenteNombre,
@@ -46,6 +58,7 @@ function buildReminderHtml(params: SendReminderEmailParams): string {
     fechaLimite,
     baseUrl,
     primerEstudianteId,
+    copetonSrc,
   } = params;
   const fechaTexto = fechaLimite
     ? fechaLimite.toLocaleDateString('es-CO', {
@@ -57,7 +70,6 @@ function buildReminderHtml(params: SendReminderEmailParams): string {
       })
     : '';
   const consultarUrl = baseUrl ? buildConsultarRecordatoriosUrl(baseUrl, fechaLimite) : '';
-  const copetonUrl = baseUrl ? buildAbsoluteUrl(baseUrl, COPETON_PUBLIC_PATH) : '';
   const docenteNombreSafe = docenteNombre.trim();
   const docenteIntro = docenteNombreSafe
     ? `Me lo compartió el docente <strong style="color:#334155;">${escapeHtml(docenteNombreSafe)}</strong> de <strong style="color:#334155;">${escapeHtml(institucionNombre)}</strong>.`
@@ -75,8 +87,8 @@ function buildReminderHtml(params: SendReminderEmailParams): string {
         })()
       : '';
 
-  const mascotImg = copetonUrl
-    ? `<img src="${escapeHtml(copetonUrl)}" width="120" height="120" alt="Copetón, mascota de Agenda Virtual" style="display:block;width:120px;height:120px;border:0;outline:none;text-decoration:none;margin:0 auto;" />`
+  const mascotImg = copetonSrc
+    ? `<img src="${escapeHtml(copetonSrc)}" width="120" height="120" alt="Copetón, mascota de Agenda Virtual" style="display:block;width:120px;height:120px;border:0;outline:none;text-decoration:none;margin:0 auto;" />`
     : `<div style="width:120px;height:120px;margin:0 auto;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-weight:700;font-size:2rem;line-height:120px;text-align:center;">C</div>`;
 
   return `
@@ -194,10 +206,18 @@ function escapeHtml(text: string): string {
 export async function sendReminderEmailNotification(
   params: SendReminderEmailParams
 ): Promise<{ success: boolean; error?: unknown }> {
-  const { emails, institucionNombre, docenteNombre, titulo, descripcion, fechaLimite, baseUrl, primerEstudianteId } = params;
+  const {
+    emails,
+    institucionNombre,
+    docenteNombre,
+    titulo,
+    descripcion,
+    fechaLimite,
+    baseUrl,
+    primerEstudianteId,
+  } = params;
 
   if (emails.length > MAX_EMAILS_WARNING) {
-    // TODO: implementar batching (ej. envío por lotes de N para evitar límites del proveedor)
     if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'test') {
       // eslint-disable-next-line no-console -- advertencia de envío masivo en servidor
       console.warn(
@@ -213,6 +233,32 @@ export async function sendReminderEmailNotification(
     return { success: true };
   }
 
+  // Preferir URL pública para enlaces si baseUrl es localhost (p. ej. E2E local).
+  const publicBase =
+    process.env.APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    '';
+  const linkBase =
+    baseUrl && !isLocalhostUrl(baseUrl)
+      ? baseUrl
+      : publicBase && !isLocalhostUrl(publicBase)
+        ? publicBase
+        : baseUrl;
+
+  const remoteAssetUrl =
+    linkBase && !isLocalhostUrl(linkBase)
+      ? buildAbsoluteUrl(linkBase, COPETON_PUBLIC_PATH)
+      : publicBase && !isLocalhostUrl(publicBase)
+        ? buildAbsoluteUrl(publicBase, COPETON_PUBLIC_PATH)
+        : undefined;
+
+  const copetonBuffer = await loadPublicAssetBuffer(
+    COPETON_PUBLIC_PATH,
+    remoteAssetUrl
+  );
+  const copetonSrc = copetonBuffer ? `cid:${COPETON_CID}` : remoteAssetUrl || '';
+
   const subject = `Nuevo recordatorio - ${institucionNombre}`;
   const html = buildReminderHtml({
     institucionNombre,
@@ -221,13 +267,23 @@ export async function sendReminderEmailNotification(
     descripcion,
     fechaLimite,
     emails: validEmails,
-    baseUrl,
+    baseUrl: linkBase || undefined,
     primerEstudianteId,
+    copetonSrc,
   });
 
   return sendEmail({
     to: validEmails,
     subject,
     html,
+    attachments: copetonBuffer
+      ? [
+          {
+            filename: 'copeton.png',
+            content: copetonBuffer,
+            contentId: COPETON_CID,
+          },
+        ]
+      : undefined,
   });
 }
