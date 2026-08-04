@@ -36,15 +36,22 @@ export function resolveLocalhostRegistroBase(publicBase: string): string {
 export function resolveRegistroBaseUrl(): string {
   const appUrl = APP_URL?.trim().replace(/\/$/, '');
   const publicUrl = publicEnv.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '');
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '');
 
-  // En desarrollo: siempre preferir localhost (evita devtunnels/ngrok rotos).
-  if (process.env.NODE_ENV === 'development') {
-    if (publicUrl && isLocalhostBase(publicUrl)) return publicUrl;
-    if (appUrl && isLocalhostBase(appUrl)) return appUrl;
-    return resolveLocalhostRegistroBase(appUrl || publicUrl || 'http://localhost:3000');
+  // Preferir dominio público (ahoritapp); localhost solo como fallback de desarrollo.
+  for (const candidate of [appUrl, publicUrl, siteUrl]) {
+    if (candidate && !isLocalhostBase(candidate) && !isDevTunnelBase(candidate)) {
+      return candidate;
+    }
   }
 
-  return appUrl || publicUrl || 'http://localhost:3000';
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://ahoritapp.com';
+  }
+
+  if (publicUrl && isLocalhostBase(publicUrl)) return publicUrl;
+  if (appUrl && isLocalhostBase(appUrl)) return appUrl;
+  return resolveLocalhostRegistroBase(appUrl || publicUrl || 'http://localhost:3000');
 }
 
 export function buildRegistroInstitucionUrlPair(

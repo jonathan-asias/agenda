@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { APP_URL } from '@/lib/env';
 import { useSearchParams } from 'next/navigation';
+import { resolveEmailConfirmationRedirectUrl } from '@/lib/app-url';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import Header from '@/components/landing/Header';
 import Footer from '@/components/landing/Footer';
@@ -980,11 +980,17 @@ function RegistroInstitucion() {
         return;
       }
 
+      const emailRedirectTo =
+        typeof window !== 'undefined' &&
+        !/localhost|127\.0\.0\.1/i.test(window.location.hostname)
+          ? `${window.location.origin}/login`
+          : resolveEmailConfirmationRedirectUrl();
+
       const { error: authError } = await supabaseClient.auth.signUp({
         email: sanitizedFormData.email,
         password: sanitizedFormData.password,
         options: {
-          emailRedirectTo: `${APP_URL}/login`,
+          emailRedirectTo,
         },
       });
 

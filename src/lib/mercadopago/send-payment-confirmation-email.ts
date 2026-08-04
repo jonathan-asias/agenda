@@ -118,7 +118,13 @@ export async function sendPaymentConfirmationEmail(params: {
   plan: PaymentConfirmationPlan;
 }): Promise<{ sent: boolean; error?: string }> {
   const normalized = params.email.trim().toLowerCase();
-  const base = APP_URL?.trim().replace(/\/$/, '') || 'http://localhost:3000';
+  const envBase = APP_URL?.trim().replace(/\/$/, '');
+  const base =
+    envBase && !isLocalhostBase(envBase)
+      ? envBase
+      : process.env.NODE_ENV === 'production'
+        ? 'https://ahoritapp.com'
+        : envBase || 'http://localhost:3000';
   const expiresInHours = getRegistroAccessTtlHours();
   const token = createRegistroAccessToken(normalized, params.referencia);
   const registroUrl = buildRegistroInstitucionUrl(base, token);

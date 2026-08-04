@@ -1,4 +1,3 @@
-import { APP_URL } from '@/lib/env';
 import { sendSignupConfirmationEmail } from '@/lib/auth/send-signup-confirmation';
 import {
   getSupabaseAdminClient,
@@ -54,7 +53,7 @@ export async function resendSignupVerificationEmail(
     };
   }
 
-  const result = await sendSignupConfirmationEmail(normalized, `${APP_URL}/login`);
+  const result = await sendSignupConfirmationEmail(normalized);
   if (!result.sent) {
     return {
       ok: false,

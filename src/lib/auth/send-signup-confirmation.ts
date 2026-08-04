@@ -1,4 +1,4 @@
-import { APP_URL } from '@/lib/env';
+import { resolveEmailConfirmationRedirectUrl } from '@/lib/app-url';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 
 /**
@@ -7,7 +7,7 @@ import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
  */
 export async function sendSignupConfirmationEmail(
   email: string,
-  redirectTo: string = `${APP_URL}/login`
+  redirectTo: string = resolveEmailConfirmationRedirectUrl()
 ): Promise<{ sent: boolean; error?: string }> {
   if (!isSupabaseConfigured()) {
     return { sent: false, error: 'Supabase no configurado' };
@@ -15,11 +15,16 @@ export async function sendSignupConfirmationEmail(
 
   const normalized = email.trim().toLowerCase();
   const supabase = getSupabaseClient();
+  const safeRedirect =
+    process.env.NODE_ENV === 'production' &&
+    (/localhost|127\.0\.0\.1/i.test(redirectTo) || !redirectTo.startsWith('http'))
+      ? resolveEmailConfirmationRedirectUrl()
+      : redirectTo;
 
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email: normalized,
-    options: { emailRedirectTo: redirectTo },
+    options: { emailRedirectTo: safeRedirect },
   });
 
   if (error) {

@@ -1,10 +1,61 @@
 import type { NextRequest } from 'next/server';
 import { APP_URL, publicEnv } from '@/lib/env';
 
+const PRODUCTION_APP_URL = 'https://ahoritapp.com';
+
+function isLocalhostUrl(url: string): boolean {
+  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(url);
+}
+
+function normalizeBaseUrl(raw: string | undefined | null): string | null {
+  const trimmed = raw?.trim().replace(/\/$/, '');
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+/**
+ * URL pública para enlaces en correos (confirmación, reset, registro).
+ * Nunca debe devolver localhost en producción: el usuario abre el correo fuera de su máquina.
+ */
+export function resolvePublicAppUrl(): string {
+  const candidates = [
+    process.env.APP_URL,
+    publicEnv.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_URL,
+  ];
+
+  for (const raw of candidates) {
+    const base = normalizeBaseUrl(raw);
+    if (!base || isLocalhostUrl(base)) continue;
+    return base;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    return PRODUCTION_APP_URL;
+  }
+
+  const local =
+    normalizeBaseUrl(publicEnv.NEXT_PUBLIC_APP_URL) ||
+    normalizeBaseUrl(APP_URL) ||
+    'http://localhost:3000';
+  return local;
+}
+
+/** Destino tras confirmar correo en Supabase Auth. */
+export function resolveEmailConfirmationRedirectUrl(): string {
+  return `${resolvePublicAppUrl()}/login`;
+}
+
 /** URL base para enlaces en correos (reset, confirmación, etc.). */
 export function resolveAppUrl(request?: NextRequest): string {
+  const publicUrl = resolvePublicAppUrl();
+  if (!isLocalhostUrl(publicUrl)) return publicUrl;
+
   const fromEnv = APP_URL?.trim().replace(/\/$/, '');
-  if (fromEnv) return fromEnv;
+  if (fromEnv && !isLocalhostUrl(fromEnv)) return fromEnv;
 
   if (request) {
     const origin = request.headers.get('origin')?.trim().replace(/\/$/, '');
@@ -44,10 +95,6 @@ export function resolveCheckoutReturnUrl(request?: NextRequest): string {
 
 function isHttpsUrl(url: string): boolean {
   return url.startsWith('https://');
-}
-
-function isLocalhostUrl(url: string): boolean {
-  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(url);
 }
 
 /** Túneles dev que suelen devolver CloudFront 403 si están caídos o bloqueados. */
@@ -157,6 +204,7 @@ export function resolvePaymentReturnBase(
   for (const raw of [
     publicEnv.NEXT_PUBLIC_APP_URL,
     APP_URL,
+    PRODUCTION_APP_URL,
     'http://localhost:3000',
     'http://127.0.0.1:3000',
   ]) {
