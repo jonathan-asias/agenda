@@ -11,7 +11,8 @@ export type AuditAction =
   | 'PLATFORM_ADMIN_RESET_PASSWORD'
   | 'PLATFORM_ADMIN_RESEND_VERIFICATION'
   | 'TRIAL_INVITE_CREATED'
-  | 'TRIAL_INVITE_RESENT';
+  | 'TRIAL_INVITE_RESENT'
+  | 'TRIAL_INSTITUTION_PROVISIONED';
 
 function getClientIp(request?: NextRequest): string | null {
   if (!request) return null;
