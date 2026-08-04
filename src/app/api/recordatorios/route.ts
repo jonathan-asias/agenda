@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { sendReminderEmailNotification } from '@/lib/notifications/reminder';
 import { sendPushNotification } from '@/lib/notifications/push';
 import {
@@ -13,6 +13,16 @@ import {
   requireInstitutionAuth,
   resolveSessionDocenteId,
 } from '@/lib/security/rbac';
+import { APP_URL } from '@/lib/env';
+
+function resolvePublicBaseUrl(request: NextRequest): string {
+  return (
+    APP_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    request.nextUrl?.origin ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -162,10 +172,7 @@ export async function POST(request: NextRequest) {
         ];
         if (emailsDestino.length > 0) {
           const docenteNombre = `${docente.nombres} ${docente.apellidos}`.trim();
-          const baseUrl =
-            process.env.NEXT_PUBLIC_SITE_URL ??
-            request.nextUrl?.origin ??
-            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+          const baseUrl = resolvePublicBaseUrl(request);
           sendReminderEmailNotification({
             institucionNombre: docente.institucion.nombre,
             docenteNombre,
@@ -195,10 +202,7 @@ export async function POST(request: NextRequest) {
           select: { id: true }
         });
         const fechaISO = fechaDateTime.toISOString().slice(0, 10);
-        const pushBaseUrl =
-          process.env.NEXT_PUBLIC_SITE_URL ??
-          request.nextUrl?.origin ??
-          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+        const pushBaseUrl = resolvePublicBaseUrl(request);
         const consultarPath = `/consultar-recordatorios?fecha=${encodeURIComponent(fechaISO)}`;
         sendPushNotification({
           institucionId: userInstitutionId,
