@@ -25,7 +25,7 @@ interface AddRecordatorioModalProps {
   asignaciones?: AsignacionLike[];
 }
 
-type DestinoStep = 1 | 2 | 3 | 4 | 5;
+type DestinoStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 const DESTINO_STEPS: {
   id: DestinoStep;
@@ -62,6 +62,12 @@ const DESTINO_STEPS: {
     title: 'Estudiantes',
     short: 'Alumnos',
     tip: 'Marca a qué estudiantes va dirigido el aviso. Sus acudientes recibirán la notificación por el canal que elegiste.',
+  },
+  {
+    id: 6,
+    title: 'Crear recordatorio',
+    short: 'Crear',
+    tip: 'Revisa el resumen. El botón Crear solo se habilita cuando todos los campos anteriores están completos.',
   },
 ];
 
@@ -273,7 +279,6 @@ export default function AddRecordatorioModal({
   const [estudiantesError, setEstudiantesError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [fase, setFase] = useState<'form' | 'confirm'>('form');
   const [modoEnvio, setModoEnvio] = useState<string[]>(['email']);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [destinoStep, setDestinoStep] = useState<DestinoStep>(1);
@@ -340,17 +345,47 @@ export default function AddRecordatorioModal({
     return Array.from(materiasMap.values());
   }, [asignaciones, formData.areaId]);
 
+  const fechaSeleccionadaOk = useMemo(() => {
+    if (!formData.fecha) return false;
+    const parsed = parseLocalDateInput(formData.fecha);
+    if (!parsed) return false;
+    const startToday = new Date();
+    startToday.setHours(0, 0, 0, 0);
+    return parsed >= startToday;
+  }, [formData.fecha]);
+
+  const avisoBasicoCompleto =
+    formData.nombre.trim().length > 0 &&
+    formData.tipo.length > 0 &&
+    formData.descripcion.trim().length > 0 &&
+    fechaSeleccionadaOk &&
+    modoEnvio.length > 0;
+
   const maxUnlockedStep: DestinoStep = useMemo(() => {
+    // Los pasos de destino solo se habilitan tras completar los datos previos a la vista previa.
+    if (!avisoBasicoCompleto) return 1;
     if (!formData.areaId) return 1;
     if (!formData.materiaId) return 2;
     if (!formData.gradoId) return 3;
     if (!formData.cursoId) return 4;
-    return 5;
-  }, [formData.areaId, formData.materiaId, formData.gradoId, formData.cursoId]);
+    if (estudiantesSeleccionados.length === 0) return 5;
+    return 6;
+  }, [
+    avisoBasicoCompleto,
+    formData.areaId,
+    formData.materiaId,
+    formData.gradoId,
+    formData.cursoId,
+    estudiantesSeleccionados.length,
+  ]);
 
   useEffect(() => {
+    if (!avisoBasicoCompleto) {
+      if (destinoStep !== 1) setDestinoStep(1);
+      return;
+    }
     if (destinoStep > maxUnlockedStep) setDestinoStep(maxUnlockedStep);
-  }, [destinoStep, maxUnlockedStep]);
+  }, [avisoBasicoCompleto, destinoStep, maxUnlockedStep]);
 
   useEffect(() => {
     if (!formData.cursoId) {
@@ -458,7 +493,7 @@ export default function AddRecordatorioModal({
       return false;
     }
     if (!formData.gradoId || !formData.cursoId || !formData.areaId || !formData.materiaId) {
-      setError('Completa los 5 pasos de destino: área, materia, grado, curso y estudiantes.');
+      setError('Completa los pasos de destino: área, materia, grado, curso y estudiantes.');
       setDestinoStep(
         !formData.areaId ? 1 : !formData.materiaId ? 2 : !formData.gradoId ? 3 : !formData.cursoId ? 4 : 5
       );
@@ -538,7 +573,7 @@ export default function AddRecordatorioModal({
         } else {
           setError(errorData.error || 'No pudimos crear el recordatorio. Intenta de nuevo.');
         }
-        setFase('form');
+        setDestinoStep(6);
         setSubmitting(false);
         return;
       }
@@ -549,21 +584,15 @@ export default function AddRecordatorioModal({
     } catch (err) {
       console.error('Error al crear recordatorio:', err);
       setError('No pudimos crear el recordatorio. Revisa tu conexión e inténtalo de nuevo.');
-      setFase('form');
+      setDestinoStep(6);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCrearRecordatorio = async () => {
     setError('');
     if (!validarFormulario()) return;
-
-    if (fase === 'form') {
-      setFase('confirm');
-      return;
-    }
 
     const destinatarios =
       estudiantesSeleccionados.length === estudiantes.length
@@ -583,11 +612,7 @@ export default function AddRecordatorioModal({
       confirmButtonColor: '#2563eb',
     });
 
-    if (!confirmed) {
-      setFase('form');
-      return;
-    }
-
+    if (!confirmed) return;
     await enviarRecordatorio();
   };
 
@@ -607,7 +632,6 @@ export default function AddRecordatorioModal({
     setEstudiantesSeleccionados([]);
     setEstudiantesError('');
     setError('');
-    setFase('form');
     setShowEmailPreview(false);
     setDestinoStep(1);
   };
@@ -675,39 +699,47 @@ export default function AddRecordatorioModal({
   const whatsappSelected = modoEnvio.includes('whatsapp');
   const currentStepMeta = DESTINO_STEPS.find((s) => s.id === destinoStep)!;
 
-  const fechaSeleccionadaOk = (() => {
-    if (!formData.fecha) return false;
-    const parsed = parseLocalDateInput(formData.fecha);
-    if (!parsed) return false;
-    const startToday = new Date();
-    startToday.setHours(0, 0, 0, 0);
-    return parsed >= startToday;
-  })();
-
-  const avisoBasicoCompleto =
-    formData.nombre.trim().length > 0 &&
-    formData.tipo.length > 0 &&
-    formData.descripcion.trim().length > 0 &&
-    fechaSeleccionadaOk &&
-    modoEnvio.length > 0;
-
   const canPreviewEmail = emailSelected && avisoBasicoCompleto;
+
+  const canCreateRecordatorio =
+    avisoBasicoCompleto &&
+    !!formData.areaId &&
+    !!formData.materiaId &&
+    !!formData.gradoId &&
+    !!formData.cursoId &&
+    estudiantesSeleccionados.length > 0;
+
+  const destinoBlockedHint = !formData.nombre.trim()
+    ? 'Completa el nombre del recordatorio.'
+    : !formData.tipo
+      ? 'Selecciona el tipo de recordatorio.'
+      : !formData.descripcion.trim()
+        ? 'Escribe la descripción.'
+        : !formData.fecha
+          ? 'Elige la fecha.'
+          : !fechaSeleccionadaOk
+            ? 'La fecha no puede ser anterior a hoy.'
+            : modoEnvio.length === 0
+              ? 'Elige al menos un método de envío.'
+              : '';
+
+  const createBlockedHint = !avisoBasicoCompleto
+    ? 'Completa nombre, tipo, descripción, fecha y método de envío arriba.'
+    : !formData.areaId
+      ? 'Falta el paso 1: área.'
+      : !formData.materiaId
+        ? 'Falta el paso 2: materia.'
+        : !formData.gradoId
+          ? 'Falta el paso 3: grado.'
+          : !formData.cursoId
+            ? 'Falta el paso 4: curso.'
+            : estudiantesSeleccionados.length === 0
+              ? 'Falta el paso 5: selecciona al menos un estudiante.'
+              : '';
 
   const previewBlockedHint = !emailSelected
     ? 'Activa correo electrónico para ver la vista previa.'
-    : !formData.nombre.trim()
-      ? 'Completa el nombre del recordatorio.'
-      : !formData.tipo
-        ? 'Selecciona el tipo de recordatorio.'
-        : !formData.descripcion.trim()
-          ? 'Escribe la descripción.'
-          : !formData.fecha
-            ? 'Elige la fecha.'
-            : !fechaSeleccionadaOk
-              ? 'La fecha no puede ser anterior a hoy.'
-              : modoEnvio.length === 0
-                ? 'Elige al menos un método de envío.'
-                : '';
+    : destinoBlockedHint;
 
   return (
     <>
@@ -719,11 +751,16 @@ export default function AddRecordatorioModal({
         className="max-w-3xl"
       >
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-          Todos los campos son obligatorios: datos del aviso, canal de envío y los 5 pasos de
-          destino (área, materia, grado, curso y estudiantes).
+          Primero completa los datos del aviso y el canal de envío. Después se habilitan los 6
+          pasos de destino (área, materia, grado, curso, estudiantes y crear).
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+          }}
+          className="space-y-6"
+        >
           <div>
             <FieldLabel
               required
@@ -941,7 +978,14 @@ export default function AddRecordatorioModal({
           </div>
 
           {/* Destino en pasos */}
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <section
+            className={`overflow-hidden rounded-2xl border bg-white shadow-sm ${
+              avisoBasicoCompleto
+                ? 'border-slate-200'
+                : 'border-slate-200 opacity-70'
+            }`}
+            aria-disabled={!avisoBasicoCompleto}
+          >
             <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 sm:px-5">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-slate-900">Destino del recordatorio</h3>
@@ -952,24 +996,36 @@ export default function AddRecordatorioModal({
                   placement="center"
                 >
                   <p className="text-sm leading-relaxed">
-                    Completa estos 5 pasos en orden. Cada elección desbloquea el siguiente.
+                    Primero completa los datos del aviso y el canal de envío (incluidos los
+                    necesarios para la vista previa). Luego estos 6 pasos se habilitan en orden.
                   </p>
                 </InfoTooltip>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
-                Paso {destinoStep} de 5 · {currentStepMeta.title}
-              </p>
+              {!avisoBasicoCompleto ? (
+                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Completa nombre, tipo, descripción, fecha y método de envío
+                  {emailSelected ? ' (puedes usar la vista previa)' : ''} antes de elegir el
+                  destino.
+                  {destinoBlockedHint ? ` ${destinoBlockedHint}` : ''}
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500">
+                  Paso {destinoStep} de 6 · {currentStepMeta.title}
+                </p>
+              )}
 
               <ol className="mt-4 flex items-center gap-1 sm:gap-2">
                 {DESTINO_STEPS.map((step, index) => {
                   const done =
-                    (step.id === 1 && !!formData.areaId) ||
-                    (step.id === 2 && !!formData.materiaId) ||
-                    (step.id === 3 && !!formData.gradoId) ||
-                    (step.id === 4 && !!formData.cursoId) ||
-                    (step.id === 5 && estudiantesSeleccionados.length > 0);
-                  const unlocked = step.id <= maxUnlockedStep;
-                  const active = step.id === destinoStep;
+                    avisoBasicoCompleto &&
+                    ((step.id === 1 && !!formData.areaId) ||
+                      (step.id === 2 && !!formData.materiaId) ||
+                      (step.id === 3 && !!formData.gradoId) ||
+                      (step.id === 4 && !!formData.cursoId) ||
+                      (step.id === 5 && estudiantesSeleccionados.length > 0) ||
+                      (step.id === 6 && canCreateRecordatorio));
+                  const unlocked = avisoBasicoCompleto && step.id <= maxUnlockedStep;
+                  const active = avisoBasicoCompleto && step.id === destinoStep;
                   return (
                     <li key={step.id} className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
                       <button
@@ -1014,7 +1070,9 @@ export default function AddRecordatorioModal({
                       {index < DESTINO_STEPS.length - 1 ? (
                         <span
                           className={`mb-4 hidden h-0.5 flex-1 rounded sm:mb-5 sm:block ${
-                            step.id < maxUnlockedStep ? 'bg-emerald-400' : 'bg-slate-200'
+                            avisoBasicoCompleto && step.id < maxUnlockedStep
+                              ? 'bg-emerald-400'
+                              : 'bg-slate-200'
                           }`}
                           aria-hidden
                         />
@@ -1025,7 +1083,11 @@ export default function AddRecordatorioModal({
               </ol>
             </div>
 
-            <div className="space-y-4 px-4 py-4 sm:px-5">
+            <div
+              className={`space-y-4 px-4 py-4 sm:px-5 ${
+                avisoBasicoCompleto ? '' : 'pointer-events-none select-none'
+              }`}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">
@@ -1153,11 +1215,71 @@ export default function AddRecordatorioModal({
                 />
               )}
 
+              {destinoStep === 6 && (
+                <div className="space-y-4">
+                  <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <h4 className="text-sm font-semibold text-slate-900">Resumen</h4>
+                    <p className="text-sm text-slate-800">
+                      <strong>{formData.nombre || '—'}</strong>
+                      {formData.tipo
+                        ? ` · ${tiposRecordatorio.find((t) => t.value === formData.tipo)?.label}`
+                        : ''}
+                    </p>
+                    <p className="whitespace-pre-wrap text-sm text-slate-600">
+                      {formData.descripcion || 'Sin descripción'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {[
+                        selectedLabels.area && `Área: ${selectedLabels.area}`,
+                        selectedLabels.materia && `Materia: ${selectedLabels.materia}`,
+                        selectedLabels.grado && `Grado: ${selectedLabels.grado}`,
+                        selectedLabels.curso && `Curso: ${selectedLabels.curso}`,
+                        formData.fecha && `Fecha: ${formData.fecha}`,
+                        `${estudiantesSeleccionados.length} estudiante${estudiantesSeleccionados.length !== 1 ? 's' : ''}`,
+                        modoEnvio
+                          .map((m) =>
+                            m === 'email' ? 'correo' : m === 'whatsapp' ? 'WhatsApp' : m
+                          )
+                          .join(' + '),
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  </div>
+
+                  {!canCreateRecordatorio ? (
+                    <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                      {createBlockedHint ||
+                        'Completa todos los pasos anteriores para habilitar la creación.'}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-emerald-700">
+                      Todo listo. Puedes crear el recordatorio.
+                    </p>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full"
+                    disabled={!canCreateRecordatorio || submitting}
+                    title={
+                      canCreateRecordatorio
+                        ? 'Crear recordatorio'
+                        : createBlockedHint || 'Completa los pasos anteriores'
+                    }
+                    onClick={() => void handleCrearRecordatorio()}
+                  >
+                    {submitting ? 'Creando…' : 'Crear recordatorio'}
+                  </Button>
+                </div>
+              )}
+
               <div
                 className={`flex items-center gap-3 border-t border-slate-100 pt-3 ${
                   destinoStep === 1
                     ? 'justify-end'
-                    : destinoStep === 5
+                    : destinoStep === 6
                       ? 'justify-start'
                       : 'justify-between'
                 }`}
@@ -1171,14 +1293,14 @@ export default function AddRecordatorioModal({
                     Anterior
                   </Button>
                 ) : null}
-                {destinoStep < 5 ? (
+                {destinoStep < 6 ? (
                   <Button
                     type="button"
                     variant="primary"
                     disabled={destinoStep >= maxUnlockedStep}
                     onClick={() =>
                       setDestinoStep((s) =>
-                        s < 5 && s < maxUnlockedStep ? ((s + 1) as DestinoStep) : s
+                        s < 6 && s < maxUnlockedStep ? ((s + 1) as DestinoStep) : s
                       )
                     }
                   >
@@ -1191,41 +1313,7 @@ export default function AddRecordatorioModal({
 
           {error && <ErrorBanner title={error} />}
 
-          {fase === 'confirm' && (
-            <section
-              className="space-y-2 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-nested)] p-4"
-              aria-label="Resumen antes de crear"
-            >
-              <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
-                Resumen antes de crear
-              </h3>
-              <p className="text-sm">
-                <strong>{formData.nombre}</strong> ·{' '}
-                {tiposRecordatorio.find((t) => t.value === formData.tipo)?.label}
-              </p>
-              <p className="text-sm text-[var(--color-text-secondary)]">{formData.descripcion}</p>
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                {selectedLabels.area} · {selectedLabels.materia} · {selectedLabels.grado} ·{' '}
-                {selectedLabels.curso} · Fecha {formData.fecha} ·{' '}
-                {estudiantesSeleccionados.length} destinatario
-                {estudiantesSeleccionados.length !== 1 ? 's' : ''}
-              </p>
-            </section>
-          )}
-
-          <div className="flex flex-col gap-3 border-t border-[var(--color-border-light)] pt-4 sm:flex-row">
-            {fase === 'confirm' && (
-              <Button type="button" variant="outline" onClick={() => setFase('form')}>
-                Volver a editar
-              </Button>
-            )}
-            <Button type="submit" variant="primary" disabled={submitting} className="flex-1">
-              {submitting
-                ? 'Creando…'
-                : fase === 'form'
-                  ? 'Revisar y crear'
-                  : 'Crear recordatorio'}
-            </Button>
+          <div className="flex justify-end border-t border-[var(--color-border-light)] pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancelar
             </Button>
@@ -1237,24 +1325,25 @@ export default function AddRecordatorioModal({
         open={showEmailPreview}
         onClose={() => setShowEmailPreview(false)}
         title="Vista previa del correo"
-        size="xl"
-        className="max-w-2xl"
+        size="full"
+        className="!h-[calc(100dvh-2rem)] !max-h-[calc(100dvh-2rem)] !max-w-[min(100%,42rem)] overflow-hidden"
         zIndex={120}
         showCloseButton={false}
+        contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-3 sm:px-5"
       >
-        <div className="mb-4 flex justify-center">
+        <div className="mb-2 flex shrink-0 justify-center">
           <Button type="button" variant="primary" onClick={() => setShowEmailPreview(false)}>
             Cerrar vista previa
           </Button>
         </div>
-        <p className="mb-3 text-center text-sm text-slate-600">
+        <p className="mb-3 shrink-0 text-center text-sm text-slate-600">
           Así verá el acudiente el mensaje de Copetón cuando envíes por correo.
         </p>
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-[#e8eef5]">
           <iframe
             title="Vista previa correo recordatorio"
             srcDoc={emailPreviewHtml}
-            className="h-[min(60vh,520px)] w-full bg-white"
+            className="absolute inset-0 h-full w-full border-0 bg-[#e8eef5]"
             sandbox=""
           />
         </div>
