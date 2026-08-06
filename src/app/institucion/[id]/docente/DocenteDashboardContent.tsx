@@ -725,6 +725,8 @@ export default function DocenteDashboardContent() {
           }}
           docenteId={docente.id}
           institucionId={docente.institucion?.id ?? 0}
+          institucionNombre={docente.institucion?.nombre ?? 'Institución'}
+          docenteNombre={`${docente.nombres} ${docente.apellidos}`.trim()}
           asignaciones={docente.docenteAsignaciones || []}
         />
       )}

@@ -2,6 +2,8 @@ export { sendEmail, type SendEmailResult } from './email';
 export {
   sendReminderEmailNotification,
   COPETON_PUBLIC_PATH,
+  buildReminderEmailHtml,
+  parseLocalDateInput,
   type SendReminderEmailParams
 } from './reminder';
 export {
