@@ -675,6 +675,40 @@ export default function AddRecordatorioModal({
   const whatsappSelected = modoEnvio.includes('whatsapp');
   const currentStepMeta = DESTINO_STEPS.find((s) => s.id === destinoStep)!;
 
+  const fechaSeleccionadaOk = (() => {
+    if (!formData.fecha) return false;
+    const parsed = parseLocalDateInput(formData.fecha);
+    if (!parsed) return false;
+    const startToday = new Date();
+    startToday.setHours(0, 0, 0, 0);
+    return parsed >= startToday;
+  })();
+
+  const avisoBasicoCompleto =
+    formData.nombre.trim().length > 0 &&
+    formData.tipo.length > 0 &&
+    formData.descripcion.trim().length > 0 &&
+    fechaSeleccionadaOk &&
+    modoEnvio.length > 0;
+
+  const canPreviewEmail = emailSelected && avisoBasicoCompleto;
+
+  const previewBlockedHint = !emailSelected
+    ? 'Activa correo electrónico para ver la vista previa.'
+    : !formData.nombre.trim()
+      ? 'Completa el nombre del recordatorio.'
+      : !formData.tipo
+        ? 'Selecciona el tipo de recordatorio.'
+        : !formData.descripcion.trim()
+          ? 'Escribe la descripción.'
+          : !formData.fecha
+            ? 'Elige la fecha.'
+            : !fechaSeleccionadaOk
+              ? 'La fecha no puede ser anterior a hoy.'
+              : modoEnvio.length === 0
+                ? 'Elige al menos un método de envío.'
+                : '';
+
   return (
     <>
       <Modal
@@ -685,7 +719,8 @@ export default function AddRecordatorioModal({
         className="max-w-3xl"
       >
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-          Completa el aviso y luego elige a quién llega, paso a paso.
+          Todos los campos son obligatorios: datos del aviso, canal de envío y los 5 pasos de
+          destino (área, materia, grado, curso y estudiantes).
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -844,37 +879,64 @@ export default function AddRecordatorioModal({
             </div>
 
             {emailSelected && (
-              <button
-                type="button"
-                onClick={() => setShowEmailPreview(true)}
-                className="mt-3 flex w-full items-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50 px-4 py-3 text-left shadow-sm transition hover:border-blue-300 hover:from-blue-100 hover:to-sky-100"
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-blue-900">
-                    Vista previa del correo al acudiente
+              <div className="mt-3 space-y-1.5">
+                <button
+                  type="button"
+                  disabled={!canPreviewEmail}
+                  onClick={() => {
+                    if (!canPreviewEmail) return;
+                    setShowEmailPreview(true);
+                  }}
+                  title={canPreviewEmail ? 'Abrir vista previa del correo' : previewBlockedHint}
+                  className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-sm transition ${
+                    canPreviewEmail
+                      ? 'cursor-pointer border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50 hover:border-blue-300 hover:from-blue-100 hover:to-sky-100'
+                      : 'cursor-not-allowed border-slate-200 bg-slate-100 opacity-60'
+                  }`}
+                >
+                  <span
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white shadow ${
+                      canPreviewEmail ? 'bg-blue-600' : 'bg-slate-400'
+                    }`}
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
                   </span>
-                  <span className="mt-0.5 block text-xs text-blue-700/80">
-                    Mira cómo se verá el mensaje de Copetón antes de enviarlo.
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`block text-sm font-semibold ${
+                        canPreviewEmail ? 'text-blue-900' : 'text-slate-600'
+                      }`}
+                    >
+                      Vista previa del correo al acudiente
+                    </span>
+                    <span
+                      className={`mt-0.5 block text-xs ${
+                        canPreviewEmail ? 'text-blue-700/80' : 'text-slate-500'
+                      }`}
+                    >
+                      {canPreviewEmail
+                        ? 'Mira cómo se verá el mensaje de Copetón antes de enviarlo.'
+                        : previewBlockedHint}
+                    </span>
                   </span>
-                </span>
-                <span className="hidden text-sm font-medium text-blue-700 sm:inline">Ver</span>
-              </button>
+                  {canPreviewEmail ? (
+                    <span className="hidden text-sm font-medium text-blue-700 sm:inline">Ver</span>
+                  ) : null}
+                </button>
+              </div>
             )}
           </div>
 
@@ -1091,27 +1153,38 @@ export default function AddRecordatorioModal({
                 />
               )}
 
-              <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={destinoStep <= 1}
-                  onClick={() => setDestinoStep((s) => (s > 1 ? ((s - 1) as DestinoStep) : s))}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  disabled={destinoStep >= 5 || destinoStep >= maxUnlockedStep}
-                  onClick={() =>
-                    setDestinoStep((s) =>
-                      s < 5 && s < maxUnlockedStep ? ((s + 1) as DestinoStep) : s
-                    )
-                  }
-                >
-                  Siguiente
-                </Button>
+              <div
+                className={`flex items-center gap-3 border-t border-slate-100 pt-3 ${
+                  destinoStep === 1
+                    ? 'justify-end'
+                    : destinoStep === 5
+                      ? 'justify-start'
+                      : 'justify-between'
+                }`}
+              >
+                {destinoStep > 1 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDestinoStep((s) => (s > 1 ? ((s - 1) as DestinoStep) : s))}
+                  >
+                    Anterior
+                  </Button>
+                ) : null}
+                {destinoStep < 5 ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    disabled={destinoStep >= maxUnlockedStep}
+                    onClick={() =>
+                      setDestinoStep((s) =>
+                        s < 5 && s < maxUnlockedStep ? ((s + 1) as DestinoStep) : s
+                      )
+                    }
+                  >
+                    Siguiente
+                  </Button>
+                ) : null}
               </div>
             </div>
           </section>
@@ -1167,22 +1240,23 @@ export default function AddRecordatorioModal({
         size="xl"
         className="max-w-2xl"
         zIndex={120}
+        showCloseButton={false}
       >
-        <p className="mb-3 text-sm text-slate-600">
+        <div className="mb-4 flex justify-center">
+          <Button type="button" variant="primary" onClick={() => setShowEmailPreview(false)}>
+            Cerrar vista previa
+          </Button>
+        </div>
+        <p className="mb-3 text-center text-sm text-slate-600">
           Así verá el acudiente el mensaje de Copetón cuando envíes por correo.
         </p>
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
           <iframe
             title="Vista previa correo recordatorio"
             srcDoc={emailPreviewHtml}
-            className="h-[70vh] w-full bg-white"
+            className="h-[min(60vh,520px)] w-full bg-white"
             sandbox=""
           />
-        </div>
-        <div className="mt-4 flex justify-end">
-          <Button type="button" variant="primary" onClick={() => setShowEmailPreview(false)}>
-            Cerrar vista previa
-          </Button>
         </div>
       </Modal>
     </>
