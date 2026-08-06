@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useMemo, useEffect, useCallback, memo, startTransition } from 'react';
 import { showConfirm } from '@/lib/notifications';
@@ -26,6 +25,46 @@ interface AddRecordatorioModalProps {
   asignaciones?: AsignacionLike[];
 }
 
+type DestinoStep = 1 | 2 | 3 | 4 | 5;
+
+const DESTINO_STEPS: {
+  id: DestinoStep;
+  title: string;
+  short: string;
+  tip: string;
+}[] = [
+  {
+    id: 1,
+    title: 'Área',
+    short: 'Área',
+    tip: 'Primero elige el área académica (por ejemplo Ciencias o Lenguaje). Solo verás las áreas que tienes asignadas.',
+  },
+  {
+    id: 2,
+    title: 'Materia',
+    short: 'Materia',
+    tip: 'Después de elegir el área, selecciona la materia concreta a la que aplica este recordatorio.',
+  },
+  {
+    id: 3,
+    title: 'Grado',
+    short: 'Grado',
+    tip: 'Indica el grado escolar (por ejemplo 5.° o 6.°). Filtra los cursos disponibles en el siguiente paso.',
+  },
+  {
+    id: 4,
+    title: 'Curso',
+    short: 'Curso',
+    tip: 'Elige el grupo o curso (por ejemplo 5-A). Con esto cargamos la lista de estudiantes.',
+  },
+  {
+    id: 5,
+    title: 'Estudiantes',
+    short: 'Alumnos',
+    tip: 'Marca a qué estudiantes va dirigido el aviso. Sus acudientes recibirán la notificación por el canal que elegiste.',
+  },
+];
+
 function FieldLabel({
   children,
   required,
@@ -36,15 +75,62 @@ function FieldLabel({
   tip: string;
 }) {
   return (
-    <div className="flex items-center gap-1.5 mb-2">
+    <div className="mb-2 flex items-center gap-1.5">
       <label className="block text-sm font-semibold text-slate-700">
         {children}
         {required ? <span className="text-red-500"> *</span> : null}
       </label>
-      <InfoTooltip label={`Ayuda: ${typeof children === 'string' ? children : 'campo'}`} size="sm" triggerVariant="muted" placement="center">
-        <p className="leading-relaxed text-sm">{tip}</p>
+      <InfoTooltip
+        label={`Ayuda: ${typeof children === 'string' ? children : 'campo'}`}
+        size="sm"
+        triggerVariant="muted"
+        placement="center"
+      >
+        <p className="text-sm leading-relaxed">{tip}</p>
       </InfoTooltip>
     </div>
+  );
+}
+
+function OptionCard({
+  selected,
+  title,
+  subtitle,
+  onSelect,
+}: {
+  selected: boolean;
+  title: string;
+  subtitle?: string;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full rounded-xl border-2 px-4 py-3 text-left transition ${
+        selected
+          ? 'border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-200'
+          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+      }`}
+    >
+      <span className="flex items-center gap-3">
+        <span
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+            selected ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
+          }`}
+        >
+          {selected ? (
+            <svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : null}
+        </span>
+        <span>
+          <span className="block text-sm font-semibold text-slate-900">{title}</span>
+          {subtitle ? <span className="mt-0.5 block text-xs text-slate-500">{subtitle}</span> : null}
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -65,9 +151,7 @@ const EstudiantesSelector = memo(function EstudiantesSelector({
 
   useEffect(() => {
     setSelectedIds((prev) => {
-      if (prev.size === value.length && value.every((id) => prev.has(id))) {
-        return prev;
-      }
+      if (prev.size === value.length && value.every((id) => prev.has(id))) return prev;
       return new Set(value);
     });
   }, [value]);
@@ -82,16 +166,16 @@ const EstudiantesSelector = memo(function EstudiantesSelector({
 
   if (loading) {
     return (
-      <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-8 text-center">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center">
         <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
-        <p className="text-sm text-slate-600">Cargando estudiantes...</p>
+        <p className="text-sm text-slate-600">Cargando estudiantes del curso…</p>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4 text-center">
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-center">
         <p className="text-sm text-red-700">{loadError}</p>
       </div>
     );
@@ -99,8 +183,8 @@ const EstudiantesSelector = memo(function EstudiantesSelector({
 
   if (estudiantes.length === 0) {
     return (
-      <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-4 text-center">
-        <p className="text-sm text-slate-600">No hay estudiantes en este curso</p>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+        <p className="text-sm text-slate-600">Este curso aún no tiene estudiantes activos.</p>
       </div>
     );
   }
@@ -108,26 +192,33 @@ const EstudiantesSelector = memo(function EstudiantesSelector({
   const allSelected = selectedIds.size === estudiantes.length;
 
   return (
-    <>
-      <div className="flex items-center justify-between">
-        <FieldLabel tip="Elige a quiénes se les notificará a sus acudientes. Puedes marcar todos o solo algunos.">
-          Estudiantes
-        </FieldLabel>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-slate-600">
+          {selectedIds.size} de {estudiantes.length} seleccionado
+          {selectedIds.size !== 1 ? 's' : ''}
+        </p>
         <button
           type="button"
-          onClick={() => commit(allSelected ? new Set() : new Set(estudiantes.map((item) => item.id)))}
-          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          onClick={() =>
+            commit(allSelected ? new Set() : new Set(estudiantes.map((item) => item.id)))
+          }
+          className="text-sm font-semibold text-blue-600 hover:text-blue-700"
         >
-          {allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+          {allSelected ? 'Quitar todos' : 'Seleccionar todos'}
         </button>
       </div>
-      <div className="max-h-64 space-y-2 overflow-y-auto rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
+      <div className="max-h-64 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
         {estudiantes.map((estudiante) => {
           const selected = selectedIds.has(estudiante.id);
           return (
             <label
               key={estudiante.id}
-              className="flex cursor-pointer items-center rounded-lg p-3 transition-colors hover:bg-white"
+              className={`flex cursor-pointer items-center rounded-lg border px-3 py-2.5 transition ${
+                selected
+                  ? 'border-blue-200 bg-white shadow-sm'
+                  : 'border-transparent hover:border-slate-200 hover:bg-white'
+              }`}
             >
               <input
                 type="checkbox"
@@ -140,23 +231,19 @@ const EstudiantesSelector = memo(function EstudiantesSelector({
                 }}
                 className="form-quiet-focus h-4 w-4 rounded text-blue-600"
               />
-              <span className="ml-3 flex-1 text-slate-800">
+              <span className="ml-3 flex-1 text-sm text-slate-800">
                 {estudiante.nombres} {estudiante.apellidos}
-                {estudiante.codigo_estudiantil && (
-                  <span className="ml-2 text-sm text-slate-500">({estudiante.codigo_estudiantil})</span>
-                )}
+                {estudiante.codigo_estudiantil ? (
+                  <span className="ml-2 text-xs text-slate-500">
+                    ({estudiante.codigo_estudiantil})
+                  </span>
+                ) : null}
               </span>
             </label>
           );
         })}
       </div>
-      {selectedIds.size > 0 && (
-        <p className="text-xs text-slate-500">
-          {selectedIds.size} estudiante{selectedIds.size !== 1 ? 's' : ''} seleccionado
-          {selectedIds.size !== 1 ? 's' : ''}
-        </p>
-      )}
-    </>
+    </div>
   );
 });
 
@@ -189,6 +276,7 @@ export default function AddRecordatorioModal({
   const [fase, setFase] = useState<'form' | 'confirm'>('form');
   const [modoEnvio, setModoEnvio] = useState<string[]>(['email']);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [destinoStep, setDestinoStep] = useState<DestinoStep>(1);
 
   const tiposRecordatorio = [
     { value: 'tarea', label: 'Tarea' },
@@ -252,6 +340,18 @@ export default function AddRecordatorioModal({
     return Array.from(materiasMap.values());
   }, [asignaciones, formData.areaId]);
 
+  const maxUnlockedStep: DestinoStep = useMemo(() => {
+    if (!formData.areaId) return 1;
+    if (!formData.materiaId) return 2;
+    if (!formData.gradoId) return 3;
+    if (!formData.cursoId) return 4;
+    return 5;
+  }, [formData.areaId, formData.materiaId, formData.gradoId, formData.cursoId]);
+
+  useEffect(() => {
+    if (destinoStep > maxUnlockedStep) setDestinoStep(maxUnlockedStep);
+  }, [destinoStep, maxUnlockedStep]);
+
   useEffect(() => {
     if (!formData.cursoId) {
       setEstudiantes([]);
@@ -278,13 +378,13 @@ export default function AddRecordatorioModal({
           setEstudiantes([]);
           setEstudiantesError(
             data.error ||
-              'No se pudieron cargar los estudiantes de este curso. Verifica tu asignación e inténtalo de nuevo.'
+              'No se pudieron cargar los estudiantes. Confirma que el curso está en tu asignación.'
           );
         }
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
         setEstudiantes([]);
-        setEstudiantesError('Error de red al cargar estudiantes.');
+        setEstudiantesError('No hay conexión para cargar estudiantes. Inténtalo de nuevo.');
       } finally {
         if (!controller.signal.aborted) setCargandoEstudiantes(false);
       }
@@ -302,63 +402,88 @@ export default function AddRecordatorioModal({
     if (error) setError('');
   };
 
-  const handleRadioChange = (name: string, value: string) => {
-    const next = { ...formData, [name]: value };
-    if (name === 'gradoId') {
-      next.cursoId = '';
+  const selectDestino = (name: 'areaId' | 'materiaId' | 'gradoId' | 'cursoId', value: string) => {
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === 'areaId') {
+        next.materiaId = '';
+        next.gradoId = '';
+        next.cursoId = '';
+      }
+      if (name === 'materiaId') {
+        next.gradoId = '';
+        next.cursoId = '';
+      }
+      if (name === 'gradoId') {
+        next.cursoId = '';
+      }
+      return next;
+    });
+
+    if (name === 'areaId' || name === 'materiaId' || name === 'gradoId') {
       setEstudiantes([]);
       setEstudiantesSeleccionados([]);
     }
-    if (name === 'cursoId') setEstudiantesSeleccionados([]);
-    if (name === 'areaId') next.materiaId = '';
-    setFormData(next);
+    if (name === 'cursoId') {
+      setEstudiantesSeleccionados([]);
+    }
+
     if (error) setError('');
+
+    if (name === 'areaId') setDestinoStep(2);
+    if (name === 'materiaId') setDestinoStep(3);
+    if (name === 'gradoId') setDestinoStep(4);
+    if (name === 'cursoId') setDestinoStep(5);
   };
 
   const validarFormulario = (): boolean => {
     if (!docenteId || docenteId <= 0) {
-      setError('No se identificó al docente. Recarga la página e inténtalo de nuevo.');
+      setError('No se identificó tu sesión de docente. Recarga la página e inténtalo otra vez.');
       return false;
     }
     if (!formData.nombre.trim()) {
-      setError('El nombre del recordatorio es requerido');
+      setError('Escribe un nombre para el recordatorio.');
       return false;
     }
     if (!formData.tipo) {
-      setError('El tipo de recordatorio es requerido');
+      setError('Elige el tipo: tarea, examen, evento u otro.');
       return false;
     }
     if (!formData.descripcion.trim()) {
-      setError('La descripción es requerida');
+      setError('Agrega una descripción para que el acudiente entienda el aviso.');
       return false;
     }
     if (!formData.fecha) {
-      setError('La fecha del recordatorio es requerida');
+      setError('Selecciona la fecha del recordatorio.');
       return false;
     }
     if (!formData.gradoId || !formData.cursoId || !formData.areaId || !formData.materiaId) {
-      setError('Selecciona grado, curso, área y materia');
+      setError('Completa los 5 pasos de destino: área, materia, grado, curso y estudiantes.');
+      setDestinoStep(
+        !formData.areaId ? 1 : !formData.materiaId ? 2 : !formData.gradoId ? 3 : !formData.cursoId ? 4 : 5
+      );
       return false;
     }
 
     const fechaSeleccionada = parseLocalDateInput(formData.fecha);
     if (!fechaSeleccionada) {
-      setError('La fecha del recordatorio no es válida');
+      setError('La fecha no es válida.');
       return false;
     }
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     if (fechaSeleccionada < hoy) {
-      setError('La fecha no puede ser anterior a hoy');
+      setError('La fecha no puede ser anterior a hoy.');
       return false;
     }
 
     if (modoEnvio.length === 0) {
-      setError('Selecciona al menos un método de envío (WhatsApp o correo electrónico)');
+      setError('Elige al menos un canal: correo electrónico o WhatsApp.');
       return false;
     }
     if (estudiantesSeleccionados.length === 0) {
-      setError('Selecciona al menos un estudiante para enviar el recordatorio');
+      setError('Selecciona al menos un estudiante (paso 5).');
+      setDestinoStep(5);
       return false;
     }
     return true;
@@ -367,7 +492,6 @@ export default function AddRecordatorioModal({
   const fechaIsoParaApi = (): string => {
     const local = parseLocalDateInput(formData.fecha);
     if (!local) return formData.fecha;
-    // Mediodía local → ISO estable (evita correr un día por UTC)
     return new Date(
       local.getFullYear(),
       local.getMonth(),
@@ -424,7 +548,7 @@ export default function AddRecordatorioModal({
       onClose();
     } catch (err) {
       console.error('Error al crear recordatorio:', err);
-      setError('No pudimos crear el recordatorio. Intenta de nuevo.');
+      setError('No pudimos crear el recordatorio. Revisa tu conexión e inténtalo de nuevo.');
       setFase('form');
     } finally {
       setSubmitting(false);
@@ -434,7 +558,6 @@ export default function AddRecordatorioModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     if (!validarFormulario()) return;
 
     if (fase === 'form') {
@@ -486,6 +609,7 @@ export default function AddRecordatorioModal({
     setError('');
     setFase('form');
     setShowEmailPreview(false);
+    setDestinoStep(1);
   };
 
   const toggleModoEnvio = (value: string) => {
@@ -516,6 +640,7 @@ export default function AddRecordatorioModal({
       baseUrl:
         typeof window !== 'undefined' ? window.location.origin : 'https://ahoritapp.com',
       copetonSrc: COPETON_PUBLIC_PATH,
+      showActionButtons: false,
     });
   }, [
     formData.nombre,
@@ -525,12 +650,30 @@ export default function AddRecordatorioModal({
     docenteNombre,
   ]);
 
+  const selectedLabels = useMemo(() => {
+    const area = opcionesIniciales.areas.find((a) => String(a.id) === formData.areaId)?.nombre;
+    const materia = materiasFiltradas.find((m) => String(m.id) === formData.materiaId)?.nombre;
+    const grado = opcionesIniciales.grados.find((g) => String(g.id) === formData.gradoId)?.nombre;
+    const curso = cursosFiltrados.find((c) => String(c.id) === formData.cursoId)?.nombre;
+    return { area, materia, grado, curso };
+  }, [
+    opcionesIniciales.areas,
+    opcionesIniciales.grados,
+    materiasFiltradas,
+    cursosFiltrados,
+    formData.areaId,
+    formData.materiaId,
+    formData.gradoId,
+    formData.cursoId,
+  ]);
+
   if (!isOpen) return null;
 
   const hoy = new Date();
   const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
   const emailSelected = modoEnvio.includes('email');
   const whatsappSelected = modoEnvio.includes('whatsapp');
+  const currentStepMeta = DESTINO_STEPS.find((s) => s.id === destinoStep)!;
 
   return (
     <>
@@ -542,14 +685,14 @@ export default function AddRecordatorioModal({
         className="max-w-3xl"
       >
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-          Crea un recordatorio para organizar tareas, exámenes o eventos con tus estudiantes.
+          Completa el aviso y luego elige a quién llega, paso a paso.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <FieldLabel
               required
-              tip="Título corto que verá el acudiente en el correo o WhatsApp. Sé claro: materia + actividad."
+              tip="Es el título que verá el acudiente. Usa algo concreto, por ejemplo: “Tarea de fracciones — entrega viernes”."
             >
               Nombre del recordatorio
             </FieldLabel>
@@ -561,14 +704,14 @@ export default function AddRecordatorioModal({
               required
               maxLength={255}
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400"
-              placeholder="Ej: Revisar exámenes de Matemáticas"
+              placeholder="Ej: Tarea de fracciones — entrega viernes"
             />
           </div>
 
           <div>
             <FieldLabel
               required
-              tip="Clasifica el aviso: tarea, examen, evento u otro. Ayuda al acudiente a priorizar."
+              tip="Clasifica el aviso para que el acudiente sepa si es tarea, examen, evento u otro tipo."
             >
               Tipo de recordatorio
             </FieldLabel>
@@ -598,7 +741,7 @@ export default function AddRecordatorioModal({
           <div>
             <FieldLabel
               required
-              tip="Detalle que leerá el acudiente: qué debe hacer el estudiante, materiales o indicaciones."
+              tip="Explica con claridad qué debe hacer o saber el estudiante. Este texto llega al acudiente casi tal cual."
             >
               Descripción
             </FieldLabel>
@@ -610,7 +753,7 @@ export default function AddRecordatorioModal({
               rows={4}
               maxLength={1000}
               className="w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400"
-              placeholder="Describe los detalles del recordatorio..."
+              placeholder="Ej: Traer el cuaderno y resolver los ejercicios 1 al 10 de la página 42."
             />
             <p className="mt-1 text-xs text-slate-500">{formData.descripcion.length}/1000 caracteres</p>
           </div>
@@ -618,7 +761,7 @@ export default function AddRecordatorioModal({
           <div>
             <FieldLabel
               required
-              tip="Fecha límite o del evento. No puede ser anterior a hoy (zona horaria local)."
+              tip="Fecha límite o del evento. No puede ser un día anterior a hoy."
             >
               Fecha del recordatorio
             </FieldLabel>
@@ -636,7 +779,7 @@ export default function AddRecordatorioModal({
           <div>
             <FieldLabel
               required
-              tip="Elige por qué canales notificar a los acudientes. Puedes combinar correo y WhatsApp. El SMS ya no está disponible."
+              tip="Define cómo se notifica al acudiente. Puedes marcar correo, WhatsApp o ambos. El SMS ya no está disponible."
             >
               Método de envío
             </FieldLabel>
@@ -667,7 +810,7 @@ export default function AddRecordatorioModal({
                 <span>
                   <span className="block font-semibold text-slate-900">Correo electrónico</span>
                   <span className="mt-0.5 block text-xs text-slate-600">
-                    Llega con la plantilla de Copetón al correo del acudiente.
+                    El acudiente recibe el mensaje con la plantilla de Copetón.
                   </span>
                 </span>
               </button>
@@ -694,148 +837,284 @@ export default function AddRecordatorioModal({
                 <span>
                   <span className="block font-semibold text-slate-900">WhatsApp</span>
                   <span className="mt-0.5 block text-xs text-slate-600">
-                    Requiere plan con WhatsApp y opt-in del acudiente.
+                    Solo si tu plan lo incluye y el acudiente ya autorizó WhatsApp.
                   </span>
                 </span>
               </button>
             </div>
 
             {emailSelected && (
-              <div className="mt-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  onClick={() => setShowEmailPreview(true)}
-                >
-                  Vista previa del correo al acudiente
-                </Button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowEmailPreview(true)}
+                className="mt-3 flex w-full items-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50 px-4 py-3 text-left shadow-sm transition hover:border-blue-300 hover:from-blue-100 hover:to-sky-100"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-blue-900">
+                    Vista previa del correo al acudiente
+                  </span>
+                  <span className="mt-0.5 block text-xs text-blue-700/80">
+                    Mira cómo se verá el mensaje de Copetón antes de enviarlo.
+                  </span>
+                </span>
+                <span className="hidden text-sm font-medium text-blue-700 sm:inline">Ver</span>
+              </button>
             )}
           </div>
 
-          {opcionesIniciales.areas.length > 0 && (
-            <div>
-              <FieldLabel required tip="Área académica asociada a tus asignaciones (ej. Matemáticas, Ciencias).">
-                Área
-              </FieldLabel>
-              <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
-                {opcionesIniciales.areas.map((area) => (
-                  <label
-                    key={area.id}
-                    className="flex cursor-pointer items-center rounded-lg p-3 transition-colors hover:bg-white"
-                  >
-                    <input
-                      type="radio"
-                      name="areaId"
-                      value={area.id.toString()}
-                      checked={formData.areaId === area.id.toString()}
-                      onChange={(e) => handleRadioChange('areaId', e.target.value)}
-                      className="h-4 w-4 rounded text-blue-600"
-                    />
-                    <span className="ml-3 text-slate-800">{area.nombre}</span>
-                  </label>
-                ))}
+          {/* Destino en pasos */}
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 sm:px-5">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-slate-900">Destino del recordatorio</h3>
+                <InfoTooltip
+                  label="Ayuda: destino"
+                  size="sm"
+                  triggerVariant="muted"
+                  placement="center"
+                >
+                  <p className="text-sm leading-relaxed">
+                    Completa estos 5 pasos en orden. Cada elección desbloquea el siguiente.
+                  </p>
+                </InfoTooltip>
               </div>
-            </div>
-          )}
+              <p className="mt-1 text-xs text-slate-500">
+                Paso {destinoStep} de 5 · {currentStepMeta.title}
+              </p>
 
-          {formData.areaId && materiasFiltradas.length > 0 && (
-            <div>
-              <FieldLabel required tip="Materia concreta del área que seleccionaste.">
-                Materia
-              </FieldLabel>
-              <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
-                {materiasFiltradas.map((materia) => (
-                  <label
-                    key={materia.id}
-                    className="flex cursor-pointer items-center rounded-lg p-3 transition-colors hover:bg-white"
-                  >
-                    <input
-                      type="radio"
-                      name="materiaId"
-                      value={materia.id.toString()}
-                      checked={formData.materiaId === materia.id.toString()}
-                      onChange={(e) => handleRadioChange('materiaId', e.target.value)}
-                      className="h-4 w-4 rounded text-blue-600"
-                    />
-                    <span className="ml-3 text-slate-800">{materia.nombre}</span>
-                  </label>
-                ))}
+              <ol className="mt-4 flex items-center gap-1 sm:gap-2">
+                {DESTINO_STEPS.map((step, index) => {
+                  const done =
+                    (step.id === 1 && !!formData.areaId) ||
+                    (step.id === 2 && !!formData.materiaId) ||
+                    (step.id === 3 && !!formData.gradoId) ||
+                    (step.id === 4 && !!formData.cursoId) ||
+                    (step.id === 5 && estudiantesSeleccionados.length > 0);
+                  const unlocked = step.id <= maxUnlockedStep;
+                  const active = step.id === destinoStep;
+                  return (
+                    <li key={step.id} className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
+                      <button
+                        type="button"
+                        disabled={!unlocked}
+                        onClick={() => unlocked && setDestinoStep(step.id)}
+                        className={`flex w-full flex-col items-center gap-1 rounded-lg px-0.5 py-1 transition ${
+                          unlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'
+                        }`}
+                        aria-current={active ? 'step' : undefined}
+                      >
+                        <span
+                          className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                            active
+                              ? 'bg-blue-600 text-white shadow'
+                              : done
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          {done && !active ? (
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2.5}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          ) : (
+                            step.id
+                          )}
+                        </span>
+                        <span
+                          className={`hidden text-[10px] font-medium sm:block ${
+                            active ? 'text-blue-700' : 'text-slate-500'
+                          }`}
+                        >
+                          {step.short}
+                        </span>
+                      </button>
+                      {index < DESTINO_STEPS.length - 1 ? (
+                        <span
+                          className={`mb-4 hidden h-0.5 flex-1 rounded sm:mb-5 sm:block ${
+                            step.id < maxUnlockedStep ? 'bg-emerald-400' : 'bg-slate-200'
+                          }`}
+                          aria-hidden
+                        />
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+
+            <div className="space-y-4 px-4 py-4 sm:px-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Paso {destinoStep}: {currentStepMeta.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500">{currentStepMeta.tip}</p>
+                </div>
+                <InfoTooltip
+                  label={`Ayuda: ${currentStepMeta.title}`}
+                  size="sm"
+                  triggerVariant="muted"
+                  placement="left"
+                >
+                  <p className="text-sm leading-relaxed">{currentStepMeta.tip}</p>
+                </InfoTooltip>
               </div>
-            </div>
-          )}
 
-          {opcionesIniciales.grados.length > 0 && (
-            <div>
-              <FieldLabel required tip="Grado escolar al que pertenece el curso de destino.">
-                Grado
-              </FieldLabel>
-              <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
-                {opcionesIniciales.grados.map((grado) => (
-                  <label
-                    key={grado.id}
-                    className="flex cursor-pointer items-center rounded-lg p-3 transition-colors hover:bg-white"
-                  >
-                    <input
-                      type="radio"
-                      name="gradoId"
-                      value={grado.id.toString()}
-                      checked={formData.gradoId === grado.id.toString()}
-                      onChange={(e) => handleRadioChange('gradoId', e.target.value)}
-                      className="h-4 w-4 rounded text-blue-600"
-                    />
-                    <span className="ml-3 text-slate-800">
-                      {grado.nombre} <span className="text-sm text-slate-500">({grado.nivel})</span>
+              {(selectedLabels.area ||
+                selectedLabels.materia ||
+                selectedLabels.grado ||
+                selectedLabels.curso) && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedLabels.area ? (
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                      Área: {selectedLabels.area}
                     </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {formData.gradoId && cursosFiltrados.length > 0 && (
-            <div>
-              <FieldLabel required tip="Curso o grupo dentro del grado (ej. 5-A). Define la lista de estudiantes.">
-                Curso
-              </FieldLabel>
-              <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border-2 border-slate-200 bg-slate-50 p-4">
-                {cursosFiltrados.map((curso) => (
-                  <label
-                    key={curso.id}
-                    className="flex cursor-pointer items-center rounded-lg p-3 transition-colors hover:bg-white"
-                  >
-                    <input
-                      type="radio"
-                      name="cursoId"
-                      value={curso.id.toString()}
-                      checked={formData.cursoId === curso.id.toString()}
-                      onChange={(e) => handleRadioChange('cursoId', e.target.value)}
-                      className="h-4 w-4 rounded text-blue-600"
-                    />
-                    <span className="ml-3 text-slate-800">
-                      {curso.nombre}
-                      {curso.jornada && (
-                        <span className="text-sm text-slate-500"> ({curso.jornada})</span>
-                      )}
+                  ) : null}
+                  {selectedLabels.materia ? (
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                      Materia: {selectedLabels.materia}
                     </span>
-                  </label>
-                ))}
+                  ) : null}
+                  {selectedLabels.grado ? (
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                      Grado: {selectedLabels.grado}
+                    </span>
+                  ) : null}
+                  {selectedLabels.curso ? (
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                      Curso: {selectedLabels.curso}
+                    </span>
+                  ) : null}
+                </div>
+              )}
+
+              {destinoStep === 1 && (
+                <div className="max-h-56 space-y-2 overflow-y-auto">
+                  {opcionesIniciales.areas.length === 0 ? (
+                    <p className="rounded-xl bg-amber-50 px-3 py-3 text-sm text-amber-800">
+                      No tienes áreas asignadas. Pide a tu administrador que te asigne materias.
+                    </p>
+                  ) : (
+                    opcionesIniciales.areas.map((area) => (
+                      <OptionCard
+                        key={area.id}
+                        selected={formData.areaId === String(area.id)}
+                        title={area.nombre}
+                        onSelect={() => selectDestino('areaId', String(area.id))}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {destinoStep === 2 && (
+                <div className="max-h-56 space-y-2 overflow-y-auto">
+                  {materiasFiltradas.length === 0 ? (
+                    <p className="text-sm text-slate-600">No hay materias en esta área.</p>
+                  ) : (
+                    materiasFiltradas.map((materia) => (
+                      <OptionCard
+                        key={materia.id}
+                        selected={formData.materiaId === String(materia.id)}
+                        title={materia.nombre}
+                        onSelect={() => selectDestino('materiaId', String(materia.id))}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {destinoStep === 3 && (
+                <div className="max-h-56 space-y-2 overflow-y-auto">
+                  {opcionesIniciales.grados.length === 0 ? (
+                    <p className="text-sm text-slate-600">No tienes grados asignados.</p>
+                  ) : (
+                    opcionesIniciales.grados.map((grado) => (
+                      <OptionCard
+                        key={grado.id}
+                        selected={formData.gradoId === String(grado.id)}
+                        title={grado.nombre}
+                        subtitle={grado.nivel}
+                        onSelect={() => selectDestino('gradoId', String(grado.id))}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {destinoStep === 4 && (
+                <div className="max-h-56 space-y-2 overflow-y-auto">
+                  {cursosFiltrados.length === 0 ? (
+                    <p className="text-sm text-slate-600">No hay cursos para este grado.</p>
+                  ) : (
+                    cursosFiltrados.map((curso) => (
+                      <OptionCard
+                        key={curso.id}
+                        selected={formData.cursoId === String(curso.id)}
+                        title={curso.nombre}
+                        subtitle={curso.jornada || undefined}
+                        onSelect={() => selectDestino('cursoId', String(curso.id))}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {destinoStep === 5 && (
+                <EstudiantesSelector
+                  estudiantes={estudiantes}
+                  value={estudiantesSeleccionados}
+                  loading={cargandoEstudiantes}
+                  loadError={estudiantesError}
+                  onChange={setEstudiantesSeleccionados}
+                />
+              )}
+
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={destinoStep <= 1}
+                  onClick={() => setDestinoStep((s) => (s > 1 ? ((s - 1) as DestinoStep) : s))}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  disabled={destinoStep >= 5 || destinoStep >= maxUnlockedStep}
+                  onClick={() =>
+                    setDestinoStep((s) =>
+                      s < 5 && s < maxUnlockedStep ? ((s + 1) as DestinoStep) : s
+                    )
+                  }
+                >
+                  Siguiente
+                </Button>
               </div>
             </div>
-          )}
-
-          {formData.cursoId && (
-            <div className="space-y-3">
-              <EstudiantesSelector
-                estudiantes={estudiantes}
-                value={estudiantesSeleccionados}
-                loading={cargandoEstudiantes}
-                loadError={estudiantesError}
-                onChange={setEstudiantesSeleccionados}
-              />
-            </div>
-          )}
+          </section>
 
           {error && <ErrorBanner title={error} />}
 
@@ -853,11 +1132,9 @@ export default function AddRecordatorioModal({
               </p>
               <p className="text-sm text-[var(--color-text-secondary)]">{formData.descripcion}</p>
               <p className="text-xs text-[var(--color-text-secondary)]">
-                Fecha: {formData.fecha} · Canales:{' '}
-                {modoEnvio
-                  .map((m) => (m === 'email' ? 'correo' : m === 'whatsapp' ? 'WhatsApp' : m))
-                  .join(', ')}{' '}
-                · {estudiantesSeleccionados.length} destinatario
+                {selectedLabels.area} · {selectedLabels.materia} · {selectedLabels.grado} ·{' '}
+                {selectedLabels.curso} · Fecha {formData.fecha} ·{' '}
+                {estudiantesSeleccionados.length} destinatario
                 {estudiantesSeleccionados.length !== 1 ? 's' : ''}
               </p>
             </section>
@@ -892,7 +1169,7 @@ export default function AddRecordatorioModal({
         zIndex={120}
       >
         <p className="mb-3 text-sm text-slate-600">
-          Así verá el acudiente el mensaje cuando envíes por correo electrónico (plantilla Copetón).
+          Así verá el acudiente el mensaje de Copetón cuando envíes por correo.
         </p>
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
           <iframe

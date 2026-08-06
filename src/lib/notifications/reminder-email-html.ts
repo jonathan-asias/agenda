@@ -16,6 +16,8 @@ export type ReminderEmailTemplateParams = {
   copetonSrc?: string;
   /** Si se omite, no se muestra el botón de push. */
   pushActivationHref?: string;
+  /** En vista previa del docente se ocultan CTAs de acción. Default true. */
+  showActionButtons?: boolean;
 };
 
 function toFechaISODate(fecha: Date): string {
@@ -52,6 +54,7 @@ export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): str
     baseUrl,
     copetonSrc,
     pushActivationHref,
+    showActionButtons = true,
   } = params;
 
   const fechaTexto = fechaLimite
@@ -152,11 +155,14 @@ export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): str
           <tr>
             <td align="center" style="padding:20px 24px 28px;">
               ${
-                consultarUrl
-                  ? `<a href="${escapeHtml(consultarUrl)}" style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;text-decoration:none;mso-padding-alt:0;">Ver el recordatorio conmigo</a>`
-                  : `<span style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;">Ver el recordatorio conmigo</span>`
+                showActionButtons
+                  ? `${
+                      consultarUrl
+                        ? `<a href="${escapeHtml(consultarUrl)}" style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;text-decoration:none;mso-padding-alt:0;">Ver el recordatorio conmigo</a>`
+                        : `<span style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;">Ver el recordatorio conmigo</span>`
+                    }${pushButton ? `<span style="display:inline-block;width:10px;"></span>${pushButton}` : ''}`
+                  : `<p style="margin:0;color:#64748b;font-size:0.8125rem;line-height:1.5;">Vista previa · así llegará el mensaje al acudiente</p>`
               }
-              ${pushButton ? `<span style="display:inline-block;width:10px;"></span>${pushButton}` : ''}
             </td>
           </tr>
           <tr>
