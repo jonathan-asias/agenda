@@ -16,9 +16,6 @@ export type SendReminderEmailParams = {
 };
 
 const MAX_EMAILS_WARNING = 200;
-
-/** Ruta pública de la mascota Copetón (sirve desde /public). */
-export const COPETON_PUBLIC_PATH = TEMPLATE_COPETON_PATH;
 const COPETON_CID = 'copeton';
 
 function isLocalhostUrl(url: string): boolean {
@@ -87,13 +84,13 @@ export async function sendReminderEmailNotification(
 
   const remoteAssetUrl =
     linkBase && !isLocalhostUrl(linkBase)
-      ? buildAbsoluteUrl(linkBase, COPETON_PUBLIC_PATH)
+      ? buildAbsoluteUrl(linkBase, TEMPLATE_COPETON_PATH)
       : publicBase && !isLocalhostUrl(publicBase)
-        ? buildAbsoluteUrl(publicBase, COPETON_PUBLIC_PATH)
+        ? buildAbsoluteUrl(publicBase, TEMPLATE_COPETON_PATH)
         : undefined;
 
   const copetonBuffer = await loadPublicAssetBuffer(
-    COPETON_PUBLIC_PATH,
+    TEMPLATE_COPETON_PATH,
     remoteAssetUrl
   );
   const copetonSrc = copetonBuffer ? `cid:${COPETON_CID}` : remoteAssetUrl || '';
