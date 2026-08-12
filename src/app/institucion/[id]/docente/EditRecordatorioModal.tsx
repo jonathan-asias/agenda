@@ -5,6 +5,7 @@ import type { Recordatorio } from '@/types/recordatorio';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import ErrorBanner from '@/components/ui/ErrorBanner';
+import { recordatorioTieneRespuestasAutorizacion } from '@/lib/recordatorios/bloqueo-edicion';
 
 interface EditRecordatorioModalProps {
   isOpen: boolean;
@@ -56,6 +57,12 @@ export default function EditRecordatorioModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (recordatorioTieneRespuestasAutorizacion(recordatorio)) {
+      setError(
+        'No se puede editar: ya hay respuestas de acudientes. Por seguridad queda bloqueada.'
+      );
+      return;
+    }
     setSubmitting(true);
     setError('');
 
@@ -138,10 +145,17 @@ export default function EditRecordatorioModal({
   if (!recordatorio) return null;
 
   const hoy = new Date().toISOString().split('T')[0];
+  const bloqueadoPorRespuestas = recordatorioTieneRespuestasAutorizacion(recordatorio);
 
   return (
     <Modal open={isOpen} onClose={handleClose} title="Editar recordatorio" size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
+          {bloqueadoPorRespuestas ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Esta autorización ya tiene respuestas de acudientes. Por seguridad no se puede
+              editar ni modificar.
+            </div>
+          ) : null}
           {/* Información no editable (solo lectura) */}
           <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 space-y-3">
             <p className="text-sm font-semibold text-slate-700 mb-3">Información del recordatorio (no editable)</p>
@@ -183,8 +197,9 @@ export default function EditRecordatorioModal({
               value={formData.nombre}
               onChange={handleInputChange}
               required
+              disabled={bloqueadoPorRespuestas}
               maxLength={255}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 placeholder:text-slate-400 disabled:bg-slate-100 disabled:text-slate-500"
               placeholder="Ej: Revisar exámenes de Matemáticas"
             />
           </div>
@@ -199,9 +214,10 @@ export default function EditRecordatorioModal({
               value={formData.descripcion}
               onChange={handleInputChange}
               required
+              disabled={bloqueadoPorRespuestas}
               rows={4}
               maxLength={1000}
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-200 resize-none"
+              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-200 resize-none disabled:bg-slate-100 disabled:text-slate-500"
               placeholder="Describe los detalles del recordatorio..."
             />
             <p className="text-xs text-slate-500">
@@ -220,8 +236,9 @@ export default function EditRecordatorioModal({
               value={formData.fecha}
               onChange={handleInputChange}
               required
+              disabled={bloqueadoPorRespuestas}
               min={hoy}
-              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200"
+              className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 transition-all duration-200 disabled:bg-slate-100 disabled:text-slate-500"
             />
             <p className="text-xs text-slate-500">
               Selecciona la fecha para la cual es el recordatorio
@@ -234,7 +251,12 @@ export default function EditRecordatorioModal({
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" disabled={submitting} className="flex-1 sm:ml-auto">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={submitting || bloqueadoPorRespuestas}
+              className="flex-1 sm:ml-auto"
+            >
               {submitting ? 'Guardando…' : 'Guardar cambios'}
             </Button>
           </div>

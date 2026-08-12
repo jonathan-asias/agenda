@@ -11,6 +11,7 @@ import EditRecordatorioModal from './EditRecordatorioModal';
 import Footer from '../Footer';
 import Header from '../Header';
 import { DashboardPageSkeleton, ListPageSkeleton } from '@/components/ui/PageSkeletons';
+import { recordatorioTieneRespuestasAutorizacion } from '@/lib/recordatorios/bloqueo-edicion';
 
 
 export default function DocenteDashboardContent() {
@@ -34,16 +35,51 @@ export default function DocenteDashboardContent() {
   const [paginaActual, setPaginaActual] = useState(1);
   const recordatoriosPorPagina = 8;
 
+  const fetchRecordatorios = async (docenteId: number, options?: { silent?: boolean }) => {
+    setLoadingRecordatorios(true);
+    try {
+      const response = await fetch(`/api/recordatorios/by-docente/${docenteId}`, {
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        console.error('Error en la respuesta de la API:', errorData);
+        if (!options?.silent) {
+          await showError(
+            'Error',
+            errorData.error || 'Error al cargar los recordatorios. Por favor, intenta nuevamente.'
+          );
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setRecordatorios(data.recordatorios || []);
+    } catch (error) {
+      console.error('Error fetching recordatorios:', error);
+      if (!options?.silent) {
+        await showError('Error', 'Error al cargar los recordatorios. Por favor, intenta nuevamente.');
+      }
+    } finally {
+      setLoadingRecordatorios(false);
+    }
+  };
+
   useEffect(() => {
     const fetchDocenteData = async () => {
       if (!user?.email) return;
-      
+
       try {
-        const response = await fetch(`/api/docentes/by-email/${encodeURIComponent(user.email)}`);
+        const response = await fetch(`/api/docentes/by-email/${encodeURIComponent(user.email)}`, {
+          cache: 'no-store',
+        });
         if (response.ok) {
           const data = await response.json();
           setDocente(data.docente);
-          // No cargar recordatorios automáticamente - solo cuando el usuario haga clic en "Actualizar"
+          if (data.docente?.id) {
+            await fetchRecordatorios(data.docente.id, { silent: true });
+          }
         }
       } catch (error) {
         console.error('Error fetching docente data:', error);
@@ -52,35 +88,24 @@ export default function DocenteDashboardContent() {
       }
     };
 
-    fetchDocenteData();
+    void fetchDocenteData();
   }, [user]);
 
-  const fetchRecordatorios = async (docenteId: number) => {
-    setLoadingRecordatorios(true);
-    try {
-      const response = await fetch(`/api/recordatorios/by-docente/${docenteId}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
-        console.error('Error en la respuesta de la API:', errorData);
-        await showError('Error', errorData.error || 'Error al cargar los recordatorios. Por favor, intenta nuevamente.');
-        return;
-      }
+  // Refrescar al volver a la pestaña para no quedar con lista desactualizada
+  useEffect(() => {
+    if (!docente?.id) return;
 
-      const data = await response.json();
-      console.log('Recordatorios recibidos:', data);
-      setRecordatorios(data.recordatorios || []);
-      
-      if (!data.recordatorios || data.recordatorios.length === 0) {
-        console.log('No se encontraron recordatorios para el docente:', docenteId);
+    const refreshIfVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchRecordatorios(docente.id, { silent: true });
       }
-    } catch (error) {
-      console.error('Error fetching recordatorios:', error);
-      await showError('Error', 'Error al cargar los recordatorios. Por favor, intenta nuevamente.');
-    } finally {
-      setLoadingRecordatorios(false);
-    }
-  };
+    };
+
+    document.addEventListener('visibilitychange', refreshIfVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', refreshIfVisible);
+    };
+  }, [docente?.id]);
 
   const handleDeleteRecordatorio = async (recordatorioId: number, recordatorioNombre: string) => {
     const confirmed = await showConfirm({
@@ -120,8 +145,7 @@ export default function DocenteDashboardContent() {
         throw new Error(errorData.error || 'Error al eliminar el recordatorio');
       }
 
-      await showSuccess('¡Recordatorio eliminado!', 'El recordatorio ha sido eliminado exitosamente. Usa el botón "Actualizar" para ver los cambios.');
-
+      await showSuccess('¡Recordatorio eliminado!', 'El recordatorio ha sido eliminado exitosamente.');
       setRecordatorios(prev => prev.filter(r => r.id !== recordatorioId));
     } catch (error) {
       console.error('Error al eliminar recordatorio:', error);
@@ -139,7 +163,7 @@ export default function DocenteDashboardContent() {
       const recordatorio = recordatorios.find(r => r.materia.id === id);
       return { id: recordatorio!.materia.id, nombre: recordatorio!.materia.nombre };
     }),
-    tipos: ['tarea', 'examen', 'evento', 'otro']
+    tipos: ['tarea', 'examen', 'evento', 'autorizacion', 'otro']
   };
 
   // Filtrar recordatorios
@@ -414,6 +438,7 @@ export default function DocenteDashboardContent() {
                       <option value="tarea">Tarea</option>
                       <option value="examen">Examen</option>
                       <option value="evento">Evento</option>
+                      <option value="autorizacion">Autorización</option>
                       <option value="otro">Otro</option>
                     </select>
                   </div>
@@ -489,6 +514,7 @@ export default function DocenteDashboardContent() {
                     tarea: 'bg-yellow-100 text-yellow-800 border-yellow-200',
                     examen: 'bg-red-100 text-red-800 border-red-200',
                     evento: 'bg-blue-100 text-blue-800 border-blue-200',
+                    autorizacion: 'bg-emerald-100 text-emerald-800 border-emerald-200',
                     otro: 'bg-purple-100 text-purple-800 border-purple-200'
                   };
 
@@ -496,6 +522,7 @@ export default function DocenteDashboardContent() {
                     tarea: 'Tarea',
                     examen: 'Examen',
                     evento: 'Evento',
+                    autorizacion: 'Autorización',
                     otro: 'Otro'
                   };
 
@@ -589,10 +616,26 @@ export default function DocenteDashboardContent() {
                         </button>
                         <button
                           onClick={() => {
+                            if (recordatorioTieneRespuestasAutorizacion(recordatorio)) {
+                              void showError(
+                                'Edición bloqueada',
+                                'Esta autorización ya tiene respuestas de acudientes y no se puede editar.'
+                              );
+                              return;
+                            }
                             setRecordatorioToEdit(recordatorio);
                             setShowEditModal(true);
                           }}
-                          className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                          className={`inline-flex items-center px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                            recordatorioTieneRespuestasAutorizacion(recordatorio)
+                              ? 'cursor-not-allowed bg-slate-300 text-slate-600'
+                              : 'bg-green-600 text-white hover:bg-green-700'
+                          }`}
+                          title={
+                            recordatorioTieneRespuestasAutorizacion(recordatorio)
+                              ? 'Bloqueado: ya hay respuestas'
+                              : 'Editar'
+                          }
                         >
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -600,8 +643,26 @@ export default function DocenteDashboardContent() {
                           Editar
                         </button>
                         <button
-                          onClick={() => handleDeleteRecordatorio(recordatorio.id, recordatorio.nombre)}
-                          className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                          onClick={() => {
+                            if (recordatorioTieneRespuestasAutorizacion(recordatorio)) {
+                              void showError(
+                                'Eliminación bloqueada',
+                                'Esta autorización ya tiene respuestas de acudientes y no se puede eliminar.'
+                              );
+                              return;
+                            }
+                            void handleDeleteRecordatorio(recordatorio.id, recordatorio.nombre);
+                          }}
+                          className={`inline-flex items-center px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                            recordatorioTieneRespuestasAutorizacion(recordatorio)
+                              ? 'cursor-not-allowed bg-slate-300 text-slate-600'
+                              : 'bg-red-600 text-white hover:bg-red-700'
+                          }`}
+                          title={
+                            recordatorioTieneRespuestasAutorizacion(recordatorio)
+                              ? 'Bloqueado: ya hay respuestas'
+                              : 'Eliminar'
+                          }
                         >
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -699,13 +760,11 @@ export default function DocenteDashboardContent() {
                   </svg>
                 </div>
                 <p className="text-slate-600">
-                  {recordatorios.length === 0 && !loadingRecordatorios
-                    ? 'No hay recordatorios cargados'
-                    : 'No hay recordatorios aún'}
+                  {loadingRecordatorios ? 'Cargando recordatorios…' : 'No hay recordatorios aún'}
                 </p>
                 <p className="text-sm text-slate-500 mt-2">
-                  {recordatorios.length === 0 && !loadingRecordatorios
-                    ? 'Haz clic en el botón "Actualizar" para cargar tus recordatorios o crea tu primer recordatorio'
+                  {loadingRecordatorios
+                    ? 'Un momento, estamos trayendo tu lista'
                     : 'Crea tu primer recordatorio para empezar'}
                 </p>
               </div>
@@ -721,7 +780,7 @@ export default function DocenteDashboardContent() {
           onClose={() => setShowRecordatorioModal(false)}
           onSuccess={async () => {
             await showSuccess('¡Recordatorio creado!', 'El recordatorio ha sido creado exitosamente.');
-            if (docente?.id) fetchRecordatorios(docente.id);
+            if (docente?.id) await fetchRecordatorios(docente.id);
           }}
           docenteId={docente.id}
           institucionId={docente.institucion?.id ?? 0}
@@ -748,14 +807,9 @@ export default function DocenteDashboardContent() {
           setShowEditModal(false);
           setRecordatorioToEdit(null);
         }}
-        onSuccess={async (updatedRecordatorio?: Recordatorio) => {
+        onSuccess={async () => {
           await showSuccess('¡Recordatorio actualizado!', 'El recordatorio ha sido actualizado exitosamente.');
-          // Actualizar el recordatorio en la lista local
-          if (updatedRecordatorio && recordatorioToEdit) {
-            setRecordatorios(prev => 
-              prev.map(r => r.id === recordatorioToEdit.id ? updatedRecordatorio : r)
-            );
-          }
+          if (docente?.id) await fetchRecordatorios(docente.id);
         }}
         recordatorio={recordatorioToEdit}
       />

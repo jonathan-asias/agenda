@@ -9,6 +9,7 @@ import InstitucionAuthGuard from '@/components/auth/InstitucionAuthGuard';
 import { showSuccess, showError, showLoading, closeLoading, showWarning, showConfirm } from '@/lib/notifications';
 import { useAuth } from '@/contexts/AuthContext';
 import AddAdministradorModal from '../AddAdministradorModal';
+import AddCalendarioAcademicoModal from '../admin/modals/AddCalendarioAcademicoModal';
 import Footer from '../Footer';
 import Header from '../Header';
 import InstitutionPlanSection from './InstitutionPlanSection';
@@ -71,6 +72,7 @@ function PerfilPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [showCalendarioModal, setShowCalendarioModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -545,6 +547,37 @@ function PerfilPageContent() {
         </div>
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </span>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-800">Calendario académico</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Vista consolidada de todas las sedes: periodos, vacaciones y días no lectivos.
+                  Cada sede administra el suyo desde su panel.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCalendarioModal(true)}
+              className="inline-flex items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700"
+            >
+              Ver calendario consolidado
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-8">
           <h2 className="text-xl font-semibold text-slate-800 mb-4">Personalización</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -678,6 +711,12 @@ function PerfilPageContent() {
             .catch(err => console.error('Error al recargar institución:', err));
         }}
         institucionId={parseInt(params.id as string)}
+      />
+      <AddCalendarioAcademicoModal
+        isOpen={showCalendarioModal}
+        onClose={() => setShowCalendarioModal(false)}
+        institucionId={institucion.id}
+        consolidado
       />
       <Footer />
     </div>

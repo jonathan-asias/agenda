@@ -1,26 +1,46 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Loader from './Loader';
 import { LOADING_EVENT, type LoadingDetail } from './ui-events';
 
+function getLoadingOverlayZIndex(): number {
+  if (typeof document === 'undefined') return 210;
+  const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-modal-root]'));
+  const maxModalZ = roots.reduce((max, el) => {
+    const z = Number(el.dataset.modalZIndex || 0);
+    return z > max ? z : max;
+  }, 0);
+  return Math.max(maxModalZ + 20, 210);
+}
+
 export function LoadingHost() {
   const [loading, setLoading] = useState<LoadingDetail | null>(null);
+  const [overlayZ, setOverlayZ] = useState(210);
 
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<LoadingDetail>).detail;
-      setLoading(detail.open ? detail : null);
+      if (detail.open) {
+        setOverlayZ(getLoadingOverlayZIndex());
+        setLoading(detail);
+      } else {
+        setLoading(null);
+      }
     };
     window.addEventListener(LOADING_EVENT, handler);
     return () => window.removeEventListener(LOADING_EVENT, handler);
   }, []);
 
-  if (!loading) return null;
+  if (!loading || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+      style={{ zIndex: overlayZ }}
+      data-modal-root
+      data-modal-z-index={overlayZ}
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="loading-overlay-title"
@@ -35,6 +55,7 @@ export function LoadingHost() {
           <p className="text-sm text-[var(--color-text-secondary)] mt-2">{loading.text}</p>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

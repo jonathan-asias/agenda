@@ -13,6 +13,26 @@ import ErrorBanner from '@/components/ui/ErrorBanner';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import type { AsignacionLike } from '@/types/docente';
 import type { Estudiante } from '@/types/estudiante';
+import {
+  getRecordatorioFormLabels,
+  isRecordatorioTipo,
+  RECORDATORIO_TIPO_LABELS,
+  RECORDATORIO_TIPOS,
+  type RecordatorioTipo,
+} from '@/lib/recordatorios/tipos';
+import {
+  AUTORIZACION_MINUTOS_ANTES,
+  computeAutorizacionVencimiento,
+  formatDateInputFromDate,
+  formatTimeInputFromDate,
+  parseLocalDateTimeInput,
+  validateAutorizacionVencimiento,
+  validateHoraFin,
+} from '@/lib/recordatorios/autorizacion';
+import {
+  CALENDARIO_EVENTO_CATEGORIA_LABELS,
+  type CalendarioEvento,
+} from '@/lib/calendario-academico/tipos';
 
 interface AddRecordatorioModalProps {
   isOpen: boolean;
@@ -95,6 +115,121 @@ function FieldLabel({
         <p className="text-sm leading-relaxed">{tip}</p>
       </InfoTooltip>
     </div>
+  );
+}
+
+function TipoRecordatorioIcon({ tipo }: { tipo: RecordatorioTipo }) {
+  const className = 'h-5 w-5';
+
+  switch (tipo) {
+    case 'tarea':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+          />
+        </svg>
+      );
+    case 'examen':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 14l9-5-9-5-9 5 9 5z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 14v7M5 6.5V17a2 2 0 002 2h10a2 2 0 002-2V6.5"
+          />
+        </svg>
+      );
+    case 'evento':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      );
+    case 'autorizacion':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+          />
+        </svg>
+      );
+    case 'otro':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+          />
+        </svg>
+      );
+  }
+}
+
+function TipoRecordatorioOption({
+  tipo,
+  label,
+  selected,
+  onSelect,
+}: {
+  tipo: RecordatorioTipo;
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      title={label}
+      className={`flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-xl border-2 px-1.5 py-2.5 transition sm:px-2 sm:py-3 ${
+        selected
+          ? 'border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-200'
+          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+      }`}
+    >
+      <span
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+          selected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+        }`}
+      >
+        <TipoRecordatorioIcon tipo={tipo} />
+      </span>
+      <span
+        className={`w-full text-center text-[10px] font-semibold leading-tight sm:text-xs ${
+          selected ? 'text-blue-800' : 'text-slate-700'
+        }`}
+      >
+        {label}
+      </span>
+    </button>
   );
 }
 
@@ -272,7 +407,17 @@ export default function AddRecordatorioModal({
     cursoId: '',
     areaId: '',
     materiaId: '',
+    eventoNombre: '',
+    fechaEvento: '',
+    horaEvento: '',
+    horaFin: '',
+    lugarEvento: '',
+    horaVencimiento: '',
+    calendarioEventoId: '' as string,
   });
+  const [eventosCalendario, setEventosCalendario] = useState<CalendarioEvento[]>([]);
+  const [cargandoEventosCalendario, setCargandoEventosCalendario] = useState(false);
+  const [horaVencimientoInvalida, setHoraVencimientoInvalida] = useState(false);
   const [estudiantesSeleccionados, setEstudiantesSeleccionados] = useState<number[]>([]);
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
   const [cargandoEstudiantes, setCargandoEstudiantes] = useState(false);
@@ -283,12 +428,14 @@ export default function AddRecordatorioModal({
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [destinoStep, setDestinoStep] = useState<DestinoStep>(1);
 
-  const tiposRecordatorio = [
-    { value: 'tarea', label: 'Tarea' },
-    { value: 'examen', label: 'Examen' },
-    { value: 'evento', label: 'Evento' },
-    { value: 'otro', label: 'Otro' },
-  ];
+  const tiposRecordatorio = RECORDATORIO_TIPOS.map((value) => ({
+    value,
+    label: RECORDATORIO_TIPO_LABELS[value],
+  }));
+  const esAutorizacion = formData.tipo === 'autorizacion';
+  const fieldLabels = isRecordatorioTipo(formData.tipo)
+    ? getRecordatorioFormLabels(formData.tipo)
+    : null;
 
   const opcionesIniciales = useMemo(() => {
     const gradosMap = new Map<number, { id: number; nombre: string; nivel: string }>();
@@ -345,21 +492,96 @@ export default function AddRecordatorioModal({
     return Array.from(materiasMap.values());
   }, [asignaciones, formData.areaId]);
 
+  const syncVencimientoFromEvento = useCallback((fechaEvento: string, horaEvento: string) => {
+    const evento = parseLocalDateTimeInput(fechaEvento, horaEvento);
+    if (!evento) {
+      return { fecha: '', horaVencimiento: '' };
+    }
+    const venc = computeAutorizacionVencimiento(evento);
+    return {
+      fecha: formatDateInputFromDate(venc),
+      horaVencimiento: formatTimeInputFromDate(venc),
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!esAutorizacion) {
+      setHoraVencimientoInvalida(false);
+      return;
+    }
+    if (!formData.fechaEvento || !formData.horaEvento) return;
+    const synced = syncVencimientoFromEvento(formData.fechaEvento, formData.horaEvento);
+    setFormData((prev) => {
+      if (
+        prev.fecha === synced.fecha &&
+        prev.horaVencimiento === synced.horaVencimiento
+      ) {
+        return prev;
+      }
+      return { ...prev, ...synced };
+    });
+    setHoraVencimientoInvalida(false);
+  }, [
+    esAutorizacion,
+    formData.fechaEvento,
+    formData.horaEvento,
+    syncVencimientoFromEvento,
+  ]);
+
   const fechaSeleccionadaOk = useMemo(() => {
     if (!formData.fecha) return false;
+    if (esAutorizacion) {
+      if (
+        !formData.horaVencimiento ||
+        !formData.fechaEvento ||
+        !formData.horaEvento ||
+        !formData.horaFin
+      ) {
+        return false;
+      }
+      const inicio = parseLocalDateTimeInput(formData.fechaEvento, formData.horaEvento);
+      const fin = parseLocalDateTimeInput(formData.fechaEvento, formData.horaFin);
+      const vencimiento = parseLocalDateTimeInput(formData.fecha, formData.horaVencimiento);
+      if (!inicio || !fin || !vencimiento) return false;
+      const startToday = new Date();
+      startToday.setHours(0, 0, 0, 0);
+      if (vencimiento < startToday) return false;
+      if (validateAutorizacionVencimiento(vencimiento, inicio)) return false;
+      if (validateHoraFin(inicio, fin)) return false;
+      return true;
+    }
     const parsed = parseLocalDateInput(formData.fecha);
     if (!parsed) return false;
     const startToday = new Date();
     startToday.setHours(0, 0, 0, 0);
     return parsed >= startToday;
-  }, [formData.fecha]);
+  }, [
+    esAutorizacion,
+    formData.fecha,
+    formData.horaVencimiento,
+    formData.fechaEvento,
+    formData.horaEvento,
+    formData.horaFin,
+  ]);
+
+  const fechaEventoOk = useMemo(() => {
+    if (!esAutorizacion) return true;
+    if (!formData.fechaEvento || !formData.horaEvento) return false;
+    return Boolean(parseLocalDateTimeInput(formData.fechaEvento, formData.horaEvento));
+  }, [esAutorizacion, formData.fechaEvento, formData.horaEvento]);
 
   const avisoBasicoCompleto =
     formData.nombre.trim().length > 0 &&
     formData.tipo.length > 0 &&
     formData.descripcion.trim().length > 0 &&
     fechaSeleccionadaOk &&
-    modoEnvio.length > 0;
+    modoEnvio.length > 0 &&
+    (!esAutorizacion ||
+      (Boolean(formData.calendarioEventoId) &&
+        formData.eventoNombre.trim().length > 0 &&
+        formData.lugarEvento.trim().length > 0 &&
+        formData.horaFin.trim().length > 0 &&
+        fechaEventoOk));
 
   const maxUnlockedStep: DestinoStep = useMemo(() => {
     // Los pasos de destino solo se habilitan tras completar los datos previos a la vista previa.
@@ -429,11 +651,112 @@ export default function AddRecordatorioModal({
     return () => controller.abort();
   }, [formData.cursoId, institucionId]);
 
+  useEffect(() => {
+    if (!esAutorizacion || !isOpen) {
+      setEventosCalendario([]);
+      return;
+    }
+    const controller = new AbortController();
+    const cargar = async () => {
+      setCargandoEventosCalendario(true);
+      try {
+        const res = await fetch(
+          `/api/instituciones/${institucionId}/calendario-academico/para-autorizacion`,
+          { signal: controller.signal }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setEventosCalendario([]);
+          return;
+        }
+        setEventosCalendario(Array.isArray(data.eventos) ? data.eventos : []);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setEventosCalendario([]);
+      } finally {
+        if (!controller.signal.aborted) setCargandoEventosCalendario(false);
+      }
+    };
+    void cargar();
+    return () => controller.abort();
+  }, [esAutorizacion, isOpen, institucionId]);
+
+  const aplicarEventoCalendario = useCallback((ev: CalendarioEvento) => {
+    const inicio = new Date(ev.fechaInicio);
+    const fin = new Date(ev.fechaFin);
+    const horaInicio = formatTimeInputFromDate(inicio);
+    const horaFinVal = formatTimeInputFromDate(fin);
+    const fechaEvento = formatDateInputFromDate(inicio);
+    const venc = computeAutorizacionVencimiento(
+      parseLocalDateTimeInput(fechaEvento, horaInicio) ?? inicio
+    );
+    setFormData((prev) => ({
+      ...prev,
+      calendarioEventoId: String(ev.id),
+      eventoNombre: ev.titulo,
+      lugarEvento: ev.lugar || '',
+      fechaEvento,
+      horaEvento: horaInicio,
+      horaFin: horaFinVal,
+      fecha: formatDateInputFromDate(venc),
+      horaVencimiento: formatTimeInputFromDate(venc),
+    }));
+    setHoraVencimientoInvalida(false);
+    if (error) setError('');
+  }, [error]);
+
+  const applyTipoChange = (value: string) => {
+    setFormData((prev) => {
+      const next = { ...prev, tipo: value };
+      if (value !== 'autorizacion') {
+        next.eventoNombre = '';
+        next.fechaEvento = '';
+        next.horaEvento = '';
+        next.horaFin = '';
+        next.lugarEvento = '';
+        next.horaVencimiento = '';
+        next.calendarioEventoId = '';
+        next.fecha = prev.tipo === 'autorizacion' ? '' : next.fecha;
+      }
+      return next;
+    });
+    setEventosCalendario([]);
+    if (error) setError('');
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'tipo') {
+      applyTipoChange(value);
+      return;
+    }
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === 'fechaEvento' || name === 'horaEvento') {
+        const synced = syncVencimientoFromEvento(
+          name === 'fechaEvento' ? value : next.fechaEvento,
+          name === 'horaEvento' ? value : next.horaEvento
+        );
+        next.fecha = synced.fecha;
+        next.horaVencimiento = synced.horaVencimiento;
+      }
+      if (name === 'horaVencimiento' || (name === 'fecha' && prev.tipo === 'autorizacion')) {
+        const evento = parseLocalDateTimeInput(next.fechaEvento, next.horaEvento);
+        if (evento) {
+          const expected = syncVencimientoFromEvento(next.fechaEvento, next.horaEvento);
+          if (next.fecha !== expected.fecha || next.horaVencimiento !== expected.horaVencimiento) {
+            setHoraVencimientoInvalida(true);
+            next.fecha = expected.fecha;
+            next.horaVencimiento = expected.horaVencimiento;
+          } else {
+            setHoraVencimientoInvalida(false);
+          }
+        }
+      }
+      return next;
+    });
     if (error) setError('');
   };
 
@@ -472,24 +795,112 @@ export default function AddRecordatorioModal({
   };
 
   const validarFormulario = (): boolean => {
+    const labels = isRecordatorioTipo(formData.tipo)
+      ? getRecordatorioFormLabels(formData.tipo)
+      : null;
+
     if (!docenteId || docenteId <= 0) {
       setError('No se identificó tu sesión de docente. Recarga la página e inténtalo otra vez.');
       return false;
     }
-    if (!formData.nombre.trim()) {
-      setError('Escribe un nombre para el recordatorio.');
+    if (!formData.tipo) {
+      setError('Elige el tipo: tarea, examen, evento, autorización u otro.');
       return false;
     }
-    if (!formData.tipo) {
-      setError('Elige el tipo: tarea, examen, evento u otro.');
+    if (!formData.nombre.trim()) {
+      setError(labels ? `Completa ${labels.nombre.toLowerCase()}.` : 'Escribe un nombre para el recordatorio.');
       return false;
     }
     if (!formData.descripcion.trim()) {
-      setError('Agrega una descripción para que el acudiente entienda el aviso.');
+      setError(
+        labels
+          ? `Completa ${labels.descripcion.toLowerCase()}.`
+          : 'Agrega una descripción para que el acudiente entienda el aviso.'
+      );
       return false;
     }
+    if (esAutorizacion) {
+      if (!formData.calendarioEventoId) {
+        setError('Selecciona un evento del calendario de tu sede.');
+        return false;
+      }
+      if (!formData.eventoNombre.trim()) {
+        setError(
+          labels
+            ? `Completa ${labels.eventoNombre.toLowerCase()}.`
+            : 'Indica a qué evento pertenece la autorización.'
+        );
+        return false;
+      }
+      if (!formData.lugarEvento.trim()) {
+        setError(
+          labels
+            ? `Completa ${labels.lugarEvento.toLowerCase()}.`
+            : 'Indica el lugar del evento.'
+        );
+        return false;
+      }
+      if (!formData.fechaEvento) {
+        setError('Selecciona la fecha del evento.');
+        return false;
+      }
+      if (!formData.horaEvento) {
+        setError('Indica la hora de inicio del evento.');
+        return false;
+      }
+      if (!formData.horaFin) {
+        setError(
+          labels
+            ? `Indica ${labels.horaFin.toLowerCase()}.`
+            : 'Indica la hora de fin del evento.'
+        );
+        return false;
+      }
+      const eventoDt = parseLocalDateTimeInput(formData.fechaEvento, formData.horaEvento);
+      if (!eventoDt) {
+        setError('La fecha u hora de inicio no es válida.');
+        return false;
+      }
+      const finDt = parseLocalDateTimeInput(formData.fechaEvento, formData.horaFin);
+      if (!finDt) {
+        setError('La hora de fin no es válida.');
+        return false;
+      }
+      const finError = validateHoraFin(eventoDt, finDt);
+      if (finError) {
+        setError(finError);
+        return false;
+      }
+      const synced = syncVencimientoFromEvento(formData.fechaEvento, formData.horaEvento);
+      if (!synced.fecha || !synced.horaVencimiento) {
+        setError('No se pudo calcular el vencimiento de la autorización.');
+        return false;
+      }
+      const vencimientoDt = parseLocalDateTimeInput(synced.fecha, synced.horaVencimiento);
+      if (!vencimientoDt) {
+        setError('La fecha u hora de vencimiento no es válida.');
+        return false;
+      }
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      if (vencimientoDt < hoy) {
+        setError('La fecha de vencimiento no puede ser anterior a hoy.');
+        return false;
+      }
+      const vencError = validateAutorizacionVencimiento(vencimientoDt, eventoDt);
+      if (vencError) {
+        setError(vencError);
+        return false;
+      }
+    }
     if (!formData.fecha) {
-      setError('Selecciona la fecha del recordatorio.');
+      setError(
+        labels
+          ? `Selecciona ${labels.fecha.toLowerCase()}.`
+          : esAutorizacion
+            ? 'Selecciona la fecha de vencimiento de la autorización.'
+            : 'Selecciona la fecha del recordatorio.'
+      );
       return false;
     }
     if (!formData.gradoId || !formData.cursoId || !formData.areaId || !formData.materiaId) {
@@ -500,16 +911,18 @@ export default function AddRecordatorioModal({
       return false;
     }
 
-    const fechaSeleccionada = parseLocalDateInput(formData.fecha);
-    if (!fechaSeleccionada) {
-      setError('La fecha no es válida.');
-      return false;
-    }
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    if (fechaSeleccionada < hoy) {
-      setError('La fecha no puede ser anterior a hoy.');
-      return false;
+    if (!esAutorizacion) {
+      const fechaSeleccionada = parseLocalDateInput(formData.fecha);
+      if (!fechaSeleccionada) {
+        setError('La fecha no es válida.');
+        return false;
+      }
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      if (fechaSeleccionada < hoy) {
+        setError('La fecha no puede ser anterior a hoy.');
+        return false;
+      }
     }
 
     if (modoEnvio.length === 0) {
@@ -523,8 +936,12 @@ export default function AddRecordatorioModal({
     }
     return true;
   };
-
   const fechaIsoParaApi = (): string => {
+    if (esAutorizacion) {
+      const synced = syncVencimientoFromEvento(formData.fechaEvento, formData.horaEvento);
+      const local = parseLocalDateTimeInput(synced.fecha, synced.horaVencimiento);
+      if (local) return local.toISOString();
+    }
     const local = parseLocalDateInput(formData.fecha);
     if (!local) return formData.fecha;
     return new Date(
@@ -537,26 +954,53 @@ export default function AddRecordatorioModal({
     ).toISOString();
   };
 
+  const fechaEventoIsoParaApi = (): string => {
+    const local = parseLocalDateTimeInput(formData.fechaEvento, formData.horaEvento);
+    return local ? local.toISOString() : formData.fechaEvento;
+  };
+
+  const horaFinIsoParaApi = (): string => {
+    const local = parseLocalDateTimeInput(formData.fechaEvento, formData.horaFin);
+    return local ? local.toISOString() : '';
+  };
+
   const enviarRecordatorio = async () => {
     setSubmitting(true);
     setError('');
     try {
+      const calendarioEventoId = formData.calendarioEventoId
+        ? Number.parseInt(formData.calendarioEventoId, 10)
+        : null;
+
+      if (esAutorizacion && !calendarioEventoId) {
+        setError('Selecciona un evento del calendario de tu sede.');
+        setSubmitting(false);
+        return;
+      }
+
+      const payloadBase = {
+        nombre: formData.nombre.trim(),
+        descripcion: formData.descripcion.trim(),
+        fecha: fechaIsoParaApi(),
+        tipo: formData.tipo,
+        modoEnvio,
+        docenteId: String(docenteId),
+        gradoId: String(formData.gradoId),
+        cursoId: String(formData.cursoId),
+        areaId: String(formData.areaId),
+        materiaId: String(formData.materiaId),
+        estudiantesSeleccionados: estudiantesSeleccionados.map(String),
+        eventoNombre: esAutorizacion ? formData.eventoNombre.trim() : '',
+        fechaEvento: esAutorizacion ? fechaEventoIsoParaApi() : '',
+        lugarEvento: esAutorizacion ? formData.lugarEvento.trim() : '',
+        horaFin: esAutorizacion ? horaFinIsoParaApi() : '',
+        calendarioEventoId: esAutorizacion ? calendarioEventoId : null,
+      };
+
       const response = await fetch('/api/recordatorios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: formData.nombre.trim(),
-          descripcion: formData.descripcion.trim(),
-          fecha: fechaIsoParaApi(),
-          tipo: formData.tipo,
-          modoEnvio,
-          docenteId: String(docenteId),
-          gradoId: String(formData.gradoId),
-          cursoId: String(formData.cursoId),
-          areaId: String(formData.areaId),
-          materiaId: String(formData.materiaId),
-          estudiantesSeleccionados: estudiantesSeleccionados.map(String),
-        }),
+        body: JSON.stringify(payloadBase),
       });
 
       if (!response.ok) {
@@ -604,9 +1048,9 @@ export default function AddRecordatorioModal({
       .join(' y ');
 
     const confirmed = await showConfirm({
-      title: '¿Crear recordatorio?',
+      title: fieldLabels?.crearConfirmTitulo ?? '¿Crear recordatorio?',
       text: `Se notificará a ${destinatarios} por ${canales}.`,
-      confirmButtonText: 'Crear recordatorio',
+      confirmButtonText: fieldLabels?.crearBoton ?? 'Crear recordatorio',
       cancelButtonText: 'Volver a revisar',
       icon: 'question',
       confirmButtonColor: '#2563eb',
@@ -626,7 +1070,16 @@ export default function AddRecordatorioModal({
       cursoId: '',
       areaId: '',
       materiaId: '',
+      eventoNombre: '',
+      fechaEvento: '',
+      horaEvento: '',
+      horaFin: '',
+      lugarEvento: '',
+      horaVencimiento: '',
+      calendarioEventoId: '',
     });
+    setEventosCalendario([]);
+    setHoraVencimientoInvalida(false);
     setModoEnvio(['email']);
     setEstudiantes([]);
     setEstudiantesSeleccionados([]);
@@ -649,27 +1102,54 @@ export default function AddRecordatorioModal({
   };
 
   const emailPreviewHtml = useMemo(() => {
-    const fecha = parseLocalDateInput(formData.fecha);
-    const fechaUtcNoon = fecha
-      ? new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), 12))
-      : null;
+    const vencimiento = esAutorizacion
+      ? parseLocalDateTimeInput(formData.fecha, formData.horaVencimiento)
+      : (() => {
+          const fecha = parseLocalDateInput(formData.fecha);
+          return fecha
+            ? new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), 12))
+            : null;
+        })();
+    const fechaEvento = parseLocalDateTimeInput(formData.fechaEvento, formData.horaEvento);
+    const horaFin = parseLocalDateTimeInput(formData.fechaEvento, formData.horaFin);
     return buildReminderEmailHtml({
       institucionNombre,
       docenteNombre,
       titulo: formData.nombre.trim() || 'Título del recordatorio',
       descripcion:
         formData.descripcion.trim() ||
-        'Aquí aparecerá la descripción que escribas para el acudiente.',
-      fechaLimite: fechaUtcNoon,
+        (esAutorizacion
+          ? 'Aquí aparecerá la descripción de la autorización.'
+          : 'Aquí aparecerá la descripción que escribas para el acudiente.'),
+      fechaLimite: vencimiento,
       baseUrl:
         typeof window !== 'undefined' ? window.location.origin : 'https://ahoritapp.com',
       copetonSrc: COPETON_PUBLIC_PATH,
       showActionButtons: false,
+      autorizacion: esAutorizacion
+        ? {
+            eventoNombre: formData.eventoNombre.trim() || 'Nombre del evento',
+            lugarEvento: formData.lugarEvento.trim() || 'Lugar del evento',
+            fechaEvento,
+            horaFin,
+            fechaVencimiento: vencimiento,
+          }
+        : null,
+      autorizacionHref: esAutorizacion
+        ? `${typeof window !== 'undefined' ? window.location.origin : 'https://ahoritapp.com'}/autorizar-recordatorio`
+        : null,
     });
   }, [
     formData.nombre,
     formData.descripcion,
     formData.fecha,
+    formData.horaVencimiento,
+    formData.eventoNombre,
+    formData.fechaEvento,
+    formData.horaEvento,
+    formData.horaFin,
+    formData.lugarEvento,
+    esAutorizacion,
     institucionNombre,
     docenteNombre,
   ]);
@@ -697,9 +1177,46 @@ export default function AddRecordatorioModal({
   const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
   const emailSelected = modoEnvio.includes('email');
   const whatsappSelected = modoEnvio.includes('whatsapp');
+  const tipoSeleccionado = formData.tipo.length > 0;
   const currentStepMeta = DESTINO_STEPS.find((s) => s.id === destinoStep)!;
 
-  const canPreviewEmail = emailSelected && avisoBasicoCompleto;
+  // Vista previa: basta con correo activo y datos del aviso (no exige destino/estudiantes).
+  const canPreviewEmail =
+    emailSelected &&
+    formData.nombre.trim().length > 0 &&
+    formData.tipo.length > 0 &&
+    formData.descripcion.trim().length > 0 &&
+    (esAutorizacion
+      ? Boolean(
+          formData.calendarioEventoId &&
+            formData.eventoNombre.trim() &&
+            formData.lugarEvento.trim() &&
+            formData.fechaEvento &&
+            formData.horaEvento &&
+            formData.horaFin
+        )
+      : Boolean(formData.fecha));
+
+  const previewBlockedHint = !emailSelected
+    ? 'Activa correo electrónico para ver la vista previa.'
+    : !formData.tipo
+      ? 'Selecciona el tipo de recordatorio.'
+      : !formData.nombre.trim()
+        ? `Completa ${fieldLabels?.nombre.toLowerCase() ?? 'el nombre'}.`
+        : !formData.descripcion.trim()
+          ? `Completa ${fieldLabels?.descripcion.toLowerCase() ?? 'la descripción'}.`
+          : esAutorizacion && !formData.calendarioEventoId
+            ? 'Selecciona un evento del calendario de tu sede.'
+            : esAutorizacion && !formData.eventoNombre.trim()
+              ? `Completa ${fieldLabels?.eventoNombre.toLowerCase() ?? 'el nombre del evento'}.`
+              : esAutorizacion && !formData.lugarEvento.trim()
+                ? `Completa ${fieldLabels?.lugarEvento.toLowerCase() ?? 'el lugar del evento'}.`
+                : esAutorizacion &&
+                    (!formData.fechaEvento || !formData.horaEvento || !formData.horaFin)
+                  ? 'Completa fecha, hora de inicio y hora de fin.'
+                  : !formData.fecha
+                    ? `Completa ${fieldLabels?.fecha.toLowerCase() ?? 'la fecha'}.`
+                    : 'Completa los datos del aviso para ver la vista previa.';
 
   const canCreateRecordatorio =
     avisoBasicoCompleto &&
@@ -709,22 +1226,38 @@ export default function AddRecordatorioModal({
     !!formData.cursoId &&
     estudiantesSeleccionados.length > 0;
 
-  const destinoBlockedHint = !formData.nombre.trim()
-    ? 'Completa el nombre del recordatorio.'
-    : !formData.tipo
-      ? 'Selecciona el tipo de recordatorio.'
+  const destinoBlockedHint = !formData.tipo
+    ? 'Selecciona el tipo de recordatorio.'
+    : !formData.nombre.trim()
+      ? `Completa ${fieldLabels?.nombre.toLowerCase() ?? 'el nombre'}.`
       : !formData.descripcion.trim()
-        ? 'Escribe la descripción.'
-        : !formData.fecha
-          ? 'Elige la fecha.'
-          : !fechaSeleccionadaOk
-            ? 'La fecha no puede ser anterior a hoy.'
-            : modoEnvio.length === 0
-              ? 'Elige al menos un método de envío.'
-              : '';
+        ? `Completa ${fieldLabels?.descripcion.toLowerCase() ?? 'la descripción'}.`
+        : esAutorizacion && !formData.calendarioEventoId
+          ? 'Selecciona un evento del calendario de tu sede.'
+          : esAutorizacion && !formData.eventoNombre.trim()
+              ? `Completa ${fieldLabels?.eventoNombre.toLowerCase() ?? 'el evento'}.`
+              : esAutorizacion && !formData.lugarEvento.trim()
+                ? `Completa ${fieldLabels?.lugarEvento.toLowerCase() ?? 'el lugar del evento'}.`
+                : esAutorizacion && !formData.fechaEvento
+                  ? `Selecciona ${fieldLabels?.fechaEvento.toLowerCase() ?? 'la fecha del evento'}.`
+                  : esAutorizacion && !formData.horaEvento
+                    ? `Indica ${fieldLabels?.horaInicio.toLowerCase() ?? 'la hora de inicio'}.`
+                    : esAutorizacion && !formData.horaFin
+                      ? `Indica ${fieldLabels?.horaFin.toLowerCase() ?? 'la hora de fin'}.`
+                      : !formData.fecha
+                          ? esAutorizacion
+                            ? 'Completa fecha e inicio del evento para calcular el vencimiento.'
+                            : `Selecciona ${fieldLabels?.fecha.toLowerCase() ?? 'la fecha'}.`
+                          : !fechaSeleccionadaOk
+                            ? esAutorizacion
+                              ? `Revisa llegada, fin y vencimiento (vence ${AUTORIZACION_MINUTOS_ANTES} min antes del inicio).`
+                              : 'La fecha no puede ser anterior a hoy.'
+                            : modoEnvio.length === 0
+                              ? 'Elige al menos un método de envío.'
+                              : '';
 
   const createBlockedHint = !avisoBasicoCompleto
-    ? 'Completa nombre, tipo, descripción, fecha y método de envío arriba.'
+    ? `Completa ${fieldLabels?.nombre.toLowerCase() ?? 'nombre'}, ${fieldLabels?.descripcion.toLowerCase() ?? 'descripción'}, ${fieldLabels?.fecha.toLowerCase() ?? 'fecha'} y método de envío arriba.`
     : !formData.areaId
       ? 'Falta el paso 1: área.'
       : !formData.materiaId
@@ -737,10 +1270,6 @@ export default function AddRecordatorioModal({
               ? 'Falta el paso 5: selecciona al menos un estudiante.'
               : '';
 
-  const previewBlockedHint = !emailSelected
-    ? 'Activa correo electrónico para ver la vista previa.'
-    : destinoBlockedHint;
-
   return (
     <>
       <Modal
@@ -748,11 +1277,12 @@ export default function AddRecordatorioModal({
         onClose={handleClose}
         title="Agregar recordatorio"
         size="xl"
-        className="max-w-3xl"
+        className="max-w-5xl w-full"
       >
         <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
-          Primero completa los datos del aviso y el canal de envío. Después se habilitan los 6
-          pasos de destino (área, materia, grado, curso, estudiantes y crear).
+          Primero elige el tipo de recordatorio. Si es autorización: elige el evento, completa
+          nombre y descripción, revisa los datos del evento y luego el canal de envío. Después se
+          habilitan los 6 pasos de destino (área, materia, grado, curso, estudiantes y crear).
         </p>
 
         <form
@@ -761,93 +1291,305 @@ export default function AddRecordatorioModal({
           }}
           className="space-y-6"
         >
-          <div>
+          <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
             <FieldLabel
               required
-              tip="Es el título que verá el acudiente. Usa algo concreto, por ejemplo: “Tarea de fracciones — entrega viernes”."
-            >
-              Nombre del recordatorio
-            </FieldLabel>
-            <input
-              type="text"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleInputChange}
-              required
-              maxLength={255}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400"
-              placeholder="Ej: Tarea de fracciones — entrega viernes"
-            />
-          </div>
-
-          <div>
-            <FieldLabel
-              required
-              tip="Clasifica el aviso para que el acudiente sepa si es tarea, examen, evento u otro tipo."
+              tip="El tipo define qué campos necesitas y cómo se mostrará el aviso al acudiente. Elige tarea, examen, evento, autorización u otro."
             >
               Tipo de recordatorio
             </FieldLabel>
-            <div className="relative">
-              <select
-                name="tipo"
-                value={formData.tipo}
-                onChange={handleInputChange}
-                required
-                className="w-full cursor-pointer appearance-none rounded-lg border border-slate-300 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900"
-              >
-                <option value="">Selecciona un tipo</option>
-                {tiposRecordatorio.map((tipo) => (
-                  <option key={tipo.value} value={tipo.value}>
-                    {tipo.label}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+            <div className="mt-3 flex flex-nowrap gap-1.5 sm:gap-2">
+              {tiposRecordatorio.map((tipo) => (
+                <TipoRecordatorioOption
+                  key={tipo.value}
+                  tipo={tipo.value}
+                  label={tipo.label}
+                  selected={formData.tipo === tipo.value}
+                  onSelect={() => applyTipoChange(tipo.value)}
+                />
+              ))}
             </div>
-          </div>
+            {!tipoSeleccionado ? (
+              <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                Selecciona un tipo para continuar con el formulario.
+              </p>
+            ) : null}
+          </section>
 
-          <div>
-            <FieldLabel
-              required
-              tip="Explica con claridad qué debe hacer o saber el estudiante. Este texto llega al acudiente casi tal cual."
-            >
-              Descripción
-            </FieldLabel>
-            <textarea
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleInputChange}
-              required
-              rows={4}
-              maxLength={1000}
-              className="w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400"
-              placeholder="Ej: Traer el cuaderno y resolver los ejercicios 1 al 10 de la página 42."
-            />
-            <p className="mt-1 text-xs text-slate-500">{formData.descripcion.length}/1000 caracteres</p>
-          </div>
+          {tipoSeleccionado && fieldLabels ? (
+          <div className="space-y-6">
+          <p className="text-sm font-semibold text-slate-900">{fieldLabels.seccionTitulo}</p>
 
-          <div>
-            <FieldLabel
-              required
-              tip="Fecha límite o del evento. No puede ser un día anterior a hoy."
-            >
-              Fecha del recordatorio
-            </FieldLabel>
-            <input
-              type="date"
-              name="fecha"
-              value={formData.fecha}
-              onChange={handleInputChange}
-              required
-              min={hoyStr}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900"
-            />
-          </div>
+          {esAutorizacion ? (
+            <>
+              {/* 1. Elegir evento */}
+              <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-900">
+                    1. Elige el evento del calendario
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-800/80">
+                    Solo aparecen eventos de tu sede. Nombre, lugar y horario los define el
+                    administrador.
+                  </p>
+                </div>
 
+                <div className="space-y-2">
+                  {cargandoEventosCalendario ? (
+                    <p className="text-sm text-slate-500">Cargando eventos del calendario…</p>
+                  ) : eventosCalendario.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-emerald-300 bg-white px-3 py-4 text-sm text-slate-600">
+                      No hay eventos disponibles en el calendario de tu sede. Pide al administrador
+                      que cree el evento (con lugar y horario) en el calendario académico.
+                    </div>
+                  ) : (
+                    <ul className="max-h-56 space-y-2 overflow-y-auto">
+                      {eventosCalendario.map((ev) => {
+                        const selected = formData.calendarioEventoId === String(ev.id);
+                        const catLabel = ev.categoria
+                          ? CALENDARIO_EVENTO_CATEGORIA_LABELS[ev.categoria]
+                          : 'Evento';
+                        return (
+                          <li key={ev.id}>
+                            <button
+                              type="button"
+                              onClick={() => aplicarEventoCalendario(ev)}
+                              className={`flex w-full flex-col gap-0.5 rounded-lg border px-3 py-2.5 text-left transition ${
+                                selected
+                                  ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-200'
+                                  : 'border-slate-200 bg-white hover:border-emerald-300'
+                              }`}
+                            >
+                              <span className="text-sm font-semibold text-slate-800">
+                                {ev.titulo}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                {catLabel}
+                                {ev.lugar ? ` · ${ev.lugar}` : ''}
+                                {' · '}
+                                {new Date(ev.fechaInicio).toLocaleString('es-CO', {
+                                  dateStyle: 'medium',
+                                  timeStyle: 'short',
+                                })}
+                                {' – '}
+                                {new Date(ev.fechaFin).toLocaleTimeString('es-CO', {
+                                  timeStyle: 'short',
+                                })}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Nombre y descripción de la autorización */}
+              {formData.calendarioEventoId ? (
+                <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-900">
+                    2. Datos de la autorización
+                  </p>
+                  <div>
+                    <FieldLabel required tip={fieldLabels.nombreTip}>
+                      {fieldLabels.nombre}
+                    </FieldLabel>
+                    <input
+                      type="text"
+                      name="nombre"
+                      value={formData.nombre}
+                      onChange={handleInputChange}
+                      required
+                      maxLength={255}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400"
+                      placeholder={fieldLabels.nombrePlaceholder}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel required tip={fieldLabels.descripcionTip}>
+                      {fieldLabels.descripcion}
+                    </FieldLabel>
+                    <textarea
+                      name="descripcion"
+                      value={formData.descripcion}
+                      onChange={handleInputChange}
+                      required
+                      rows={4}
+                      maxLength={1000}
+                      className="w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400"
+                      placeholder={fieldLabels.descripcionPlaceholder}
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      {formData.descripcion.length}/1000 caracteres
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Selecciona un evento para continuar con el nombre y la descripción de la
+                  autorización.
+                </p>
+              )}
+
+              {/* 3. Resumen del evento + plazo */}
+              {formData.calendarioEventoId ? (
+                <div className="space-y-4">
+                  <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+                    <p className="text-sm font-semibold text-emerald-900">
+                      3. Datos del evento (solo lectura)
+                    </p>
+                    <div className="grid gap-3 rounded-lg border border-emerald-200 bg-white p-3 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">
+                          {fieldLabels.eventoNombre}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                          {formData.eventoNombre}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">
+                          {fieldLabels.lugarEvento}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                          {formData.lugarEvento}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">
+                          {fieldLabels.fechaEvento}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                          {formData.fechaEvento}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">Horario</p>
+                        <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                          {formData.horaEvento} – {formData.horaFin}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 sm:p-5">
+                    <p className="text-sm font-semibold text-violet-900">Plazo para responder</p>
+                    <p className="mt-1 mb-4 text-xs leading-relaxed text-violet-700">
+                      Se calcula solo según el inicio del evento ({AUTORIZACION_MINUTOS_ANTES}{' '}
+                      minutos antes). No es editable.
+                    </p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <FieldLabel
+                          required
+                          tip={fieldLabels.fechaVencimientoTip(AUTORIZACION_MINUTOS_ANTES)}
+                        >
+                          {fieldLabels.fechaVencimiento}
+                        </FieldLabel>
+                        <input
+                          type="date"
+                          name="fecha"
+                          value={formData.fecha}
+                          onChange={handleInputChange}
+                          required
+                          min={hoyStr}
+                          max={formData.fechaEvento || undefined}
+                          readOnly
+                          className={`w-full rounded-lg border px-4 py-2.5 text-sm text-slate-900 ${
+                            horaVencimientoInvalida
+                              ? 'border-red-500 bg-red-50'
+                              : 'border-violet-200 bg-white/90'
+                          }`}
+                        />
+                      </div>
+                      <div>
+                        <FieldLabel
+                          required
+                          tip={fieldLabels.horaVencimientoTip(AUTORIZACION_MINUTOS_ANTES)}
+                        >
+                          {fieldLabels.horaVencimiento}
+                        </FieldLabel>
+                        <input
+                          type="time"
+                          name="horaVencimiento"
+                          value={formData.horaVencimiento}
+                          onChange={handleInputChange}
+                          required
+                          readOnly
+                          className={`w-full rounded-lg border px-4 py-2.5 text-sm text-slate-900 ${
+                            horaVencimientoInvalida
+                              ? 'border-red-500 bg-red-50'
+                              : 'border-violet-200 bg-white/90'
+                          }`}
+                        />
+                        {horaVencimientoInvalida ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">
+                            Debe ser {AUTORIZACION_MINUTOS_ANTES} min antes del inicio. Ya la
+                            corregimos.
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <div>
+                <FieldLabel required tip={fieldLabels.nombreTip}>
+                  {fieldLabels.nombre}
+                </FieldLabel>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleInputChange}
+                  required
+                  maxLength={255}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400"
+                  placeholder={fieldLabels.nombrePlaceholder}
+                />
+              </div>
+
+              <div>
+                <FieldLabel required tip={fieldLabels.descripcionTip}>
+                  {fieldLabels.descripcion}
+                </FieldLabel>
+                <textarea
+                  name="descripcion"
+                  value={formData.descripcion}
+                  onChange={handleInputChange}
+                  required
+                  rows={4}
+                  maxLength={1000}
+                  className="w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400"
+                  placeholder={fieldLabels.descripcionPlaceholder}
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  {formData.descripcion.length}/1000 caracteres
+                </p>
+              </div>
+
+              <div>
+                <FieldLabel required tip={fieldLabels.fechaTip}>
+                  {fieldLabels.fecha}
+                </FieldLabel>
+                <input
+                  type="date"
+                  name="fecha"
+                  value={formData.fecha}
+                  onChange={handleInputChange}
+                  required
+                  min={hoyStr}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900"
+                />
+              </div>
+            </>
+          )}
+
+          {(!esAutorizacion || Boolean(formData.calendarioEventoId)) && (
           <div>
             <FieldLabel
               required
@@ -915,8 +1657,8 @@ export default function AddRecordatorioModal({
               </button>
             </div>
 
-            {emailSelected && (
-              <div className="mt-3 space-y-1.5">
+            {emailSelected ? (
+              <div className="mt-4 flex flex-col items-center gap-2">
                 <button
                   type="button"
                   disabled={!canPreviewEmail}
@@ -925,57 +1667,37 @@ export default function AddRecordatorioModal({
                     setShowEmailPreview(true);
                   }}
                   title={canPreviewEmail ? 'Abrir vista previa del correo' : previewBlockedHint}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-sm transition ${
+                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
                     canPreviewEmail
-                      ? 'cursor-pointer border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50 hover:border-blue-300 hover:from-blue-100 hover:to-sky-100'
-                      : 'cursor-not-allowed border-slate-200 bg-slate-100 opacity-60'
+                      ? 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg active:scale-[0.98]'
+                      : 'cursor-not-allowed bg-slate-300 opacity-70'
                   }`}
                 >
-                  <span
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white shadow ${
-                      canPreviewEmail ? 'bg-blue-600' : 'bg-slate-400'
-                    }`}
-                  >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span
-                      className={`block text-sm font-semibold ${
-                        canPreviewEmail ? 'text-blue-900' : 'text-slate-600'
-                      }`}
-                    >
-                      Vista previa del correo al acudiente
-                    </span>
-                    <span
-                      className={`mt-0.5 block text-xs ${
-                        canPreviewEmail ? 'text-blue-700/80' : 'text-slate-500'
-                      }`}
-                    >
-                      {canPreviewEmail
-                        ? 'Mira cómo se verá el mensaje de Copetón antes de enviarlo.'
-                        : previewBlockedHint}
-                    </span>
-                  </span>
-                  {canPreviewEmail ? (
-                    <span className="hidden text-sm font-medium text-blue-700 sm:inline">Ver</span>
-                  ) : null}
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                  Ver vista previa del correo
                 </button>
+                <p className="max-w-md text-center text-xs text-slate-500">
+                  {canPreviewEmail
+                    ? 'Así verá el acudiente el mensaje de Copetón.'
+                    : previewBlockedHint}
+                </p>
               </div>
-            )}
+            ) : null}
           </div>
+          )}
 
           {/* Destino en pasos */}
           <section
@@ -1003,9 +1725,9 @@ export default function AddRecordatorioModal({
               </div>
               {!avisoBasicoCompleto ? (
                 <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  Completa nombre, tipo, descripción, fecha y método de envío
-                  {emailSelected ? ' (puedes usar la vista previa)' : ''} antes de elegir el
-                  destino.
+                  {`Completa ${fieldLabels?.nombre.toLowerCase() ?? 'nombre'}, ${fieldLabels?.descripcion.toLowerCase() ?? 'descripción'}, ${fieldLabels?.fecha.toLowerCase() ?? 'fecha'} y método de envío${
+                    emailSelected ? ' (puedes usar la vista previa)' : ''
+                  } antes de elegir el destino.`}
                   {destinoBlockedHint ? ` ${destinoBlockedHint}` : ''}
                 </p>
               ) : (
@@ -1254,7 +1976,7 @@ export default function AddRecordatorioModal({
                     </p>
                   ) : (
                     <p className="text-sm text-emerald-700">
-                      Todo listo. Puedes crear el recordatorio.
+                      Todo listo. Puedes {fieldLabels?.crearBoton.toLowerCase() ?? 'crear el recordatorio'}.
                     </p>
                   )}
 
@@ -1265,12 +1987,14 @@ export default function AddRecordatorioModal({
                     disabled={!canCreateRecordatorio || submitting}
                     title={
                       canCreateRecordatorio
-                        ? 'Crear recordatorio'
+                        ? fieldLabels?.crearBoton ?? 'Crear recordatorio'
                         : createBlockedHint || 'Completa los pasos anteriores'
                     }
                     onClick={() => void handleCrearRecordatorio()}
                   >
-                    {submitting ? 'Creando…' : 'Crear recordatorio'}
+                    {submitting
+                      ? fieldLabels?.crearBotonEnProgreso ?? 'Creando…'
+                      : fieldLabels?.crearBoton ?? 'Crear recordatorio'}
                   </Button>
                 </div>
               )}
@@ -1310,6 +2034,8 @@ export default function AddRecordatorioModal({
               </div>
             </div>
           </section>
+          </div>
+          ) : null}
 
           {error && <ErrorBanner title={error} />}
 
@@ -1339,6 +2065,17 @@ export default function AddRecordatorioModal({
         <p className="mb-3 shrink-0 text-center text-sm text-slate-600">
           Así verá el acudiente el mensaje de Copetón cuando envíes por correo.
         </p>
+        {esAutorizacion ? (
+          <div className="mb-3 shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p className="text-sm font-semibold text-emerald-900">
+              El correo incluirá el botón &quot;Ver autorización y responder&quot;
+            </p>
+            <p className="mt-1 text-xs text-emerald-800">
+              Ese enlace llevará al acudiente a una pantalla donde verá el detalle y podrá
+              marcar Se autorizó / No autorizó.
+            </p>
+          </div>
+        ) : null}
         <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-[#e8eef5]">
           <iframe
             title="Vista previa correo recordatorio"

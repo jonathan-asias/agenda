@@ -8,6 +8,7 @@ import AddMateriaModal from './modals/AddMateriaModal';
 import AddDocenteModal from './modals/AddDocenteModal';
 import AddEstudianteModal from './modals/AddEstudianteModal';
 import BulkUploadEstudiantesModal from './modals/BulkUploadEstudiantesModal';
+import AddCalendarioAcademicoModal from './modals/AddCalendarioAcademicoModal';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -16,7 +17,14 @@ interface AddItemModalProps {
   onSuccess: () => void;
 }
 
-type ModalType = 'materia' | 'curso' | 'docente' | 'estudiante' | 'estudiantes_masivo' | null;
+type ModalType =
+  | 'materia'
+  | 'curso'
+  | 'docente'
+  | 'estudiante'
+  | 'estudiantes_masivo'
+  | 'calendario_academico'
+  | null;
 
 export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess }: AddItemModalProps) {
   const [selectedType, setSelectedType] = useState<ModalType>(null);
@@ -79,6 +87,15 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
       case 'estudiantes_masivo':
         return (
           <BulkUploadEstudiantesModal
+            isOpen={true}
+            onClose={handleClose}
+            institucionId={institucionId}
+            onSuccess={handleSuccess}
+          />
+        );
+      case 'calendario_academico':
+        return (
+          <AddCalendarioAcademicoModal
             isOpen={true}
             onClose={handleClose}
             institucionId={institucionId}
@@ -195,6 +212,33 @@ export default function AddItemModal({ isOpen, onClose, institucionId, onSuccess
                 </div>
               </div>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedType('calendario_academico')}
+              className="w-full p-4 text-left bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition-colors group h-full"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-sky-500 rounded-lg flex items-center justify-center group-hover:bg-sky-600 transition-colors flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-slate-900 mb-1">Agregar calendario académico</h3>
+                  <p className="text-sm text-slate-600 leading-snug">
+                    Definir el calendario académico de la institución: periodos, fechas clave,
+                    vacaciones y días no lectivos.
+                  </p>
+                </div>
+              </div>
+            </button>
+
             <button
               type="button"
               onClick={() => {

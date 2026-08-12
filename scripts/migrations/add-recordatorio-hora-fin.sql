@@ -1,0 +1,2 @@
+ALTER TABLE "Recordatorios"
+  ADD COLUMN IF NOT EXISTS "hora_fin" TIMESTAMP(3);

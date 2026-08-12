@@ -16,8 +16,35 @@ function isPlatformAdminEmail(email: string | null | undefined): boolean {
   return getPlatformAdminEmails().includes(email.trim().toLowerCase());
 }
 
+function normalizePath(pathname: string): string {
+  try {
+    return decodeURIComponent(pathname).normalize('NFC');
+  } catch {
+    return pathname.normalize('NFC');
+  }
+}
+
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+  const pathname = normalizePath(request.nextUrl.pathname);
+
+  // Prototipo UI (público): /version-diseño-1 → /version-diseno-1
+  if (
+    pathname === '/version-diseño-1' ||
+    pathname.startsWith('/version-diseño-1/')
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace('/version-diseño-1', '/version-diseno-1');
+    return NextResponse.rewrite(url);
+  }
+
+  // Prototipo ASCII: sin auth
+  if (
+    pathname === '/version-diseno-1' ||
+    pathname.startsWith('/version-diseno-1/')
+  ) {
+    return NextResponse.next({ request });
+  }
+
   const isPlatformRoute = pathname.startsWith('/gestion-vortico');
 
   let response = NextResponse.next({ request });
@@ -82,5 +109,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/institucion/:path*', '/gestion-vortico/:path*'],
+  matcher: [
+    '/institucion/:path*',
+    '/gestion-vortico/:path*',
+    '/version-diseno-1',
+    '/version-diseno-1/:path*',
+    '/version-diseño-1',
+    '/version-diseño-1/:path*',
+  ],
 };

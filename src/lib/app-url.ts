@@ -3,15 +3,53 @@ import { APP_URL, publicEnv } from '@/lib/env';
 
 const PRODUCTION_APP_URL = 'https://ahoritapp.com';
 
+/** Hosts que no sirven como enlace en el navegador (bind-all / loopback). */
+function isNonBrowsableHost(hostname: string): boolean {
+  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host === '0.0.0.0' ||
+    host === '::'
+  );
+}
+
 function isLocalhostUrl(url: string): boolean {
-  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(url);
+  try {
+    return isNonBrowsableHost(new URL(url).hostname);
+  } catch {
+    return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0|\[::\])(:\d+)?$/i.test(url);
+  }
+}
+
+/**
+ * Next a veces reporta origin como http://0.0.0.0:3000 (dirección de bind).
+ * Eso produce ERR_ADDRESS_INVALID en el navegador; se reescribe a localhost.
+ */
+export function rewriteBindAllHostToLocalhost(url: string): string {
+  const trimmed = url.trim().replace(/\/$/, '');
+  if (!trimmed) return trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    const host = parsed.hostname.replace(/^\[|\]$/g, '');
+    if (host === '0.0.0.0' || host === '::') {
+      parsed.hostname = 'localhost';
+      return parsed.toString().replace(/\/$/, '');
+    }
+    return trimmed;
+  } catch {
+    return trimmed
+      .replace(/^https?:\/\/0\.0\.0\.0(?=:\d+|\/|$)/i, (m) => m.replace('0.0.0.0', 'localhost'))
+      .replace(/^https?:\/\/\[::\](?=:\d+|\/|$)/i, (m) => m.replace('[::]', 'localhost'));
+  }
 }
 
 function normalizeBaseUrl(raw: string | undefined | null): string | null {
   const trimmed = raw?.trim().replace(/\/$/, '');
   if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  return rewriteBindAllHostToLocalhost(withProtocol);
 }
 
 /**
@@ -41,7 +79,42 @@ export function resolvePublicAppUrl(): string {
     normalizeBaseUrl(publicEnv.NEXT_PUBLIC_APP_URL) ||
     normalizeBaseUrl(APP_URL) ||
     'http://localhost:3000';
-  return local;
+  return rewriteBindAllHostToLocalhost(local);
+}
+
+/**
+ * Base URL para enlaces en correos (autorización, push, consultar).
+ * Prioriza URL pública de entorno; en local usa Origin/Host del request
+ * y nunca deja 0.0.0.0 (no navegable).
+ */
+export function resolveEmailLinkBaseUrl(request?: NextRequest): string {
+  const publicUrl = resolvePublicAppUrl();
+  if (publicUrl && !isLocalhostUrl(publicUrl)) {
+    return rewriteBindAllHostToLocalhost(publicUrl);
+  }
+
+  if (request) {
+    const headerOrigin = request.headers.get('origin')?.trim().replace(/\/$/, '');
+    if (headerOrigin) {
+      return rewriteBindAllHostToLocalhost(headerOrigin);
+    }
+
+    const host = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '')
+      .trim()
+      .split(',')[0]
+      ?.trim();
+    const proto = (request.headers.get('x-forwarded-proto') || 'http').split(',')[0]?.trim() || 'http';
+    if (host && !isNonBrowsableHost(host.split(':')[0] || host)) {
+      return `${proto}://${host}`.replace(/\/$/, '');
+    }
+    if (host) {
+      return rewriteBindAllHostToLocalhost(`${proto}://${host}`);
+    }
+
+    return rewriteBindAllHostToLocalhost(request.nextUrl.origin.replace(/\/$/, ''));
+  }
+
+  return rewriteBindAllHostToLocalhost(publicUrl || 'http://localhost:3000');
 }
 
 /** Destino tras confirmar correo en Supabase Auth. */
@@ -58,12 +131,14 @@ export function resolveAppUrl(request?: NextRequest): string {
   if (fromEnv && !isLocalhostUrl(fromEnv)) return fromEnv;
 
   if (request) {
-    const origin = request.headers.get('origin')?.trim().replace(/\/$/, '');
-    if (origin) return origin;
-    return request.nextUrl.origin.replace(/\/$/, '');
+    return resolveEmailLinkBaseUrl(request);
   }
 
-  return publicEnv.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || 'http://localhost:3000';
+  return (
+    rewriteBindAllHostToLocalhost(
+      publicEnv.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || 'http://localhost:3000'
+    )
+  );
 }
 
 /** Webhooks MP: debe ser URL pública alcanzable (túnel/ngrok/producción). */

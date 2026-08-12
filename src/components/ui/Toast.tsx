@@ -1,11 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { TOAST_EVENT, type ToastDetail, type ToastType } from './ui-events';
 
 interface ToastItem extends ToastDetail {
   id: string;
 }
+
+/** Por encima de modales (100–130), confirm (200+) y loading (210+). */
+const TOAST_Z_INDEX = 400;
 
 const iconByType: Record<ToastType, string> = {
   success: 'text-[var(--color-success)]',
@@ -46,6 +50,11 @@ function ToastIcon({ type }: { type: ToastType }) {
 
 export function ToastHost() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -66,11 +75,12 @@ export function ToastHost() {
     return () => window.removeEventListener(TOAST_EVENT, handler);
   }, [removeToast]);
 
-  if (toasts.length === 0) return null;
+  if (!mounted || toasts.length === 0 || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"
+      className="fixed bottom-4 right-4 flex max-w-sm w-full flex-col gap-2 px-4 pointer-events-none sm:px-0"
+      style={{ zIndex: TOAST_Z_INDEX }}
       aria-live="polite"
       aria-relevant="additions"
     >
@@ -81,24 +91,25 @@ export function ToastHost() {
           className={`pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-lg motion-safe:animate-in motion-safe:slide-in-from-bottom-2 ${borderByType[toast.type]}`}
         >
           <ToastIcon type={toast.type} />
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-[var(--color-text-primary)]">{toast.title}</p>
             {toast.text && (
-              <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">{toast.text}</p>
+              <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">{toast.text}</p>
             )}
           </div>
           <button
             type="button"
             onClick={() => removeToast(toast.id)}
-            className="shrink-0 p-1 rounded-md text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] focus-ring-outline min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1"
+            className="-mr-1 flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-md p-1 text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-nested)] focus-ring-outline"
             aria-label="Cerrar notificación"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
       ))}
-    </div>
+    </div>,
+    document.body
   );
 }

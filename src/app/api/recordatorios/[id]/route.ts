@@ -51,6 +51,24 @@ export async function PATCH(
 
       await assertDocenteOwnsRecordatorio(request, ctx, recordatorio.docente_id);
 
+      if (recordatorio.tipo === 'autorizacion') {
+        const respuestas = await tx.recordatorioEstudiantes.count({
+          where: {
+            recordatorio_id: recordatorioId,
+            autorizacion_respuesta: { in: ['autorizado', 'no_autorizado'] },
+          },
+        });
+        if (respuestas > 0) {
+          return NextResponse.json(
+            {
+              error:
+                'No se puede editar la autorización: ya hay respuestas de acudientes. Por seguridad queda bloqueada.',
+            },
+            { status: 409 }
+          );
+        }
+      }
+
       const recordatorioActualizado = await tx.recordatorios.update({
         where: { id: recordatorioId },
         data: {
@@ -117,6 +135,24 @@ export async function DELETE(
       }
 
       await assertDocenteOwnsRecordatorio(request, ctx, recordatorio.docente_id);
+
+      if (recordatorio.tipo === 'autorizacion') {
+        const respuestas = await tx.recordatorioEstudiantes.count({
+          where: {
+            recordatorio_id: recordatorioId,
+            autorizacion_respuesta: { in: ['autorizado', 'no_autorizado'] },
+          },
+        });
+        if (respuestas > 0) {
+          return NextResponse.json(
+            {
+              error:
+                'No se puede eliminar la autorización: ya hay respuestas de acudientes. Por seguridad queda bloqueada.',
+            },
+            { status: 409 }
+          );
+        }
+      }
 
       await tx.recordatorioEstudiantes.deleteMany({
         where: { recordatorio_id: recordatorioId }

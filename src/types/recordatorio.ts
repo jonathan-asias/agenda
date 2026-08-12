@@ -9,6 +9,16 @@ export interface Recordatorio {
   fecha: string;
   tipo: string;
   modo_envio?: string | null;
+  motivo?: string | null;
+  evento_nombre?: string | null;
+  fecha_evento?: string | null;
+  lugar_evento?: string | null;
+  hora_llegada?: string | null;
+  hora_fin?: string | null;
+  documento_path?: string | null;
+  documento_nombre?: string | null;
+  documento_mime?: string | null;
+  documento_tamano?: number | null;
   created_at?: string;
   updated_at?: string;
   grado: {
@@ -41,5 +51,7 @@ export interface Recordatorio {
       apellidos: string;
       codigo_estudiantil: string;
     };
+    autorizacion_respuesta?: string | null;
+    autorizacion_respondido_at?: string | null;
   }>;
 }

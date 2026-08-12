@@ -1,12 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Button from './Button';
 import Input from './Input';
 import { CONFIRM_EVENT, type ConfirmDetail } from './ui-events';
 
+function getConfirmOverlayZIndex(): number {
+  if (typeof document === 'undefined') return 200;
+  const roots = Array.from(document.querySelectorAll<HTMLElement>('[data-modal-root]'));
+  const maxModalZ = roots.reduce((max, el) => {
+    const z = Number(el.dataset.modalZIndex || 0);
+    return z > max ? z : max;
+  }, 0);
+  return Math.max(maxModalZ + 10, 200);
+}
+
 export function ConfirmHost() {
   const [dialog, setDialog] = useState<ConfirmDetail | null>(null);
+  const [overlayZ, setOverlayZ] = useState(200);
   const [inputValue, setInputValue] = useState('');
   const [inputError, setInputError] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
@@ -18,6 +30,7 @@ export function ConfirmHost() {
       triggerRef.current = document.activeElement as HTMLElement;
       setInputValue('');
       setInputError('');
+      setOverlayZ(getConfirmOverlayZIndex());
       setDialog(detail);
     };
     window.addEventListener(CONFIRM_EVENT, handler);
@@ -65,7 +78,7 @@ export function ConfirmHost() {
     };
   }, [dialog]);
 
-  if (!dialog) return null;
+  if (!dialog || typeof document === 'undefined') return null;
 
   const confirmVariant =
     dialog.variant === 'danger' ? 'destructive' : dialog.variant === 'warning' ? 'primary' : 'primary';
@@ -89,9 +102,12 @@ export function ConfirmHost() {
     triggerRef.current?.focus();
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ zIndex: overlayZ }}
+      data-modal-root
+      data-modal-z-index={overlayZ}
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
@@ -150,6 +166,7 @@ export function ConfirmHost() {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

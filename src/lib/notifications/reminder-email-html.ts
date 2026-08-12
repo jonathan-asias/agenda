@@ -6,6 +6,15 @@
 /** Ruta pública de la mascota Copetón (sirve desde /public). */
 export const COPETON_PUBLIC_PATH = '/branding/copeton.png';
 
+export type ReminderAutorizacionEmailParams = {
+  eventoNombre: string;
+  lugarEvento?: string | null;
+  fechaEvento?: Date | null;
+  horaFin?: Date | null;
+  horaLlegada?: Date | null;
+  fechaVencimiento?: Date | null;
+};
+
 export type ReminderEmailTemplateParams = {
   institucionNombre: string;
   docenteNombre: string;
@@ -18,10 +27,44 @@ export type ReminderEmailTemplateParams = {
   pushActivationHref?: string;
   /** En vista previa del docente se ocultan CTAs de acción. Default true. */
   showActionButtons?: boolean;
+  /** Datos extra cuando el tipo es autorización. */
+  autorizacion?: ReminderAutorizacionEmailParams | null;
+  /** Enlace firmado para responder la autorización (botón del correo). */
+  autorizacionHref?: string | null;
 };
 
 function toFechaISODate(fecha: Date): string {
   return fecha.toISOString().slice(0, 10);
+}
+
+function formatFechaLarga(fecha: Date): string {
+  return fecha.toLocaleDateString('es-CO', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'America/Bogota',
+  });
+}
+
+function formatFechaHora(fecha: Date): string {
+  return fecha.toLocaleString('es-CO', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Bogota',
+  });
+}
+
+function formatSoloHora(fecha: Date): string {
+  return fecha.toLocaleTimeString('es-CO', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Bogota',
+  });
 }
 
 function buildConsultarRecordatoriosUrl(baseUrl: string, fechaLimite?: Date | null): string {
@@ -43,6 +86,70 @@ export function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (ch) => map[ch] ?? ch);
 }
 
+function buildAutorizacionBlock(autorizacion: ReminderAutorizacionEmailParams): string {
+  const fechaEventoTexto = autorizacion.fechaEvento
+    ? formatFechaLarga(autorizacion.fechaEvento)
+    : '';
+  const horaInicioTexto = autorizacion.fechaEvento
+    ? formatSoloHora(autorizacion.fechaEvento)
+    : '';
+  const horaFinTexto = autorizacion.horaFin ? formatSoloHora(autorizacion.horaFin) : '';
+  const fechaVencimientoTexto = autorizacion.fechaVencimiento
+    ? formatFechaHora(autorizacion.fechaVencimiento)
+    : '';
+
+  return `
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;margin-top:12px;">
+                <tr>
+                  <td style="padding:16px 18px 8px;">
+                    <p style="margin:0 0 4px;font-size:0.75rem;letter-spacing:0.03em;text-transform:uppercase;color:#047857;font-weight:700;">Autorización</p>
+                    <p style="margin:0;font-size:0.875rem;color:#065f46;line-height:1.5;">El docente solicita tu autorización para el siguiente evento.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 18px;">
+                    <p style="margin:0 0 2px;font-size:0.75rem;letter-spacing:0.03em;text-transform:uppercase;color:#64748b;font-weight:600;">Evento</p>
+                    <p style="margin:0 0 10px;font-size:0.9375rem;color:#0f172a;font-weight:600;">${escapeHtml(autorizacion.eventoNombre)}</p>
+                    ${
+                      autorizacion.lugarEvento
+                        ? `<p style="margin:0 0 2px;font-size:0.75rem;letter-spacing:0.03em;text-transform:uppercase;color:#64748b;font-weight:600;">Lugar</p>
+                    <p style="margin:0 0 10px;font-size:0.875rem;color:#334155;">${escapeHtml(autorizacion.lugarEvento)}</p>`
+                        : ''
+                    }
+                    ${
+                      fechaEventoTexto
+                        ? `<p style="margin:0 0 8px;font-size:0.875rem;color:#334155;">📅 <strong>Fecha del evento:</strong> ${escapeHtml(fechaEventoTexto)}</p>`
+                        : ''
+                    }
+                    ${
+                      horaInicioTexto
+                        ? `<p style="margin:0 0 8px;font-size:0.875rem;color:#334155;">🕐 <strong>Hora de inicio:</strong> ${escapeHtml(horaInicioTexto)}${
+                            horaFinTexto
+                              ? ` &nbsp;·&nbsp; <strong>Hora de fin:</strong> ${escapeHtml(horaFinTexto)}`
+                              : ''
+                          }</p>`
+                        : ''
+                    }
+                    ${
+                      autorizacion.horaLlegada
+                        ? `<p style="margin:0 0 8px;font-size:0.875rem;color:#334155;">🚏 <strong>Hora de llegada:</strong> ${escapeHtml(formatSoloHora(autorizacion.horaLlegada))}</p>`
+                        : ''
+                    }
+                    ${
+                      fechaVencimientoTexto
+                        ? `<p style="margin:0 0 8px;font-size:0.875rem;color:#334155;">⏳ <strong>Vence la autorización:</strong> ${escapeHtml(fechaVencimientoTexto)}</p>`
+                        : ''
+                    }
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 18px 16px;">
+                    <p style="margin:0;font-size:0.8125rem;color:#047857;line-height:1.45;">Pulsa <strong>Ver autorización y responder</strong> para indicar si autorizas o no.</p>
+                  </td>
+                </tr>
+              </table>`;
+}
+
 /** HTML idéntico al correo que recibe el acudiente. */
 export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): string {
   const {
@@ -55,18 +162,16 @@ export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): str
     copetonSrc,
     pushActivationHref,
     showActionButtons = true,
+    autorizacion = null,
+    autorizacionHref = null,
   } = params;
 
-  const fechaTexto = fechaLimite
-    ? fechaLimite.toLocaleDateString('es-CO', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'UTC',
-      })
-    : '';
+  const fechaTexto = fechaLimite ? formatFechaLarga(fechaLimite) : '';
   const consultarUrl = baseUrl ? buildConsultarRecordatoriosUrl(baseUrl, fechaLimite) : '';
+  const primaryHref = autorizacion && autorizacionHref ? autorizacionHref : consultarUrl;
+  const primaryLabel = autorizacion
+    ? 'Ver autorización y responder'
+    : 'Ver el recordatorio conmigo';
   const docenteNombreSafe = docenteNombre.trim();
   const docenteIntro = docenteNombreSafe
     ? `Me lo compartió el docente <strong style="color:#334155;">${escapeHtml(docenteNombreSafe)}</strong> de <strong style="color:#334155;">${escapeHtml(institucionNombre)}</strong>.`
@@ -80,6 +185,14 @@ export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): str
     ? `<img src="${escapeHtml(copetonSrc)}" width="120" height="120" alt="Copetón, mascota de Agenda Virtual" style="display:block;width:120px;height:120px;border:0;outline:none;text-decoration:none;margin:0 auto;" />`
     : `<div style="width:120px;height:120px;margin:0 auto;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-weight:700;font-size:2rem;line-height:120px;text-align:center;">C</div>`;
 
+  const esAutorizacion = Boolean(autorizacion);
+  const headerSubtitle = esAutorizacion
+    ? 'Te traigo una solicitud de autorización'
+    : 'Te traigo un recordatorio escolar';
+  const dateLabel = esAutorizacion
+    ? `<p style="margin:16px 0 0;padding:10px 12px;background:#ffffff;border-radius:8px;border:1px solid #e2e8f0;color:#334155;font-size:0.875rem;line-height:1.45;">⏳ <strong>Vence la autorización:</strong> el <strong>${escapeHtml(fechaLimite ? formatFechaHora(fechaLimite) : fechaTexto)}</strong>.</p>`
+    : `<p style="margin:16px 0 0;padding:10px 12px;background:#ffffff;border-radius:8px;border:1px solid #e2e8f0;color:#334155;font-size:0.875rem;line-height:1.45;">📅 <strong>No lo olvides:</strong> este recordatorio es para el <strong>${escapeHtml(fechaTexto)}</strong>.</p>`;
+
   return `
 <!DOCTYPE html>
 <html lang="es">
@@ -87,7 +200,7 @@ export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): str
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Nuevo recordatorio</title>
+  <title>${esAutorizacion ? 'Solicitud de autorización' : 'Nuevo recordatorio'}</title>
 </head>
 <body style="margin:0;padding:0;background:#e8eef5;font-family:Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#e8eef5;padding:24px 12px;">
@@ -98,7 +211,7 @@ export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): str
             <td style="background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 55%,#0ea5e9 100%);background-color:#2563eb;color:#ffffff;padding:22px 24px;">
               <p style="margin:0;font-size:0.75rem;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9;">Mensaje de Copetón</p>
               <h1 style="margin:6px 0 0;font-size:1.25rem;font-weight:700;line-height:1.3;">${escapeHtml(institucionNombre)}</h1>
-              <p style="margin:8px 0 0;font-size:0.875rem;opacity:0.92;">Te traigo un recordatorio escolar</p>
+              <p style="margin:8px 0 0;font-size:0.875rem;opacity:0.92;">${headerSubtitle}</p>
             </td>
           </tr>
           <tr>
@@ -135,13 +248,11 @@ export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): str
                 </tr>
                 <tr>
                   <td style="padding:8px 20px 18px;">
-                    <p style="margin:0 0 8px;font-size:0.75rem;letter-spacing:0.03em;text-transform:uppercase;color:#64748b;font-weight:600;">Lo que te quiero decir</p>
+                    <p style="margin:0 0 8px;font-size:0.75rem;letter-spacing:0.03em;text-transform:uppercase;color:#64748b;font-weight:600;">${esAutorizacion ? 'Descripción de la autorización' : 'Lo que te quiero decir'}</p>
                     <div style="color:#475569;line-height:1.65;font-size:0.9375rem;white-space:pre-wrap;">${escapeHtml(descripcion)}</div>
-                    ${
-                      fechaLimite
-                        ? `<p style="margin:16px 0 0;padding:10px 12px;background:#ffffff;border-radius:8px;border:1px solid #e2e8f0;color:#334155;font-size:0.875rem;line-height:1.45;">📅 <strong>No lo olvides:</strong> este recordatorio es para el <strong>${escapeHtml(fechaTexto)}</strong>.</p>`
-                        : ''
-                    }
+                    ${fechaLimite && !esAutorizacion ? dateLabel : ''}
+                    ${fechaLimite && esAutorizacion ? dateLabel : ''}
+                    ${autorizacion ? buildAutorizacionBlock(autorizacion) : ''}
                   </td>
                 </tr>
               </table>
@@ -157,9 +268,9 @@ export function buildReminderEmailHtml(params: ReminderEmailTemplateParams): str
               ${
                 showActionButtons
                   ? `${
-                      consultarUrl
-                        ? `<a href="${escapeHtml(consultarUrl)}" style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;text-decoration:none;mso-padding-alt:0;">Ver el recordatorio conmigo</a>`
-                        : `<span style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;">Ver el recordatorio conmigo</span>`
+                      primaryHref
+                        ? `<a href="${escapeHtml(primaryHref)}" style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;text-decoration:none;mso-padding-alt:0;">${escapeHtml(primaryLabel)}</a>`
+                        : `<span style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;">${escapeHtml(primaryLabel)}</span>`
                     }${pushButton ? `<span style="display:inline-block;width:10px;"></span>${pushButton}` : ''}`
                   : `<p style="margin:0;color:#64748b;font-size:0.8125rem;line-height:1.5;">Vista previa · así llegará el mensaje al acudiente</p>`
               }

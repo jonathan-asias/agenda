@@ -45,6 +45,8 @@ loadEnvFile('.env.local');
 loadEnvFile('.env.e2e');
 
 const BASE_URL = (process.env.E2E_BASE_URL || 'https://ahoritapp.com').replace(/\/$/, '');
+/** Si GV falla en prod (sin PLATFORM_ADMIN_EMAILS), usar localhost con misma DB. */
+const GV_BASE_URL = (process.env.E2E_GV_BASE_URL || BASE_URL).replace(/\/$/, '');
 const GV_EMAIL = (process.env.E2E_GV_EMAIL || '').trim().toLowerCase();
 const GV_PASSWORD = process.env.E2E_GV_PASSWORD || '';
 const PASSWORD = process.env.E2E_PASSWORD || '';
@@ -103,8 +105,9 @@ async function loginAs(email, password) {
   return { email, cookieHeader: jar.header(), session: data.session };
 }
 
-async function apiFetch(pathName, { method = 'GET', cookieHeader, body } = {}) {
-  const url = `${BASE_URL}${pathName.startsWith('/') ? pathName : `/${pathName}`}`;
+async function apiFetch(pathName, { method = 'GET', cookieHeader, body, baseUrl } = {}) {
+  const root = (baseUrl || BASE_URL).replace(/\/$/, '');
+  const url = `${root}${pathName.startsWith('/') ? pathName : `/${pathName}`}`;
   const init = {
     method,
     headers: {
@@ -368,7 +371,7 @@ async function setupForSedeAdmin(inst, admin, counts, namePrefix) {
         apellidos: `${namePrefix}${estSeq}`,
         codigo_estudiantil: `E2E${inst.tag}${RUN_ID}${namePrefix}${estSeq}`.slice(0, 30),
         nombre_acudiente: `Acudiente ${inst.tag}-${estSeq}`,
-        correo_acudiente: alias(`acu${inst.tag}${estSeq}r${RUN_ID}`),
+        correo_acudiente: alias(`acu${inst.tag}${namePrefix}${estSeq}r${RUN_ID}`),
         telefono_acudiente: `311${String(4000000 + estSeq).slice(0, 7)}`,
         grado_id: curso.grado_id,
         curso_id: curso.id,
@@ -408,27 +411,46 @@ async function main() {
     throw new Error('Configure E2E_GV_EMAIL, E2E_GV_PASSWORD, E2E_PASSWORD en .env.e2e');
   }
 
-  console.log(`E2E ahoritapp sedes BASE=${BASE_URL} RUN=${RUN_ID}`);
+  console.log(`E2E ahoritapp sedes BASE=${BASE_URL} GV_BASE=${GV_BASE_URL} RUN=${RUN_ID}`);
 
   const health = await apiFetch('/api/planes');
   if (!health.ok) throw new Error(`Servidor no responde (${health.status})`);
 
   const gv = await loginAs(GV_EMAIL, GV_PASSWORD);
-  const me = await apiFetch('/api/gestion-vortico/me', { cookieHeader: gv.cookieHeader });
-  if (!me.ok) {
-    throw new Error(`GV denegado: ${JSON.stringify(me.json)}`);
+
+  async function resolveGvBase() {
+    const candidates = [...new Set([GV_BASE_URL, BASE_URL, 'http://localhost:3000'])];
+    for (const candidate of candidates) {
+      const me = await apiFetch('/api/gestion-vortico/me', {
+        cookieHeader: gv.cookieHeader,
+        baseUrl: candidate,
+      });
+      if (me.ok) {
+        console.log(`Gestión Vortico OK @ ${candidate}`);
+        return candidate;
+      }
+      console.warn(
+        `GV denegado @ ${candidate}: ${me.json?.code || me.status} ${me.json?.error || ''}`
+      );
+    }
+    throw new Error(
+      'Gestión Vortico denegado en todos los hosts. En Vercel (Production) agregue PLATFORM_ADMIN_EMAILS=jonathanasias@gmail.com y redeploy, o arranque npm run dev en local con esa variable.'
+    );
   }
-  console.log('Gestión Vortico OK');
+
+  const gvBase = await resolveGvBase();
+  REPORT.gvBaseUrl = gvBase;
+  REPORT.baseUrl = BASE_URL;
 
   const planId = await resolvePlanId(gv.cookieHeader);
 
-  // Fix createInvite to use planId once
   async function inviteAndProvision(cfg) {
     const email = alias(`inst${cfg.tag}r${RUN_ID}`);
     console.log(`\n=== ${cfg.nombre} (${email}) sedes=${cfg.sedes.length} ===`);
     const inviteRes = await apiFetch('/api/gestion-vortico/trial-invites', {
       method: 'POST',
       cookieHeader: gv.cookieHeader,
+      baseUrl: gvBase,
       body: {
         institucionNombre: cfg.nombre,
         nit: cfg.nit,
@@ -446,6 +468,7 @@ async function main() {
       {
         method: 'POST',
         cookieHeader: gv.cookieHeader,
+        baseUrl: gvBase,
         body: {
           password: PASSWORD,
           direccionPrincipal: `Av E2E ${cfg.tag} #${RUN_ID}`,
@@ -581,7 +604,10 @@ function buildReportMarkdown(report) {
   const lines = [];
   lines.push(`# Cuentas E2E ahoritapp.com — sedes (run ${report.runId})`);
   lines.push('');
-  lines.push(`**Base URL:** ${report.baseUrl}  `);
+  lines.push(`**Base URL (setup académico):** ${report.baseUrl}  `);
+  if (report.gvBaseUrl && report.gvBaseUrl !== report.baseUrl) {
+    lines.push(`**GV / provision:** ${report.gvBaseUrl} (misma DB; prod sin PLATFORM_ADMIN_EMAILS)  `);
+  }
   lines.push(`**Contraseña:** la de \`.env.e2e\` (\`E2E_PASSWORD\` / provisional de pruebas).`);
   lines.push('');
   lines.push('## Operador Gestión Vortico');

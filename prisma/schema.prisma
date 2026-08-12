@@ -98,6 +98,7 @@ model Instituciones {
   pushSubscriptions   PushSubscriptions[]
   plan                Plan?             @relation(fields: [plan_id], references: [id])
   suscripcion         Suscripcion?      @relation(fields: [suscripcion_id], references: [id])
+  calendarioEventos   CalendarioAcademicoEventos[]
 
   @@map("Instituciones")
 }
@@ -146,6 +147,7 @@ model Sedes {
   materias        Materias[]
   docentes        Docentes[]
   estudiantes     Estudiantes[]
+  calendarioEventos CalendarioAcademicoEventos[]
 
   @@map("Sedes")
 }
@@ -402,36 +404,51 @@ model Estudiantes {
 }
 
 model Recordatorios {
-  id          Int                     @id @default(autoincrement())
-  nombre      String                  @db.VarChar(255)
-  descripcion String                  @db.Text
-  fecha       DateTime
-  tipo        String                  @db.VarChar(50) // 'tarea', 'examen', 'evento', 'otro'
-  modo_envio  String?                 @db.VarChar(100) // 'sms', 'whatsapp', 'email' (comma-separated)
-  docente_id  Int
-  grado_id    Int
-  curso_id    Int
-  area_id     Int
-  materia_id  Int
-  created_at  DateTime                @default(now()) @map("created_at")
-  updated_at  DateTime                @updatedAt @map("updated_at")
-  docente     Docentes                @relation(fields: [docente_id], references: [id], onDelete: Cascade)
-  grado       Grados                  @relation(fields: [grado_id], references: [id], onDelete: Cascade)
-  curso       Cursos                  @relation(fields: [curso_id], references: [id], onDelete: Cascade)
-  area        Areas                   @relation(fields: [area_id], references: [id], onDelete: Cascade)
-  materia     Materias                @relation(fields: [materia_id], references: [id], onDelete: Cascade)
-  estudiantes RecordatorioEstudiantes[]
+  id               Int                     @id @default(autoincrement())
+  nombre           String                  @db.VarChar(255)
+  descripcion      String                  @db.Text
+  fecha            DateTime // fecha del recordatorio o vencimiento de la autorización
+  tipo             String                  @db.VarChar(50) // 'tarea', 'examen', 'evento', 'autorizacion', 'otro'
+  modo_envio       String?                 @db.VarChar(100) // 'sms', 'whatsapp', 'email' (comma-separated)
+  motivo           String?                 @db.Text // legacy; ya no se usa en UI (usar descripcion)
+  evento_nombre    String?                 @db.VarChar(255) // evento al que pertenece la autorización
+  fecha_evento     DateTime? // fecha y hora del evento
+  lugar_evento     String?                 @db.VarChar(255) // lugar del evento
+  hora_llegada     DateTime? // hora de llegada al punto de encuentro
+  hora_fin         DateTime? // hora de fin del evento
+  calendario_evento_id Int?                @map("calendario_evento_id")
+  documento_path   String?                 @db.VarChar(500) // legacy; ya no se usa en UI
+  documento_nombre String?                 @db.VarChar(255)
+  documento_mime   String?                 @db.VarChar(120)
+  documento_tamano Int?
+  docente_id       Int
+  grado_id         Int
+  curso_id         Int
+  area_id          Int
+  materia_id       Int
+  created_at       DateTime                @default(now()) @map("created_at")
+  updated_at       DateTime                @updatedAt @map("updated_at")
+  docente          Docentes                @relation(fields: [docente_id], references: [id], onDelete: Cascade)
+  grado            Grados                  @relation(fields: [grado_id], references: [id], onDelete: Cascade)
+  curso            Cursos                  @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+  area             Areas                   @relation(fields: [area_id], references: [id], onDelete: Cascade)
+  materia          Materias                @relation(fields: [materia_id], references: [id], onDelete: Cascade)
+  calendarioEvento CalendarioAcademicoEventos? @relation(fields: [calendario_evento_id], references: [id], onDelete: SetNull)
+  estudiantes      RecordatorioEstudiantes[]
 
+  @@index([calendario_evento_id])
   @@map("Recordatorios")
 }
 
 model RecordatorioEstudiantes {
-  id              Int          @id @default(autoincrement())
-  recordatorio_id Int
-  estudiante_id   Int
-  created_at      DateTime     @default(now()) @map("created_at")
-  recordatorio    Recordatorios @relation(fields: [recordatorio_id], references: [id], onDelete: Cascade)
-  estudiante      Estudiantes  @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+  id                         Int           @id @default(autoincrement())
+  recordatorio_id            Int
+  estudiante_id              Int
+  autorizacion_respuesta     String?       @db.VarChar(20) // 'autorizado' | 'no_autorizado'
+  autorizacion_respondido_at DateTime?
+  created_at                 DateTime      @default(now()) @map("created_at")
+  recordatorio               Recordatorios @relation(fields: [recordatorio_id], references: [id], onDelete: Cascade)
+  estudiante                 Estudiantes   @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
 
   @@unique([recordatorio_id, estudiante_id])
   @@map("RecordatorioEstudiantes")
@@ -462,6 +479,34 @@ model AuditLog {
   created_at DateTime @default(now()) @map("created_at")
 
   @@map("AuditLogs")
+}
+
+/// Eventos del calendario académico (por sede).
+model CalendarioAcademicoEventos {
+  id             Int           @id @default(autoincrement())
+  institucion_id Int           @map("institucion_id")
+  sede_id        Int?          @map("sede_id")
+  titulo         String        @db.VarChar(255)
+  descripcion    String?       @db.Text
+  tipo           String        @default("otro") @db.VarChar(50)
+  /// Subtipo cuando tipo = evento (salida pedagógica, izada de bandera, etc.)
+  categoria      String?       @db.VarChar(50)
+  lugar          String?       @db.VarChar(255)
+  /// true = evento de día completo (solo fechas); false = con hora
+  todo_el_dia    Boolean       @default(true) @map("todo_el_dia")
+  fecha_inicio   DateTime      @map("fecha_inicio")
+  fecha_fin      DateTime      @map("fecha_fin")
+  color          String?       @db.VarChar(7)
+  created_at     DateTime      @default(now()) @map("created_at")
+  updated_at     DateTime      @updatedAt @map("updated_at")
+  institucion    Instituciones @relation(fields: [institucion_id], references: [id], onDelete: Cascade)
+  sede           Sedes?        @relation(fields: [sede_id], references: [id], onDelete: SetNull)
+  recordatorios  Recordatorios[]
+
+  @@index([institucion_id, sede_id])
+  @@index([institucion_id, fecha_inicio, fecha_fin])
+  @@index([institucion_id, tipo])
+  @@map("CalendarioAcademicoEventos")
 }
 
 /// Respaldo JSONB antes de eliminar una institución (retención limitada).

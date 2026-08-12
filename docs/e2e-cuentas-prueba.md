@@ -1,134 +1,184 @@
-# Cuentas E2E de prueba — Agenda Virtual
+# Cuentas E2E ahoritapp.com — sedes (run 726704)
 
-Datos del run exitoso **`249040`** (4 ago 2026).  
-Servidor: local (`http://localhost:3000`) vía Gestión Vortico → invitaciones trial.  
-Canal de recordatorios: **solo email** (Plan Básico).  
-Contraseña de todas las cuentas de prueba: la definida en `.env.e2e` como `E2E_PASSWORD` / `E2E_GV_PASSWORD` (provisional de pruebas).
-
-> No subir `.env.e2e` al repositorio. Este documento lista correos e IDs para revisión manual.
-
----
+**Base URL (setup académico):** https://ahoritapp.com  
+**GV / provision:** http://localhost:3000 (misma DB; prod sin PLATFORM_ADMIN_EMAILS)  
+**Contraseña:** la de `.env.e2e` (`E2E_PASSWORD` / provisional de pruebas).
 
 ## Operador Gestión Vortico
 
-| Campo | Valor |
-|---|---|
-| Email | `jonathanasias@gmail.com` |
-| Panel | `/gestion-vortico` |
-| Rol | Platform admin (`PLATFORM_ADMIN_EMAILS`) |
+- Email: `jonathanasias@gmail.com`
 
----
-
-## Institución 1 — flujo wizard (lotes `/api/setup/*`)
+## E2E Sedes Inst1 726704
 
 | Campo | Valor |
 |---|---|
-| ID institución | **26** |
-| Nombre | `E2E Test Inst 1 249040` |
-| Email institución | `jonathanasias+inst1r249040@gmail.com` |
-| Modo alta | Wizard (grados/cursos/áreas/materias/docente/estudiantes en lote) |
-| Estudiantes | 15 |
-| Recordatorio email | id **15** (5 acudientes del mismo curso) |
+| ID | **28** |
+| Email institución | `jonathanasias+inst1r726704@gmail.com` |
+| Sedes | 1 (ids: 5) |
+| Totales | docentes=5, materias=4, cursos=4, estudiantes=16 |
 
-### Docente Inst 1
+### Admins por sede
+
+- `jonathanasias+adm1s1r726704@gmail.com` → sede_id=5
+
+### Docentes
+
+- `jonathanasias+doc1a1r726704@gmail.com`
+- `jonathanasias+doc1a2r726704@gmail.com`
+- `jonathanasias+doc1a3r726704@gmail.com`
+- `jonathanasias+doc1a4r726704@gmail.com`
+- `jonathanasias+doc1a5r726704@gmail.com`
+
+### Cursos
+
+- A-C1
+- A-C3
+- A-C2
+- A-C4
+
+### Materias
+
+- A-Mat1
+- A-Mat2
+- A-Mat3
+- A-Mat4
+
+### Acudientes (correos)
+
+- `jonathanasias+acu11r726704@gmail.com`
+- `jonathanasias+acu12r726704@gmail.com`
+- `jonathanasias+acu13r726704@gmail.com`
+- `jonathanasias+acu14r726704@gmail.com`
+- `jonathanasias+acu15r726704@gmail.com`
+- `jonathanasias+acu16r726704@gmail.com`
+- `jonathanasias+acu17r726704@gmail.com`
+- `jonathanasias+acu18r726704@gmail.com`
+- `jonathanasias+acu19r726704@gmail.com`
+- `jonathanasias+acu110r726704@gmail.com`
+- `jonathanasias+acu111r726704@gmail.com`
+- `jonathanasias+acu112r726704@gmail.com`
+- `jonathanasias+acu113r726704@gmail.com`
+- `jonathanasias+acu114r726704@gmail.com`
+- `jonathanasias+acu115r726704@gmail.com`
+- `jonathanasias+acu116r726704@gmail.com`
+
+## E2E Sedes Inst2 726704
 
 | Campo | Valor |
 |---|---|
-| Email | `jonathanasias+doc1r249040@gmail.com` |
-| Nombre | Docente E2E1 |
+| ID | **29** |
+| Email institución | `jonathanasias+inst2r726704@gmail.com` |
+| Sedes | 2 (ids: 6, 7) |
+| Totales | docentes=5, materias=4, cursos=4, estudiantes=16 |
 
-### Acudientes Inst 1 (estudiantes 1–15)
+### Admins por sede
 
-Correo patrón: `jonathanasias+acu{N}r249040@gmail.com`
+- `jonathanasias+adm2s1r726704@gmail.com` → sede_id=6
+- `jonathanasias+adm2s2r726704@gmail.com` → sede_id=7
 
-| # | Correo acudiente |
-|---|---|
-| 1 | `jonathanasias+acu1r249040@gmail.com` |
-| 2 | `jonathanasias+acu2r249040@gmail.com` |
-| 3 | `jonathanasias+acu3r249040@gmail.com` |
-| 4 | `jonathanasias+acu4r249040@gmail.com` |
-| 5 | `jonathanasias+acu5r249040@gmail.com` |
-| 6 | `jonathanasias+acu6r249040@gmail.com` |
-| 7 | `jonathanasias+acu7r249040@gmail.com` |
-| 8 | `jonathanasias+acu8r249040@gmail.com` |
-| 9 | `jonathanasias+acu9r249040@gmail.com` |
-| 10 | `jonathanasias+acu10r249040@gmail.com` |
-| 11 | `jonathanasias+acu11r249040@gmail.com` |
-| 12 | `jonathanasias+acu12r249040@gmail.com` |
-| 13 | `jonathanasias+acu13r249040@gmail.com` |
-| 14 | `jonathanasias+acu14r249040@gmail.com` |
-| 15 | `jonathanasias+acu15r249040@gmail.com` |
+### Docentes
 
----
+- `jonathanasias+doc2n1r726704@gmail.com`
+- `jonathanasias+doc2n2r726704@gmail.com`
+- `jonathanasias+doc2n3r726704@gmail.com`
+- `jonathanasias+doc2s1r726704@gmail.com`
+- `jonathanasias+doc2s2r726704@gmail.com`
 
-## Institución 2 — alta manual (elemento por elemento)
+### Cursos
+
+- N-C1
+- N-C2
+- S-C1
+- S-C2
+
+### Materias
+
+- N-Mat1
+- N-Mat2
+- S-Mat1
+- S-Mat2
+
+### Acudientes (correos)
+
+- `jonathanasias+acu21r726704@gmail.com`
+- `jonathanasias+acu22r726704@gmail.com`
+- `jonathanasias+acu23r726704@gmail.com`
+- `jonathanasias+acu24r726704@gmail.com`
+- `jonathanasias+acu25r726704@gmail.com`
+- `jonathanasias+acu26r726704@gmail.com`
+- `jonathanasias+acu27r726704@gmail.com`
+- `jonathanasias+acu28r726704@gmail.com`
+- `jonathanasias+acu21r726704@gmail.com`
+- `jonathanasias+acu22r726704@gmail.com`
+- `jonathanasias+acu23r726704@gmail.com`
+- `jonathanasias+acu24r726704@gmail.com`
+- `jonathanasias+acu25r726704@gmail.com`
+- `jonathanasias+acu26r726704@gmail.com`
+- `jonathanasias+acu27r726704@gmail.com`
+- `jonathanasias+acu28r726704@gmail.com`
+
+## E2E Sedes Inst3 726704
 
 | Campo | Valor |
 |---|---|
-| ID institución | **27** |
-| Nombre | `E2E Test Inst 2 249040` |
-| Email institución | `jonathanasias+inst2r249040@gmail.com` |
-| Modo alta | Manual (cursos uno a uno, materia, docente, 15 estudiantes uno a uno) |
-| Estudiantes | 15 |
-| Recordatorio email | id **16** (5 acudientes del mismo curso) |
+| ID | **30** |
+| Email institución | `jonathanasias+inst3r726704@gmail.com` |
+| Sedes | 2 (ids: 8, 9) |
+| Totales | docentes=5, materias=4, cursos=4, estudiantes=16 |
 
-### Docente Inst 2
+### Admins por sede
 
-| Campo | Valor |
-|---|---|
-| Email | `jonathanasias+doc2r249040@gmail.com` |
-| Nombre | Docente Manual2 |
+- `jonathanasias+adm3s1r726704@gmail.com` → sede_id=8
+- `jonathanasias+adm3s2r726704@gmail.com` → sede_id=9
 
-### Acudientes Inst 2 (estudiantes 16–30)
+### Docentes
 
-| # | Correo acudiente |
-|---|---|
-| 16 | `jonathanasias+acu16r249040@gmail.com` |
-| 17 | `jonathanasias+acu17r249040@gmail.com` |
-| 18 | `jonathanasias+acu18r249040@gmail.com` |
-| 19 | `jonathanasias+acu19r249040@gmail.com` |
-| 20 | `jonathanasias+acu20r249040@gmail.com` |
-| 21 | `jonathanasias+acu21r249040@gmail.com` |
-| 22 | `jonathanasias+acu22r249040@gmail.com` |
-| 23 | `jonathanasias+acu23r249040@gmail.com` |
-| 24 | `jonathanasias+acu24r249040@gmail.com` |
-| 25 | `jonathanasias+acu25r249040@gmail.com` |
-| 26 | `jonathanasias+acu26r249040@gmail.com` |
-| 27 | `jonathanasias+acu27r249040@gmail.com` |
-| 28 | `jonathanasias+acu28r249040@gmail.com` |
-| 29 | `jonathanasias+acu29r249040@gmail.com` |
-| 30 | `jonathanasias+acu30r249040@gmail.com` |
+- `jonathanasias+doc3n1r726704@gmail.com`
+- `jonathanasias+doc3n2r726704@gmail.com`
+- `jonathanasias+doc3n3r726704@gmail.com`
+- `jonathanasias+doc3s1r726704@gmail.com`
+- `jonathanasias+doc3s2r726704@gmail.com`
 
----
+### Cursos
 
-## Admin vs institución
+- N-C1
+- N-C2
+- S-C1
+- S-C2
 
-En este E2E la cuenta **institución** (`+inst…`) actúa también como admin de setup (`ADMIN_ROLES` incluye `institucion`).  
-No se crearon filas separadas `+admin1` / `+admin2` en el run `249040`; el login de institución basta para el wizard y el alta manual.
+### Materias
 
-Si más adelante se prueban admins dedicados, usar:
+- N-Mat1
+- N-Mat2
+- S-Mat1
+- S-Mat2
 
-- `jonathanasias+admin1@gmail.com`
-- `jonathanasias+admin2@gmail.com`
+### Acudientes (correos)
 
----
+- `jonathanasias+acu31r726704@gmail.com`
+- `jonathanasias+acu32r726704@gmail.com`
+- `jonathanasias+acu33r726704@gmail.com`
+- `jonathanasias+acu34r726704@gmail.com`
+- `jonathanasias+acu35r726704@gmail.com`
+- `jonathanasias+acu36r726704@gmail.com`
+- `jonathanasias+acu37r726704@gmail.com`
+- `jonathanasias+acu38r726704@gmail.com`
+- `jonathanasias+acu31r726704@gmail.com`
+- `jonathanasias+acu32r726704@gmail.com`
+- `jonathanasias+acu33r726704@gmail.com`
+- `jonathanasias+acu34r726704@gmail.com`
+- `jonathanasias+acu35r726704@gmail.com`
+- `jonathanasias+acu36r726704@gmail.com`
+- `jonathanasias+acu37r726704@gmail.com`
+- `jonathanasias+acu38r726704@gmail.com`
 
-## Comprobaciones hechas en el run
+## Cómo se creó
 
-- Cross-tenant: docente Inst 1 → recursos Inst 2 → **403**
-- Invitaciones trial desde Gestión Vortico (sin Wompi/Mercado Pago)
-- Recordatorios solo canal **email**
+1. Invitación trial desde Gestión Vortico en ahoritapp.com
+2. Provision operador (`POST .../trial-invites/:id/provision`)
+3. Admins por sede desde cuenta institución
+4. Setup académico con sesión de cada admin (scoped por sede)
 
-## Cómo repetir
+## Recordatorios (post-run)
 
-```bash
-# .env.e2e configurado + servidor npm run dev
-npm run e2e:ensure-gv   # opcional: asegura usuario GV
-npm run e2e:trial
-```
-
-Cada run genera un `RUN_ID` nuevo en los correos (`…r{RUN_ID}@gmail.com`) para no chocar con datos previos.
-
-## Nota sobre correos recibidos
-
-Hubo varios intentos fallidos antes del run exitoso; por eso llegaron ~10 invitaciones trial y solo **2** recordatorios del cierre OK. Los correos de recordatorio anteriores podían salir **sin imagen** de Copetón (URL localhost); el fix de imagen embebida (CID) aplica a envíos nuevos tras el deploy.
+Cada docente envió **2** recordatorios por email. Detalle: `docs/e2e-recordatorios-enviados.md`.

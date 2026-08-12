@@ -1,6 +1,10 @@
 import { loadPublicAssetBuffer, sendEmail } from './email';
 import { createPushActivationSig } from '@/lib/security/push-activation-token';
-import { buildReminderEmailHtml, COPETON_PUBLIC_PATH as TEMPLATE_COPETON_PATH } from './reminder-email-html';
+import {
+  buildReminderEmailHtml,
+  COPETON_PUBLIC_PATH as TEMPLATE_COPETON_PATH,
+  type ReminderAutorizacionEmailParams,
+} from './reminder-email-html';
 
 export type SendReminderEmailParams = {
   institucionNombre: string;
@@ -13,6 +17,10 @@ export type SendReminderEmailParams = {
   baseUrl?: string;
   /** ID del primer estudiante para link de activar push (?estudianteId=X) */
   primerEstudianteId?: number;
+  /** Datos de autorización (tipo autorizacion). */
+  autorizacion?: ReminderAutorizacionEmailParams | null;
+  /** Enlace firmado para responder la autorización. */
+  autorizacionHref?: string | null;
 };
 
 const MAX_EMAILS_WARNING = 200;
@@ -20,10 +28,30 @@ const COPETON_CID = 'copeton';
 
 function isLocalhostUrl(url: string): boolean {
   try {
-    const host = new URL(url).hostname;
-    return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+    const host = new URL(url).hostname.replace(/^\[|\]$/g, '').toLowerCase();
+    return (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '::1' ||
+      host === '0.0.0.0' ||
+      host === '::'
+    );
   } catch {
-    return /localhost|127\.0\.0\.1/i.test(url);
+    return /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(url);
+  }
+}
+
+function rewriteBindAllHostToLocalhost(url: string): string {
+  try {
+    const parsed = new URL(url.trim());
+    const host = parsed.hostname.replace(/^\[|\]$/g, '');
+    if (host === '0.0.0.0' || host === '::') {
+      parsed.hostname = 'localhost';
+      return parsed.toString().replace(/\/$/, '');
+    }
+    return url.trim().replace(/\/$/, '');
+  } catch {
+    return url.trim().replace(/\/$/, '');
   }
 }
 
@@ -31,6 +59,18 @@ function buildAbsoluteUrl(baseUrl: string, pathName: string): string {
   const base = baseUrl.replace(/\/$/, '');
   const normalizedPath = pathName.startsWith('/') ? pathName : `/${pathName}`;
   return `${base}${normalizedPath}`;
+}
+
+function resolveLinkBase(baseUrl?: string): string | undefined {
+  const publicBase =
+    process.env.APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    (process.env.NODE_ENV === 'production' ? 'https://ahoritapp.com' : '');
+  if (baseUrl && !isLocalhostUrl(baseUrl)) return rewriteBindAllHostToLocalhost(baseUrl);
+  if (publicBase && !isLocalhostUrl(publicBase)) return rewriteBindAllHostToLocalhost(publicBase);
+  if (process.env.NODE_ENV === 'production') return 'https://ahoritapp.com';
+  return baseUrl ? rewriteBindAllHostToLocalhost(baseUrl) : baseUrl;
 }
 
 /**
@@ -50,6 +90,8 @@ export async function sendReminderEmailNotification(
     fechaLimite,
     baseUrl,
     primerEstudianteId,
+    autorizacion = null,
+    autorizacionHref = null,
   } = params;
 
   if (emails.length > MAX_EMAILS_WARNING) {
@@ -68,19 +110,12 @@ export async function sendReminderEmailNotification(
     return { success: true };
   }
 
+  const linkBase = resolveLinkBase(baseUrl);
   const publicBase =
     process.env.APP_URL?.trim() ||
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    (process.env.NODE_ENV === 'production' ? 'https://ahoritapp.com' : '');
-  const linkBase =
-    baseUrl && !isLocalhostUrl(baseUrl)
-      ? baseUrl
-      : publicBase && !isLocalhostUrl(publicBase)
-        ? publicBase
-        : process.env.NODE_ENV === 'production'
-          ? 'https://ahoritapp.com'
-          : baseUrl;
+    '';
 
   const remoteAssetUrl =
     linkBase && !isLocalhostUrl(linkBase)
@@ -105,7 +140,9 @@ export async function sendReminderEmailNotification(
     }
   }
 
-  const subject = `Nuevo recordatorio - ${institucionNombre}`;
+  const subject = autorizacion
+    ? `Autorización requerida - ${institucionNombre}`
+    : `Nuevo recordatorio - ${institucionNombre}`;
   const html = buildReminderEmailHtml({
     institucionNombre,
     docenteNombre,
@@ -115,21 +152,24 @@ export async function sendReminderEmailNotification(
     baseUrl: linkBase || undefined,
     copetonSrc,
     pushActivationHref,
+    autorizacion,
+    autorizacionHref,
   });
+
+  const attachments = [];
+  if (copetonBuffer) {
+    attachments.push({
+      filename: 'copeton.png',
+      content: copetonBuffer,
+      contentId: COPETON_CID,
+    });
+  }
 
   return sendEmail({
     to: validEmails,
     subject,
     html,
-    attachments: copetonBuffer
-      ? [
-          {
-            filename: 'copeton.png',
-            content: copetonBuffer,
-            contentId: COPETON_CID,
-          },
-        ]
-      : undefined,
+    attachments: attachments.length > 0 ? attachments : undefined,
   });
 }
 

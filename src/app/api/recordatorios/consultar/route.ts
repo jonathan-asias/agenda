@@ -156,6 +156,19 @@ export async function POST(request: NextRequest) {
           descripcion: v.recordatorio.descripcion,
           fecha: v.recordatorio.fecha.toISOString(),
           tipo: v.recordatorio.tipo,
+          motivo: v.recordatorio.motivo,
+          evento_nombre: v.recordatorio.evento_nombre,
+          fecha_evento: v.recordatorio.fecha_evento
+            ? v.recordatorio.fecha_evento.toISOString()
+            : null,
+          lugar_evento: v.recordatorio.lugar_evento,
+          hora_fin: v.recordatorio.hora_fin
+            ? v.recordatorio.hora_fin.toISOString()
+            : null,
+          hora_llegada: v.recordatorio.hora_llegada
+            ? v.recordatorio.hora_llegada.toISOString()
+            : null,
+          autorizacion_respuesta: v.autorizacion_respuesta,
           materia: v.recordatorio.materia.nombre,
           area: v.recordatorio.area.nombre,
           grado: v.recordatorio.grado.nombre,

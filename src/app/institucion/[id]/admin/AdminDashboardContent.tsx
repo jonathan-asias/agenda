@@ -474,9 +474,16 @@ export default function AdminDashboardContent() {
                                     tarea: 'bg-yellow-100 text-yellow-800 border-yellow-200',
                                     examen: 'bg-red-100 text-red-800 border-red-200',
                                     evento: 'bg-blue-100 text-blue-800 border-blue-200',
+                                    autorizacion: 'bg-emerald-100 text-emerald-800 border-emerald-200',
                                     otro: 'bg-purple-100 text-purple-800 border-purple-200'
                                   };
-                                  const tipoLabels = { tarea: 'Tarea', examen: 'Examen', evento: 'Evento', otro: 'Otro' };
+                                  const tipoLabels = {
+                                    tarea: 'Tarea',
+                                    examen: 'Examen',
+                                    evento: 'Evento',
+                                    autorizacion: 'Autorización',
+                                    otro: 'Otro',
+                                  };
                                   const descripcionTruncada = recordatorio.descripcion.length > 100
                                     ? recordatorio.descripcion.substring(0, 100) + '...'
                                     : recordatorio.descripcion;
