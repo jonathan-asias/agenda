@@ -81,7 +81,7 @@ function DetailRow({
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
-  tone?: 'blue' | 'rose' | 'amber' | 'indigo' | 'orange' | 'teal';
+  tone?: 'blue' | 'rose' | 'amber' | 'indigo' | 'orange' | 'teal' | 'slate';
 }) {
   const toneClasses = {
     blue: 'bg-blue-100 text-blue-700',
@@ -90,6 +90,7 @@ function DetailRow({
     indigo: 'bg-indigo-100 text-indigo-700',
     orange: 'bg-orange-100 text-orange-700',
     teal: 'bg-teal-100 text-teal-700',
+    slate: 'bg-slate-100 text-slate-700',
   } as const;
 
   return (
